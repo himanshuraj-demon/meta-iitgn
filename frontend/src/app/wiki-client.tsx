@@ -29,7 +29,8 @@ import {
   Trash2,
   PlusCircle,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  PanelRight
 } from "lucide-react";
 
 // Dynamically import MilkdownEditor so it doesn't run during SSR
@@ -50,6 +51,7 @@ export default function WikiClient({ initialMarkdown }: WikiClientProps) {
   const [editorLoaded, setEditorLoaded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toolbarContainer, setToolbarContainer] = useState<HTMLDivElement | null>(null);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
 
   const [rightWidth, setRightWidth] = useState(320);
   const [currentTier, setCurrentTier] = useState<keyof typeof TIERS>("gold");
@@ -182,11 +184,22 @@ export default function WikiClient({ initialMarkdown }: WikiClientProps) {
     if (!container) return;
 
     const headings = container.querySelectorAll("h2, h3");
+    const seenIds: Record<string, number> = {};
     headings.forEach((heading) => {
       const text = heading.textContent || "";
-      const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      if (heading.id !== id) {
-        heading.id = id;
+      let baseId = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      if (!baseId) baseId = "heading";
+      
+      let finalId = baseId;
+      if (seenIds[baseId] === undefined) {
+        seenIds[baseId] = 0;
+      } else {
+        seenIds[baseId]++;
+        finalId = `${baseId}-${seenIds[baseId]}`;
+      }
+
+      if (heading.id !== finalId) {
+        heading.id = finalId;
       }
     });
   }, [editorLoaded]);
@@ -247,13 +260,13 @@ export default function WikiClient({ initialMarkdown }: WikiClientProps) {
   return (
     <div className="flex flex-col w-full h-screen bg-[#fcfcfd] overflow-hidden font-sans">
       {/* Top Header Bar */}
-      <header className="h-16 border-b border-gray-100 flex items-center justify-between px-8 shrink-0 bg-white shadow-sm z-10">
+      <header className="h-16 border-b border-gray-100 flex items-center justify-between px-4 lg:px-8 shrink-0 bg-white shadow-sm z-10">
         {/* Leftmost: Hamburger Menu & Brand Logo */}
-        <div className="flex items-center gap-4">
+        <div className={`${isEditing ? "hidden lg:flex" : "flex"} items-center gap-4`}>
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 rounded-lg transition-colors cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center text-slate-550 hover:text-indigo-650 hover:bg-slate-50 border border-slate-200/80 hover:border-indigo-200 rounded-xl transition-all duration-200 cursor-pointer shadow-sm active:scale-95 bg-white"
               aria-label="Toggle menu"
             >
               <Menu className="h-5 w-5" />
@@ -331,7 +344,7 @@ export default function WikiClient({ initialMarkdown }: WikiClientProps) {
           <div
             id="editor-toolbar-portal"
             ref={setToolbarContainer}
-            className={`milkdown hidden lg:flex w-full h-full items-center justify-center transition-all duration-500 ease-in-out ${
+            className={`milkdown flex w-full h-full items-center justify-center transition-all duration-500 ease-in-out ${
               isEditing
                 ? "opacity-100 pointer-events-auto translate-y-0 scale-100 relative w-full shrink-0"
                 : "opacity-0 pointer-events-none -translate-y-2 scale-95 absolute inset-x-0"
@@ -729,59 +742,7 @@ export default function WikiClient({ initialMarkdown }: WikiClientProps) {
             </nav>
           </div>
 
-          <hr className="border-gray-100" />
 
-          {/* Dynamic Table of Contents */}
-          <div>
-            <h3 className="text-[10px] font-bold text-gray-400 tracking-wider mb-3 uppercase">
-              Contents
-            </h3>
-            <ul className="text-xs flex flex-col gap-2.5 font-semibold">
-              {parsed.toc.map((item, index) => {
-                const isActive = activeSection === item.id;
-                return (
-                  <div key={item.id} className="flex flex-col gap-1.5">
-                    <li className="flex items-center justify-between">
-                      <a
-                        href={`#${item.id}`}
-                        onClick={(e) => handleTocClick(e, item.id)}
-                        className={`truncate flex-1 py-0.5 transition-all duration-150 ${
-                          isActive
-                            ? "text-indigo-600 font-bold translate-x-1"
-                            : "text-gray-500 hover:text-gray-800"
-                        }`}
-                      >
-                        {index + 1}. {item.title}
-                      </a>
-                    </li>
-                    {item.subItems && item.subItems.length > 0 && (
-                      <ul className="flex flex-col gap-1.5 pl-3 text-[11px] font-medium border-l border-gray-100 ml-1.5">
-                        {item.subItems.map((sub, idx) => {
-                          const subId = sub.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-                          const isSubActive = activeSection === subId;
-                          return (
-                            <li key={idx}>
-                              <a
-                                href={`#${subId}`}
-                                onClick={(e) => handleTocClick(e, subId)}
-                                className={`truncate block py-0.5 transition-all duration-150 ${
-                                  isSubActive
-                                    ? "text-indigo-500 font-bold translate-x-0.5"
-                                    : "text-gray-400 hover:text-gray-600"
-                                }`}
-                              >
-                                {index + 1}.{idx + 1} {sub.title}
-                              </a>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                );
-              })}
-            </ul>
-          </div>
         </aside>
 
 
@@ -821,14 +782,36 @@ export default function WikiClient({ initialMarkdown }: WikiClientProps) {
           className="hidden lg:block w-1.5 -mr-1 cursor-col-resize hover:bg-indigo-500/30 active:bg-indigo-500/50 transition-colors z-20 h-full flex-shrink-0"
           title="Drag to resize, double-click to reset"
         />
+        {/* Mobile Backdrop for Right Sidebar */}
+        {rightSidebarOpen && (
+          <div
+            onClick={() => setRightSidebarOpen(false)}
+            className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-[2px] z-45 animate-in fade-in duration-200"
+          />
+        )}
+
         {/* InfoBox (Right Sidebar) */}
         <aside
           style={{ width: `${rightWidth}px` }}
-          className="hidden lg:flex border-l border-gray-300 shrink-0 overflow-y-auto bg-white flex flex-col select-none"
+          className={`
+            border-l border-gray-300 shrink-0 overflow-y-auto bg-white flex flex-col select-none right-sidebar-mobile-toggle
+            fixed lg:static top-0 bottom-0 right-0 z-50 lg:z-auto h-full lg:h-auto shadow-2xl lg:shadow-none
+            transition-transform duration-300 ease-in-out
+            ${rightSidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"}
+          `}
         >
+          {/* Close Button on Mobile */}
+          <div className="lg:hidden absolute top-4 right-4 z-50">
+            <button
+              onClick={() => setRightSidebarOpen(false)}
+              className="p-2 bg-white/95 hover:bg-white backdrop-blur-md rounded-full shadow border border-slate-200 text-gray-500 hover:text-gray-900 transition-all active:scale-95 cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
           {/* Infobox Image */}
           <div
-            className={`w-full relative bg-gray-50 border-b border-gray-100 flex items-center justify-center overflow-hidden transition-all duration-300 ${
+            className={`w-full relative bg-gray-50 border-b border-gray-100 flex items-center justify-center overflow-hidden transition-all duration-300 shrink-0 ${
               isEditing ? "h-32 p-4 bg-gray-50/50" : "aspect-square"
             }`}
           >
@@ -1061,6 +1044,56 @@ export default function WikiClient({ initialMarkdown }: WikiClientProps) {
               </button>
             )}
           </div>
+
+          <div className="p-6 select-none pt-0">
+            <h4 className="text-[10px] font-bold text-gray-400 tracking-wider mb-4 uppercase">
+              Table of Contents
+            </h4>
+            <ul className="text-xs flex flex-col gap-2.5 font-semibold">
+              {parsed.toc.map((item, index) => {
+                const isActive = activeSection === item.id;
+                return (
+                  <div key={item.id} className="flex flex-col gap-1.5">
+                    <li className="flex items-center justify-between">
+                      <a
+                        href={`#${item.id}`}
+                        onClick={(e) => handleTocClick(e, item.id)}
+                        className={`truncate flex-1 py-0.5 transition-all duration-150 ${
+                          isActive
+                            ? "text-indigo-600 font-bold translate-x-1"
+                            : "text-gray-500 hover:text-gray-800"
+                        }`}
+                      >
+                        {index + 1}. {item.title}
+                      </a>
+                    </li>
+                    {item.subItems && item.subItems.length > 0 && (
+                      <ul className="flex flex-col gap-1.5 pl-3 text-[11px] font-medium border-l border-gray-100 ml-1.5">
+                        {item.subItems.map((sub, idx) => {
+                          const isSubActive = activeSection === sub.id;
+                          return (
+                            <li key={sub.id}>
+                              <a
+                                href={`#${sub.id}`}
+                                onClick={(e) => handleTocClick(e, sub.id)}
+                                className={`truncate block py-0.5 transition-all duration-150 ${
+                                  isSubActive
+                                    ? "text-indigo-500 font-bold translate-x-0.5"
+                                    : "text-gray-400 hover:text-gray-600"
+                                }`}
+                              >
+                                {index + 1}.{idx + 1} {sub.title}
+                              </a>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </ul>
+          </div>
         </aside>
 
         {/* Pinned Bottom Dock for Small Screens */}
@@ -1113,6 +1146,17 @@ export default function WikiClient({ initialMarkdown }: WikiClientProps) {
               >
                 <PlusCircle className="h-5 w-5" />
                 <span>New Page</span>
+              </button>
+
+              {/* Button 4: Sidebar Toggle */}
+              <button
+                onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
+                className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-colors cursor-pointer ${
+                  rightSidebarOpen ? "text-indigo-600" : "text-slate-500 hover:text-indigo-600"
+                }`}
+              >
+                <PanelRight className="h-5 w-5" />
+                <span>Sidebar</span>
               </button>
             </>
           )}

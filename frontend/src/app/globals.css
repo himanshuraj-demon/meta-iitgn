@@ -81,6 +81,44 @@ body {
   fill: #4f46e5 !important;
 }
 
+/* Responsive styles for editor toolbars on small screens */
+@media (max-width: 1023px) {
+  /* Hide the floating tooltip/bubble menu/toolbar in editors */
+  .milkdown-toolbar,
+  .milkdown .milkdown-toolbar,
+  .milkdown-balloon,
+  .milkdown .milkdown-balloon,
+  .milkdown-block-handle,
+  .milkdown .milkdown-block-handle,
+  .milkdown-slash-menu,
+  .milkdown .milkdown-slash-menu {
+    display: none !important;
+  }
+
+  aside.right-sidebar-mobile-toggle {
+    width: 300px !important;
+  }
+}
+
+/* Ensure the top bar is scrollable horizontally when narrow, but without visible scrollbars */
+.milkdown-top-bar {
+  overflow-x: auto !important;
+  white-space: nowrap !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  max-width: 100% !important;
+  -webkit-overflow-scrolling: touch;
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
 /* High-contrast premium text shadow to maintain legibility on colorful backdrops */
 .text-shadow-premium {
   text-shadow: 0 4px 16px rgba(0, 0, 0, 0.65), 0 2px 4px rgba(0, 0, 0, 0.4) !important;

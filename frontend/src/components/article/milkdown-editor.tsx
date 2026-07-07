@@ -69,7 +69,6 @@ function MilkdownEditorInner({
       }
     }
   }, [loading, onLoaded]);
-
   // Safely teleport the top bar DOM element to the header portal container
   useEffect(() => {
     if (!toolbarContainer || !topBarNode) return;
