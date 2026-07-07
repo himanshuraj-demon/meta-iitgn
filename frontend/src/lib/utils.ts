@@ -1,94 +1,13 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { ContentSegment } from "./types"
+import { InfoboxData, InfoboxRow, TocItem } from "./types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function segmentsToMarkdown(segments: ContentSegment[]): string {
-  return segments
-    .map((seg) => {
-      if (seg.type === "paragraph" && seg.html) {
-        if (seg.html.startsWith("<h1>") && seg.html.endsWith("</h1>")) {
-          return `# ${seg.html.replace(/<\/?h1>/g, "")}`;
-        }
-        if (seg.html.startsWith("<blockquote>") && seg.html.endsWith("</blockquote>")) {
-          return `> ${seg.html.replace(/<\/?blockquote>/g, "")}`;
-        }
-        // Convert HTML back to markdown bold/links
-        return seg.html
-          .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
-          .replace(/<a\s+[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g, "[$2]($1)");
-      } else if (seg.type === "section") {
-        return `## ${seg.title}\n${seg.text}`;
-      }
-      return "";
-    })
-    .filter(Boolean)
-    .join("\n\n");
-}
 
-export function markdownToSegments(markdown: string): ContentSegment[] {
-  const lines = markdown.split(/\r?\n/);
-  const segments: ContentSegment[] = [];
-  let currentSection: { title: string; lines: string[] } | null = null;
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-
-    if (trimmed.startsWith("## ")) {
-      if (currentSection) {
-        segments.push({
-          type: "section",
-          title: currentSection.title,
-          text: currentSection.lines.join("\n"),
-        });
-      }
-      currentSection = {
-        title: trimmed.replace(/^##\s+/, ""),
-        lines: [],
-      };
-    } else {
-      if (currentSection) {
-        currentSection.lines.push(trimmed);
-      } else {
-        if (trimmed.startsWith("# ")) {
-          segments.push({
-            type: "paragraph",
-            html: `<h1>${trimmed.replace(/^#\s+/, "")}</h1>`,
-          });
-        } else if (trimmed.startsWith("> ")) {
-          segments.push({
-            type: "paragraph",
-            html: `<blockquote>${trimmed.replace(/^>\s+/, "")}</blockquote>`,
-          });
-        } else {
-          const html = trimmed
-            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-blue-600 hover:underline">$1</a>');
-          segments.push({
-            type: "paragraph",
-            html,
-          });
-        }
-      }
-    }
-  }
-
-  if (currentSection) {
-    segments.push({
-      type: "section",
-      title: currentSection.title,
-      text: currentSection.lines.join("\n"),
-    });
-  }
-
-  return segments;
-}
-
-import { InfoboxData, InfoboxRow, TocItem } from "./types";
 
 export function parseMarkdown(markdown: string) {
   let title = "My Wiki";
@@ -182,6 +101,19 @@ export function parseMarkdown(markdown: string) {
   let titleFound = false;
   const contentLines: string[] = [];
   
+  const seenIds: Record<string, number> = {};
+  const makeUniqueId = (text: string) => {
+    let baseId = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    if (!baseId) baseId = "heading";
+    if (seenIds[baseId] === undefined) {
+      seenIds[baseId] = 0;
+      return baseId;
+    } else {
+      seenIds[baseId]++;
+      return `${baseId}-${seenIds[baseId]}`;
+    }
+  };
+  
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith("# ")) {
@@ -195,12 +127,13 @@ export function parseMarkdown(markdown: string) {
 
     if (trimmed.startsWith("## ")) {
       const h2Text = trimmed.replace(/^##\s+/, "").trim();
-      const id = h2Text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const id = makeUniqueId(h2Text);
       toc.push({ id, title: h2Text, active: toc.length === 0, subItems: [] });
     } else if (trimmed.startsWith("### ")) {
       const h3Text = trimmed.replace(/^###\s+/, "").trim();
+      const id = makeUniqueId(h3Text);
       if (toc.length > 0) {
-        toc[toc.length - 1].subItems?.push({ title: h3Text });
+        toc[toc.length - 1].subItems?.push({ id, title: h3Text });
       }
     }
   }
