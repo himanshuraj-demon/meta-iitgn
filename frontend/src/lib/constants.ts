@@ -11,6 +11,8 @@ import {
   Zap
 } from "lucide-react";
 
+// --- Original Constants Required by wiki-client.tsx ---
+
 export interface Tier {
   name: string;
   icon: string;
@@ -25,7 +27,7 @@ export const TIERS: Record<string, Tier> = {
     name: "Bronze",
     icon: "🥉",
     gradient: "from-amber-800 via-amber-600 to-amber-700 text-white",
-    avatarGradient: "from-amber-905 via-amber-800 to-amber-700",
+    avatarGradient: "from-amber-950 via-amber-800 to-amber-700",
     roleTitle: "Bronze Contributor",
     benefits: ["Can only read articles", "Post comments on discussion pages"]
   },
@@ -94,4 +96,154 @@ export const menuItems = [
   { title: "Campus Map", icon: Map, link: "#" },
   { title: "Academics", icon: BookOpen, link: "#" },
   { title: "Student Life", icon: Users, link: "#" },
+];
+
+// --- New Navigation and Portal Constants for Redesigned Homepage ---
+
+export interface SidebarItem {
+  name: string;
+  path: string;
+  iconName: string; // Lucide icon name to be dynamically rendered
+}
+
+export interface SidebarSection {
+  title: string;
+  items: SidebarItem[];
+}
+
+export interface QuickPortalItem {
+  name: string;
+  path: string;
+  iconName: string;
+  colorTheme: {
+    bg: string;       // Background color for icon container
+    icon: string;     // Color for icon
+    textBg: string;   // Optional hover backgrounds
+  };
+}
+
+export const SIDEBAR_SECTIONS: SidebarSection[] = [
+  {
+    title: "NAVIGATION",
+    items: [
+      { name: "Main Page", path: "/", iconName: "Home" },
+      { name: "Random Article", path: "/wiki/random", iconName: "Shuffle" },
+    ],
+  },
+  {
+    title: "BROWSE WIKI",
+    items: [
+      { name: "Departments", path: "/wiki/departments", iconName: "Building2" },
+      { name: "Faculty Profiles", path: "/wiki/faculty", iconName: "Users2" },
+      { name: "Courses Info", path: "/wiki/courses", iconName: "BookOpen" },
+      { name: "Research & Labs", path: "/wiki/research", iconName: "FlaskConical" },
+    ],
+  },
+  {
+    title: "RESIDENTIAL & LIFE",
+    items: [
+      { name: "Hostels Guide", path: "/wiki/hostels", iconName: "Tent" },
+      { name: "Campus Facilities", path: "/wiki/facilities", iconName: "MapPin" },
+      { name: "Student Clubs", path: "/wiki/clubs", iconName: "Trophy" },
+      { name: "Student Life (Fests)", path: "/wiki/fests", iconName: "Sparkles" },
+    ],
+  },
+  {
+    title: "INSTITUTE DETAILS",
+    items: [
+      { name: "Academic Calendar", path: "/wiki/calendar", iconName: "Calendar" },
+      { name: "Institute Policies", path: "/wiki/policies", iconName: "Shield" },
+      { name: "Placement Stats", path: "/wiki/placements", iconName: "TrendingUp" },
+    ],
+  },
+];
+
+export const QUICK_PORTALS: QuickPortalItem[] = [
+  {
+    name: "Departments",
+    path: "/wiki/departments",
+    iconName: "Building2",
+    colorTheme: {
+      bg: "bg-rose-50 text-rose-500",
+      icon: "text-rose-500",
+      textBg: "hover:bg-rose-50/50",
+    },
+  },
+  {
+    name: "Faculty",
+    path: "/wiki/faculty",
+    iconName: "Users2",
+    colorTheme: {
+      bg: "bg-amber-50 text-amber-600",
+      icon: "text-amber-600",
+      textBg: "hover:bg-amber-50/50",
+    },
+  },
+  {
+    name: "Courses",
+    path: "/wiki/courses",
+    iconName: "BookOpen",
+    colorTheme: {
+      bg: "bg-emerald-50 text-emerald-600",
+      icon: "text-emerald-600",
+      textBg: "hover:bg-emerald-50/50",
+    },
+  },
+  {
+    name: "Clubs",
+    path: "/wiki/clubs",
+    iconName: "Trophy",
+    colorTheme: {
+      bg: "bg-indigo-50 text-indigo-600",
+      icon: "text-indigo-600",
+      textBg: "hover:bg-indigo-50/50",
+    },
+  },
+  {
+    name: "Hostels",
+    path: "/wiki/hostels",
+    iconName: "Tent",
+    colorTheme: {
+      bg: "bg-sky-50 text-sky-500",
+      icon: "text-sky-500",
+      textBg: "hover:bg-sky-50/50",
+    },
+  },
+  {
+    name: "Campus Facilities",
+    path: "/wiki/facilities",
+    iconName: "MapPin",
+    colorTheme: {
+      bg: "bg-purple-50 text-purple-600",
+      icon: "text-purple-600",
+      textBg: "hover:bg-purple-50/50",
+    },
+  },
+  {
+    name: "Research Labs",
+    path: "/wiki/research",
+    iconName: "FlaskConical",
+    colorTheme: {
+      bg: "bg-teal-50 text-teal-600",
+      icon: "text-teal-600",
+      textBg: "hover:bg-teal-50/50",
+    },
+  },
+  {
+    name: "Student Life",
+    path: "/wiki/fests",
+    iconName: "Sparkles",
+    colorTheme: {
+      bg: "bg-fuchsia-50 text-fuchsia-600",
+      icon: "text-fuchsia-600",
+      textBg: "hover:bg-fuchsia-50/50",
+    },
+  },
+];
+
+export const PROFILE_MENU_ITEMS = [
+  { name: "My Profile", path: "/wiki/profile" },
+  { name: "My Contributions", path: "/wiki/contributions" },
+  { name: "Settings", path: "/wiki/settings" },
+  { name: "Sign Out", path: "/wiki/signout", isDanger: true },
 ];
