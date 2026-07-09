@@ -238,8 +238,8 @@ export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClie
     <>
 
         {/* Main Scrollable Article Body */}
-        <main className="flex-1 px-4 md:px-8 lg:px-12 pt-8 pb-24 overflow-y-auto bg-[#FCFCFD] relative scroll-smooth">
-          <article className="w-full max-w-4xl mx-auto space-y-6">
+        <main className="flex-1 px-4 md:px-8 pt-8 pb-20 overflow-y-auto bg-white relative scroll-smooth">
+          <article className="w-full max-w-5xl mx-auto space-y-6">
             
             {/* Article Action Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-150 pb-4 mb-6 select-none">
@@ -249,7 +249,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClie
               <div className="flex items-center gap-2">
                 <div className="hidden md:flex">
                 {isEditing ? (
-                  <>
+                  <div className="flex gap-5">
                     <button
                       onClick={handleSave}
                       className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs cursor-pointer transition-colors shadow-sm"
@@ -266,7 +266,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClie
                     >
                       <X className="h-4 w-4" /> Cancel
                     </button>
-                  </>
+                  </div>
                 ) : (
                   <>
                     <button
@@ -348,7 +348,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClie
           style={{ width: `${rightWidth}px` }}
           className={`
             border-l border-gray-300 shrink-0 overflow-y-auto bg-white flex flex-col select-none right-sidebar-mobile-toggle
-            fixed lg:static top-0 bottom-0 right-0 z-50 lg:z-auto h-full lg:h-auto shadow-2xl lg:shadow-none
+            fixed lg:static top-0 bottom-0 right-0 z-50 lg:z-auto h-full lg:h-auto shadow-2xl lg:shadow-none min-w-sm
             transition-transform duration-300 ease-in-out
             ${rightSidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"}
           `}

@@ -29,8 +29,8 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
   }
 
   return (
-    <main className="flex-1 p-6 md:p-8 lg:p-12 bg-[#FCFCFD] overflow-y-auto">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <main className="flex-1 p-6 md:p-8 bg-[#FCFCFD] overflow-y-auto">
+      <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-xs font-semibold text-gray-400 select-none">
@@ -46,7 +46,7 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
         </nav>
 
         {/* Category Header */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between border-b border-gray-100 pb-6 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between border-b border-gray-100  gap-6">
           <div className="space-y-3 flex-1">
             <div className="inline-flex items-center justify-center p-3 bg-blue-50 text-blue-600 rounded-2xl shadow-sm">
               <BookOpen className="h-6 w-6" />
@@ -85,7 +85,7 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
               {category.articles.map((article) => (
                 <div
                   key={article.slug}
-                  className="flex-1 min-w-[300px] md:max-w-[48%] lg:max-w-[32%] flex flex-col justify-between p-6 bg-white border border-gray-150 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-blue-200 transition-all duration-300 group"
+                  className="flex-1 min-w-75 md:max-w-[48%] lg:max-w-[32%] flex flex-col justify-between p-6 bg-white border border-gray-150 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-blue-200 transition-all duration-300 group"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
