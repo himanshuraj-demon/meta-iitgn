@@ -119,13 +119,13 @@ export default function HomePage() {
         {/* Split Screen Layout */}
         <div className="flex-1 flex flex-col lg:flex-row h-auto lg:h-full w-full bg-white">
           {/* Left Panel: Fixed Dashboard on Desktop */}
-          <div className="w-full lg:w-120 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-150 flex flex-col justify-between p-6 bg-white z-20 h-auto lg:h-full lg:overflow-y-auto select-none">
+          <div className="w-full lg:w-120 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-150 flex flex-col justify-between p-4 bg-white z-20 h-auto lg:h-full lg:overflow-y-auto select-none">
             <div className="space-y-2">
               {/* Header with Hamburger Menu and Profile Dropdown inside Left Panel */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 w-full shrink-0">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 w-full shrink-0">
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="p-2 hover:bg-slate-100 rounded-lg text-slate-650 transition-colors duration-200 cursor-pointer active:scale-95"
+                  className=" hover:bg-slate-100 rounded-lg text-slate-650 transition-colors duration-200 cursor-pointer active:scale-95"
                   aria-label="Toggle Sidebar"
                 >
                   <Menu className="h-5.5 w-5.5 text-black" />

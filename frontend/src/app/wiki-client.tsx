@@ -348,7 +348,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClie
           style={{ width: `${rightWidth}px` }}
           className={`
             border-l border-gray-300 shrink-0 overflow-y-auto bg-white flex flex-col select-none right-sidebar-mobile-toggle
-            fixed lg:static top-0 bottom-0 right-0 z-50 lg:z-auto h-full lg:h-auto shadow-2xl lg:shadow-none min-w-sm
+            fixed lg:static top-0 bottom-0 right-0 z-50 lg:z-auto h-full lg:h-auto shadow-2xl lg:shadow-none md:min-w-sm
             transition-transform duration-300 ease-in-out
             ${rightSidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"}
           `}

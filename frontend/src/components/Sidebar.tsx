@@ -39,9 +39,6 @@ type userType = {
   currentTier: string;
 };
 
-
-
-
 // Local map for statically imported icons to avoid wildcard imports
 const ICON_MAP: Record<string, LucideIcon> = {
   Home,
@@ -65,13 +62,13 @@ export default function Sidebar({
   currentTier,
 }: SidebarProps) {
   const pathname = usePathname();
-  
-  const user:userType = {
-  name: "Meta IITGN",
-  image: "Image",
-  email: "meta.iitgn@iitgn.ac.in",
-  currentTier: currentTier as string,
-};
+
+  const user: userType = {
+    name: "Meta IITGN",
+    image: "Image",
+    email: "meta.iitgn@iitgn.ac.in",
+    currentTier: currentTier as string,
+  };
 
   const activeTier = user?.currentTier || "bronze";
   const activeTierData = TIERS[activeTier as keyof typeof TIERS] || TIERS.gold;
@@ -103,7 +100,7 @@ export default function Sidebar({
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex flex-col h-full bg-white border-r border-gray-150 transition-all duration-300 ease-in-out shrink-0 select-none overflow-hidden ${
           isOpen
-            ? "w-80 translate-x-0 shadow-2xl"
+            ? "w-70 lg:w-80 translate-x-0 shadow-2xl"
             : "w-0 -translate-x-full lg:border-r-0"
         }`}
       >
@@ -287,64 +284,64 @@ export default function Sidebar({
                   <span className="truncate">Sign Out</span>
                 </Link>
               </div>
+              {/* Tier Banner at Bottom */}
+              {user ? (
+                <div className="mb-3 shrink-0">
+                  <div className="py-3 px-1 rounded-xl border border-gray-150 bg-gray-50/30">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[9px] font-bold text-gray-400 tracking-wider uppercase">
+                        Contributor Tier
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        Rank {activeTierData.rank}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base leading-none">
+                          {activeTierData.icon}
+                        </span>
+                        <span className="text-xs font-extrabold text-gray-800">
+                          {activeTierData.name}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-extrabold text-gray-500">
+                        {activeTierData.xp} XP
+                      </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mb-2">
+                      <div
+                        className={`h-full rounded-full transition-all duration-350 ${activeTierData.progressBar}`}
+                        style={{ width: `${activeTierData.percent}%` }}
+                      />
+                    </div>
+
+                    {/* Next Tier Unlock */}
+                    {activeTierData.nextTier && (
+                      <p className="text-[9px] font-semibold text-gray-400 leading-normal line-clamp-1">
+                        Next: {activeTierData.nextTier} •{" "}
+                        {activeTierData.nextUnlock}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <></>
+              )}
             </div>
           ) : (
             <>
-             <div className="p-1 py-2 mx-2 cursor-pointer transition-all duration-100 ease-in-out hover:scale-105 rounded-xl border flex justify-center border-gray-150 bg-blue-500">
-              <div className="flex items-center justify-center">
-                <button>Login</button>
+              <div className="p-1 py-2 mx-2 cursor-pointer transition-all duration-100 ease-in-out hover:scale-105 rounded-xl border flex justify-center border-gray-150 bg-blue-500">
+                <div className="flex items-center justify-center">
+                  <button>Login</button>
+                </div>
               </div>
-            </div>
             </>
           )}
         </div>
-
-        {/* Tier Banner at Bottom */}
-        {user ? (
-          <div className="px-4 mb-3 shrink-0">
-            <div className="p-3.5 rounded-xl border border-gray-150 bg-gray-50/30">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[9px] font-bold text-gray-400 tracking-wider uppercase">
-                  Contributor Tier
-                </span>
-                <span className="text-[10px] font-bold text-gray-400">
-                  Rank {activeTierData.rank}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-base leading-none">
-                    {activeTierData.icon}
-                  </span>
-                  <span className="text-xs font-extrabold text-gray-800">
-                    {activeTierData.name}
-                  </span>
-                </div>
-                <span className="text-[10px] font-extrabold text-gray-500">
-                  {activeTierData.xp} XP
-                </span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mb-2">
-                <div
-                  className={`h-full rounded-full transition-all duration-350 ${activeTierData.progressBar}`}
-                  style={{ width: `${activeTierData.percent}%` }}
-                />
-              </div>
-
-              {/* Next Tier Unlock */}
-              {activeTierData.nextTier && (
-                <p className="text-[9px] font-semibold text-gray-400 leading-normal line-clamp-1">
-                  Next: {activeTierData.nextTier} • {activeTierData.nextUnlock}
-                </p>
-              )}
-            </div>
-          </div>
-        ) : (
-          <></>
-        )}
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0">
