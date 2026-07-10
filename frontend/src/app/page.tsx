@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -22,8 +22,14 @@ import {
   Menu,
   LucideIcon,
   Building2,
+  Home as HomeIcon,
+  Bookmark as BookmarkIcon,
+  PlusCircle,
+  Trash2,
+  CheckCircle2,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import BottomNavbar from "@/components/BottomNavbar";
 import { QUICK_PORTALS } from "@/lib/constants";
 
 export default function HomePage() {
@@ -32,6 +38,88 @@ export default function HomePage() {
   const router = useRouter();
 
   const [activeTier, setActiveTier] = useState("gold");
+  const [activeTab, setActiveTab] = useState<"home" | "search" | "bookmarks" | "create">("home");
+
+  // Search tab states
+  const [searchTabQuery, setSearchTabQuery] = useState("");
+  const [searchCategory, setSearchCategory] = useState("All");
+
+  // Bookmarks states
+  const [bookmarks, setBookmarks] = useState<Array<{ id: string; title: string; category: string; description: string }>>([]);
+
+  // Create page states
+  const [newPageTitle, setNewPageTitle] = useState("");
+  const [newPageCategory, setNewPageCategory] = useState("Campus");
+  const [newPageContent, setNewPageContent] = useState("");
+  const [createSuccess, setCreateSuccess] = useState(false);
+
+  // Load bookmarks on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("wiki-bookmarks");
+    if (saved) {
+      try {
+        setBookmarks(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      const defaultBookmarks = [
+        { id: "1", title: "IIT Gandhinagar Campus & Architecture", category: "Campus", description: "Overview of the greenest campus in India and its GRIHA LD rating." },
+        { id: "2", title: "Amalthea Technical Summit", category: "Fests", description: "The annual student-run technical festival of IIT Gandhinagar." },
+        { id: "3", title: "Academic Courses Directory", category: "Academics", description: "Directory of undergraduate and postgraduate courses." },
+      ];
+      setBookmarks(defaultBookmarks);
+      localStorage.setItem("wiki-bookmarks", JSON.stringify(defaultBookmarks));
+    }
+  }, []);
+
+  const removeBookmark = (id: string) => {
+    const updated = bookmarks.filter(b => b.id !== id);
+    setBookmarks(updated);
+    localStorage.setItem("wiki-bookmarks", JSON.stringify(updated));
+  };
+
+  const handleCreatePageSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPageTitle.trim() || !newPageContent.trim()) return;
+
+    // Simulate backend creation by adding to bookmarks or alert
+    const newPage = {
+      id: Date.now().toString(),
+      title: newPageTitle.trim(),
+      category: newPageCategory,
+      description: newPageContent.trim().substring(0, 100) + (newPageContent.length > 100 ? "..." : ""),
+    };
+
+    const updatedBookmarks = [newPage, ...bookmarks];
+    setBookmarks(updatedBookmarks);
+    localStorage.setItem("wiki-bookmarks", JSON.stringify(updatedBookmarks));
+
+    setCreateSuccess(true);
+    setNewPageTitle("");
+    setNewPageContent("");
+
+    setTimeout(() => {
+      setCreateSuccess(false);
+      setActiveTab("bookmarks"); // Redirect to bookmarks/saved list to show the new page
+    }, 1500);
+  };
+
+  const allSearchableItems = [
+    { title: "IIT Gandhinagar Campus & Architecture", category: "Campus", path: "/wiki", description: "Information about Palaj campus facilities, design, architecture, and construction." },
+    { title: "Amalthea Technical Summit", category: "Fests", path: "/wiki", description: "The student-organized technical summit of IIT Gandhinagar." },
+    { title: "Hostels and Student Life", category: "Campus", path: "/wiki", description: "Everything about hostels, Mess dining, and student council rules." },
+    { title: "Technical Council & Clubs", category: "Clubs", path: "/wiki", description: "Explore robotics, coding, animanga, astronomy, and developer clubs." },
+    { title: "Computer Science Curriculum", category: "Academics", path: "/wiki", description: "Undergraduate curriculum and course plans for CS major." },
+    { title: "Research Labs & Facilities", category: "Research", path: "/wiki", description: "Directory of advanced research instrumentation and centers." },
+  ];
+
+  const filteredSearchItems = allSearchableItems.filter(item => {
+    const matchesSearch = item.title.toLowerCase().includes(searchTabQuery.toLowerCase()) || 
+                          item.description.toLowerCase().includes(searchTabQuery.toLowerCase());
+    const matchesCategory = searchCategory === "All" || item.category === searchCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +192,13 @@ export default function HomePage() {
     );
   };
 
+  const homeTabs = [
+    { id: "home", label: "Home", icon: HomeIcon, onClick: () => setActiveTab("home") },
+    { id: "search", label: "Search", icon: Search, onClick: () => setActiveTab("search") },
+    { id: "bookmarks", label: "Bookmarks", icon: BookmarkIcon, onClick: () => setActiveTab("bookmarks") },
+    { id: "create", label: "Create Page", icon: PlusCircle, onClick: () => setActiveTab("create") },
+  ];
+
   return (
     <div className="flex flex-col h-screen bg-gray-50/30 overflow-hidden font-sans">
       {/* Main Container */}
@@ -117,9 +212,11 @@ export default function HomePage() {
         />
 
         {/* Split Screen Layout */}
-        <div className="flex-1 flex flex-col lg:flex-row h-auto lg:h-full w-full bg-white">
-          {/* Left Panel: Fixed Dashboard on Desktop */}
-          <div className="w-full lg:w-120 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-150 flex flex-col justify-between p-6 bg-white z-20 h-auto lg:h-full lg:overflow-y-auto select-none">
+        <div className="flex-1 flex flex-col lg:flex-row h-auto lg:h-full w-full bg-white relative">
+          {activeTab === "home" ? (
+            <>
+              {/* Left Panel: Fixed Dashboard on Desktop */}
+              <div className="w-full lg:w-120 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-150 flex flex-col justify-between p-6 bg-white z-20 h-auto lg:h-full lg:overflow-y-auto select-none pb-28">
             <div className="space-y-2">
               {/* Header with Hamburger Menu and Profile Dropdown inside Left Panel */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 w-full shrink-0">
@@ -522,8 +619,236 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        </>
+      ) : activeTab === "search" ? (
+            <div className="flex-1 flex flex-col h-full bg-slate-50/50 p-6 md:p-10 lg:p-12 overflow-y-auto select-none pb-28">
+              <div className="max-w-2xl mx-auto w-full space-y-8">
+                {/* Header */}
+                <div className="text-center space-y-2">
+                  <h1 className="text-3xl md:text-4xl font-serif font-black text-slate-900 tracking-tight">Search Meta IITGN</h1>
+                  <p className="text-sm text-slate-500 font-semibold">Explore student guides, course details, campus resources, and portal links.</p>
+                </div>
+
+                {/* Search input and category filters */}
+                <div className="space-y-4">
+                  <div className="relative w-full flex items-center h-12 bg-white border border-slate-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 rounded-2xl px-4 transition-all duration-200 shadow-sm">
+                    <Search className="h-5 w-5 text-slate-400 shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="Search articles, guides, policies..."
+                      value={searchTabQuery}
+                      onChange={(e) => setSearchTabQuery(e.target.value)}
+                      className="w-full text-sm text-slate-800 placeholder:text-gray-400 bg-transparent focus:outline-none px-3 h-full"
+                      autoFocus
+                    />
+                    {searchTabQuery && (
+                      <button
+                        onClick={() => setSearchTabQuery("")}
+                        className="text-slate-400 hover:text-slate-655 text-xs font-bold px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Category Pills */}
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {["All", "Campus", "Academics", "Clubs", "Fests", "Research"].map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setSearchCategory(cat)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-extrabold border transition-all duration-200 cursor-pointer ${
+                          searchCategory === cat
+                            ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-350 hover:bg-slate-50"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Results List */}
+                <div className="space-y-4 mt-6">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                    Search Results ({filteredSearchItems.length})
+                  </h3>
+
+                  {filteredSearchItems.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-4">
+                      {filteredSearchItems.map((item) => (
+                        <Link
+                          key={item.title}
+                          href={item.path}
+                          className="p-5 rounded-2xl border border-slate-150 bg-white hover:border-blue-200 hover:shadow-md transition-all duration-200 flex flex-col gap-2 group text-left cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] uppercase font-black tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                              {item.category}
+                            </span>
+                          </div>
+                          <h4 className="text-base font-black text-slate-800 group-hover:text-blue-600 transition-colors font-serif">
+                            {item.title}
+                          </h4>
+                          <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                            {item.description}
+                          </p>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200/80">
+                      <HelpCircle className="h-10 w-10 text-slate-300 mx-auto mb-3 animate-pulse" />
+                      <p className="text-sm text-slate-500 font-bold">No matching articles found</p>
+                      <p className="text-xs text-slate-400 mt-1">Try matching another keyword or filter category.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : activeTab === "bookmarks" ? (
+            <div className="flex-1 flex flex-col h-full bg-slate-50/50 p-6 md:p-10 lg:p-12 overflow-y-auto select-none pb-28">
+              <div className="max-w-2xl mx-auto w-full space-y-8">
+                {/* Header */}
+                <div className="text-center space-y-2">
+                  <h1 className="text-3xl md:text-4xl font-serif font-black text-slate-900 tracking-tight flex items-center justify-center gap-2">
+                    <BookmarkIcon className="h-8 w-8 text-blue-500 fill-blue-500" />
+                    My Bookmarks
+                  </h1>
+                  <p className="text-sm text-slate-500 font-semibold">Your curated reading list of campus articles, guides, and pages.</p>
+                </div>
+
+                {/* Bookmarks Grid */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                    Saved Pages ({bookmarks.length})
+                  </h3>
+
+                  {bookmarks.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-4">
+                      {bookmarks.map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-5 rounded-2xl border border-slate-150 bg-white hover:shadow-md transition-all duration-200 flex flex-col gap-3 text-left"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] uppercase font-black tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                              {item.category}
+                            </span>
+                            <button
+                              onClick={() => removeBookmark(item.id)}
+                              className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              title="Remove Bookmark"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <Link href="/wiki" className="group">
+                            <h4 className="text-base font-black text-slate-800 group-hover:text-blue-600 transition-colors font-serif">
+                              {item.title}
+                            </h4>
+                          </Link>
+                          <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                            {item.description}
+                          </p>
+                          <Link
+                            href="/wiki"
+                            className="inline-flex items-center gap-1 text-[10px] font-extrabold text-blue-500 hover:text-blue-800 uppercase tracking-wider self-start pt-1"
+                          >
+                            Read Article <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200/80">
+                      <BookmarkIcon className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                      <p className="text-sm text-slate-500 font-bold">Your reading list is empty</p>
+                      <p className="text-xs text-slate-400 mt-1">Bookmark wiki pages to save them here for offline access.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col h-full bg-slate-50/50 p-6 md:p-10 lg:p-12 overflow-y-auto select-none pb-28">
+              <div className="max-w-xl mx-auto w-full space-y-8">
+                {/* Header */}
+                <div className="text-center space-y-2">
+                  <h1 className="text-3xl md:text-4xl font-serif font-black text-slate-900 tracking-tight flex items-center justify-center gap-2">
+                    <PlusCircle className="h-8 w-8 text-blue-500" />
+                    Create Wiki Page
+                  </h1>
+                  <p className="text-sm text-slate-500 font-semibold">Write and publish a new campus page. Share your knowledge with others.</p>
+                </div>
+
+                {createSuccess ? (
+                  <div className="p-8 text-center bg-white border border-slate-150 rounded-2xl shadow-sm space-y-4">
+                    <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto animate-bounce" />
+                    <h3 className="text-lg font-black text-slate-800 font-serif">Page Created Successfully!</h3>
+                    <p className="text-xs text-slate-500 font-semibold">Adding your page to the Campus Encyclopedia and redirecting...</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleCreatePageSubmit} className="p-6 bg-white border border-slate-150 rounded-2xl shadow-sm space-y-5 text-left">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] uppercase font-black text-slate-400 tracking-wider">
+                        Page Title
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newPageTitle}
+                        onChange={(e) => setNewPageTitle(e.target.value)}
+                        placeholder="e.g. Hostels Dining Council"
+                        className="w-full border border-slate-200 hover:border-slate-350 focus:border-blue-500 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 bg-white focus:outline-none transition-all duration-150 shadow-inner bg-slate-50/20"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] uppercase font-black text-slate-400 tracking-wider">
+                        Category
+                      </label>
+                      <select
+                        value={newPageCategory}
+                        onChange={(e) => setNewPageCategory(e.target.value)}
+                        className="w-full border border-slate-200 hover:border-slate-350 focus:border-blue-500 rounded-xl px-4 py-2.5 text-xs text-slate-800 bg-white focus:outline-none transition-all duration-150 shadow-inner bg-slate-50/20"
+                      >
+                        {["Campus", "Academics", "Clubs", "Fests", "Research", "Policies"].map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] uppercase font-black text-slate-400 tracking-wider">
+                        Content (Markdown supported)
+                      </label>
+                      <textarea
+                        required
+                        rows={6}
+                        value={newPageContent}
+                        onChange={(e) => setNewPageContent(e.target.value)}
+                        placeholder="Describe the page topic, details, timings, contacts..."
+                        className="w-full border border-slate-200 hover:border-slate-350 focus:border-blue-500 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 bg-white focus:outline-none transition-all duration-150 shadow-inner bg-slate-50/20 resize-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition-all duration-150 active:scale-97 text-center"
+                    >
+                      Publish Page
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+      {/* Material Design 3 Bottom Navigation Bar */}
+      <BottomNavbar tabs={homeTabs} activeTab={activeTab} />
     </div>
   );
 }

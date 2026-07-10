@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Menu,
   Search,
@@ -11,6 +11,16 @@ import {
   Settings,
   LogOut,
   Sparkles,
+  ArrowLeft,
+  MoreVertical,
+  Share2,
+  Download,
+  History,
+  Trash2,
+  Printer,
+  Moon,
+  AlertTriangle,
+  Bookmark,
 } from "lucide-react";
 import { TIERS } from "@/lib/constants";
 
@@ -27,9 +37,13 @@ export default function Navbar({
 }: NavbarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [localTier, setLocalTier] = useState("gold");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
+  const isWiki = pathname?.startsWith("/wiki");
 
   const activeTier = currentTier || localTier;
   const setActiveTier = onChangeTier || setLocalTier;
@@ -44,6 +58,12 @@ export default function Navbar({
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setDropdownOpen(false);
+      }
+      if (
+        moreMenuRef.current &&
+        !moreMenuRef.current.contains(event.target as Node)
+      ) {
+        setMoreMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -63,13 +83,29 @@ export default function Navbar({
     <header className="h-16 border-b border-gray-150 flex items-center justify-between px-4 lg:px-6 shrink-0 bg-white sticky top-0 z-40 select-none">
       {/* Left side: Hamburger and Logo */}
       <div className="flex items-center gap-2">
-        <button
-          onClick={onToggleSidebar}
-          className="p-2 hover:bg-gray-150 rounded-lg text-gray-600 transition-colors duration-200 cursor-pointer active:scale-95"
-          aria-label="Toggle Sidebar"
-        >
-          <Menu className="h-6 w-6" />
-        </button>
+        {isWiki ? (
+          <button
+            onClick={() => {
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/");
+              }
+            }}
+            className="p-2 hover:bg-gray-150 rounded-lg text-gray-600 transition-colors duration-200 cursor-pointer active:scale-95 flex items-center justify-center"
+            aria-label="Go Back"
+          >
+            <ArrowLeft className="h-6 w-6 text-black" />
+          </button>
+        ) : (
+          <button
+            onClick={onToggleSidebar}
+            className="p-2 hover:bg-gray-150 rounded-lg text-gray-600 transition-colors duration-200 cursor-pointer active:scale-95"
+            aria-label="Toggle Sidebar"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+        )}
 
         <Link
           href="/"
@@ -110,7 +146,8 @@ export default function Navbar({
       </form>
 
       {/* Right side: User avatar & dropdown */}
-      <div className="flex items-center gap-4 relative" ref={dropdownRef}>
+      <div className="flex items-center gap-2">
+        <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen(!dropdownOpen)}
           className="flex items-center gap-2 hover:bg-gray-50 border border-gray-150 hover:border-gray-250 py-1.5 px-3 rounded-full shadow-sm transition-all duration-200 cursor-pointer active:scale-97"
@@ -250,6 +287,88 @@ export default function Navbar({
           </div>
         )}
       </div>
+
+      {isWiki && (
+        <div className="relative flex items-center" ref={moreMenuRef}>
+          <button
+            onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+            className="p-2 hover:bg-slate-100 rounded-full text-slate-600 hover:text-slate-900 transition-colors cursor-pointer flex items-center justify-center"
+            aria-label="More Actions"
+          >
+            <MoreVertical className="h-5.5 w-5.5 text-slate-700" />
+          </button>
+          {moreMenuOpen && (
+            <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-slate-200 shadow-xl py-1 z-50 select-none animate-in fade-in duration-200 rounded-none">
+              <button
+                onClick={() => { alert("Sharing link copied!"); setMoreMenuOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+              >
+                <Share2 className="h-4.5 w-4.5 text-slate-500 shrink-0" />
+                <span>Share Page</span>
+              </button>
+              <button
+                onClick={() => { alert("Page bookmarked successfully!"); setMoreMenuOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+              >
+                <Bookmark className="h-4.5 w-4.5 text-slate-500 shrink-0" />
+                <span>Bookmark Page</span>
+              </button>
+              <button
+                onClick={() => { alert("Exporting to PDF..."); setMoreMenuOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+              >
+                <Download className="h-4.5 w-4.5 text-slate-500 shrink-0" />
+                <span>Export PDF</span>
+              </button>
+              <button
+                onClick={() => { alert("Loading page history..."); setMoreMenuOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+              >
+                <History className="h-4.5 w-4.5 text-slate-500 shrink-0" />
+                <span>Page History</span>
+              </button>
+              <button
+                onClick={() => { window.print(); setMoreMenuOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+              >
+                <Printer className="h-4.5 w-4.5 text-slate-500 shrink-0" />
+                <span>Print Article</span>
+              </button>
+              <div className="border-t border-slate-100 my-1" />
+              <button
+                onClick={() => { alert("Toggling dark mode..."); setMoreMenuOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+              >
+                <Moon className="h-4.5 w-4.5 text-slate-500 shrink-0" />
+                <span>Dark Mode</span>
+              </button>
+              <button
+                onClick={() => { alert("Loading settings..."); setMoreMenuOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+              >
+                <Settings className="h-4.5 w-4.5 text-slate-500 shrink-0" />
+                <span>Page Settings</span>
+              </button>
+              <button
+                onClick={() => { alert("Report page submitted."); setMoreMenuOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+              >
+                <AlertTriangle className="h-4.5 w-4.5 text-slate-500 shrink-0" />
+                <span>Report Content</span>
+              </button>
+              <div className="border-t border-slate-100 my-1" />
+              <button
+                onClick={() => { alert("Page deletion requested."); setMoreMenuOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-xs text-rose-600 hover:bg-rose-100/50 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+              >
+                <Trash2 className="h-4.5 w-4.5 text-rose-500 shrink-0" />
+                <span>Delete Page</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
     </header>
   );
 }

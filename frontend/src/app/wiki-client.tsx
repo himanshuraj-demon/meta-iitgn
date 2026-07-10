@@ -7,6 +7,7 @@ import { parseMarkdown, stringifyMarkdown } from "@/lib/utils";
 import { InfoboxData } from "@/lib/types";
 
 import { EditableCell } from "@/components/article/editable-cell";
+import { useRouter } from "next/navigation";
 import {
   Share2,
   Edit3,
@@ -18,8 +19,10 @@ import {
   History,
   Trash2,
   PanelRight,
-  Home
+  Home,
+  ArrowLeft,
 } from "lucide-react";
+import BottomNavbar from "@/components/BottomNavbar";
 
 // Dynamically import MilkdownEditor so it doesn't run during SSR
 const MilkdownEditor = dynamic(() => import("@/components/article/milkdown-editor"), {
@@ -32,6 +35,7 @@ interface WikiClientProps {
 }
 
 export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClientProps) {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(defaultEditing || false);
   const [markdown, setMarkdown] = useState(initialMarkdown);
   const parsed = useMemo(() => parseMarkdown(markdown), [markdown]);
@@ -39,13 +43,16 @@ export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClie
   const [editorLoaded, setEditorLoaded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toolbarContainer, setToolbarContainer] = useState<HTMLDivElement | null>(null);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
 
   const [rightWidth, setRightWidth] = useState(320);
 
   useEffect(() => {
     const savedRight = localStorage.getItem("wiki-right-sidebar-width");
     if (savedRight) setRightWidth(Math.max(200, Number(savedRight)));
+    if (window.innerWidth < 1024) {
+      setRightSidebarOpen(false);
+    }
   }, []);
 
   const startResizeRight = (e: React.MouseEvent) => {
@@ -240,61 +247,6 @@ export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClie
         {/* Main Scrollable Article Body */}
         <main className="flex-1 px-4 md:px-8 pt-8 pb-20 overflow-y-auto bg-white relative scroll-smooth">
           <article className="w-full max-w-5xl mx-auto space-y-6">
-            
-            {/* Article Action Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-150 pb-4 mb-6 select-none">
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Wiki Page
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="hidden md:flex">
-                {isEditing ? (
-                  <div className="flex gap-5">
-                    <button
-                      onClick={handleSave}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs cursor-pointer transition-colors shadow-sm"
-                    >
-                      <Check className="h-4 w-4" /> Save
-                    </button>
-                    <button
-                      onClick={() => {
-                        setMarkdown(initialMarkdown);
-                        markdownRef.current = initialMarkdown;
-                        setIsEditing(false);
-                      }}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs cursor-pointer transition-colors shadow-sm"
-                    >
-                      <X className="h-4 w-4" /> Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs cursor-pointer transition-colors shadow-sm"
-                    >
-                      <Edit3 className="h-4 w-4" /> Edit Page
-                    </button>
-                  </>
-                )}
-                </div>
-                
-                <div className="h-6 w-px bg-gray-250 mx-1" />
-                
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" title="History">
-                  <History className="h-4 w-4" />
-                </button>
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" title="Share">
-                  <Share2 className="h-4 w-4" />
-                </button>
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" title="Bookmark">
-                  <Bookmark className="h-4 w-4" />
-                </button>
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" title="Download">
-                  <Download className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
 
             {/* Teleported editor toolbar container */}
             {isEditing && (
@@ -329,30 +281,29 @@ export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClie
           </article>
         </main>
 
-        <div
-          onMouseDown={startResizeRight}
-          onDoubleClick={handleRightDoubleClick}
-          className="hidden lg:block w-1.5 -mr-1 cursor-col-resize hover:bg-indigo-500/30 active:bg-indigo-500/50 transition-colors z-20 h-full shrink-0"
-          title="Drag to resize, double-click to reset"
-        />
-        {/* Mobile Backdrop for Right Sidebar */}
         {rightSidebarOpen && (
-          <div
-            onClick={() => setRightSidebarOpen(false)}
-            className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-[2px] z-45 animate-in fade-in duration-200"
-          />
-        )}
+          <>
+            <div
+              onMouseDown={startResizeRight}
+              onDoubleClick={handleRightDoubleClick}
+              className="hidden lg:block w-1.5 -mr-1 cursor-col-resize hover:bg-indigo-500/30 active:bg-indigo-500/50 transition-colors z-20 h-full shrink-0"
+              title="Drag to resize, double-click to reset"
+            />
+            {/* Mobile Backdrop for Right Sidebar */}
+            <div
+              onClick={() => setRightSidebarOpen(false)}
+              className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-[2px] z-45 animate-in fade-in duration-200"
+            />
 
-        {/* InfoBox (Right Sidebar) */}
-        <aside
-          style={{ width: `${rightWidth}px` }}
-          className={`
-            border-l border-gray-300 shrink-0 overflow-y-auto bg-white flex flex-col select-none right-sidebar-mobile-toggle
-            fixed lg:static top-0 bottom-0 right-0 z-50 lg:z-auto h-full lg:h-auto shadow-2xl lg:shadow-none min-w-sm
-            transition-transform duration-300 ease-in-out
-            ${rightSidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"}
-          `}
-        >
+            {/* InfoBox (Right Sidebar) */}
+            <aside
+              style={{ width: `${rightWidth}px` }}
+              className={`
+                border-l border-gray-300 shrink-0 overflow-y-auto bg-white flex flex-col select-none right-sidebar-mobile-toggle
+                fixed lg:static top-0 bottom-0 right-0 z-50 lg:z-auto h-full lg:h-auto shadow-2xl lg:shadow-none min-w-sm
+                transition-transform duration-300 ease-in-out translate-x-0
+              `}
+            >
           {/* Close Button on Mobile */}
           <div className="lg:hidden absolute top-4 right-4 z-50">
             <button
@@ -648,64 +599,86 @@ export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClie
             </ul>
           </div>
         </aside>
-
-        {/* Pinned Bottom Dock for Small Screens */}
-        <div className="lg:hidden fixed bottom-0 inset-x-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200/85 shadow-lg p-3 flex items-center justify-around z-40">
-          {isEditing ? (
-            <div className="flex w-full divide-x divide-slate-200">
-              <button
-                onClick={handleSave}
-                className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors cursor-pointer"
-              >
-                <Check className="h-5 w-5" />
-                <span>SAVE CHANGES</span>
-              </button>
-              <button
-                onClick={() => {
-                  setMarkdown(initialMarkdown);
-                  markdownRef.current = initialMarkdown;
-                  setIsEditing(false);
-                }}
-                className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-                <span>CANCEL</span>
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Button 1: Home */}
-              <NextLink
-                href="/"
-                className="flex flex-col items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-indigo-600 transition-colors"
-              >
-                <Home className="h-5 w-5" />
-                <span>Home</span>
-              </NextLink>
-
-              {/* Button 2: Edit */}
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex flex-col items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
-              >
-                <Edit3 className="h-5 w-5" />
-                <span>Edit</span>
-              </button>
-
-
-              {/* Button 4: Sidebar Toggle */}
-              <button
-                onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
-                className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-colors cursor-pointer ${
-                  rightSidebarOpen ? "text-indigo-600" : "text-slate-500 hover:text-indigo-600"
-                }`}
-              >
-                <PanelRight className="h-5 w-5" />
-                <span>Sidebar</span>
-              </button>
-            </>
-          )}
-        </div>
+          </>
+        )}
+ 
+        {/* Material Design 3 Bottom Navigation Bar */}
+        <BottomNavbar
+          tabs={
+            isEditing
+              ? [
+                  {
+                    id: "back",
+                    label: "Back",
+                    icon: ArrowLeft,
+                    onClick: () => {
+                      if (window.history.length > 1) {
+                        router.back();
+                      } else {
+                        router.push("/");
+                      }
+                    },
+                  },
+                  {
+                    id: "save",
+                    label: "Save",
+                    icon: Check,
+                    onClick: handleSave,
+                  },
+                  {
+                    id: "cancel",
+                    label: "Cancel",
+                    icon: X,
+                    onClick: () => {
+                      setMarkdown(initialMarkdown);
+                      markdownRef.current = initialMarkdown;
+                      setIsEditing(false);
+                    },
+                  },
+                  {
+                    id: "sidebar",
+                    label: "Sidebar",
+                    icon: PanelRight,
+                    onClick: () => setRightSidebarOpen(!rightSidebarOpen),
+                  },
+                ]
+              : [
+                  {
+                    id: "back",
+                    label: "Back",
+                    icon: ArrowLeft,
+                    onClick: () => {
+                      if (window.history.length > 1) {
+                        router.back();
+                      } else {
+                        router.push("/");
+                      }
+                    },
+                  },
+                  {
+                    id: "edit",
+                    label: "Edit Page",
+                    icon: Edit3,
+                    onClick: () => setIsEditing(true),
+                  },
+                  {
+                    id: "changes",
+                    label: "Changes",
+                    icon: History,
+                    onClick: () => {
+                      alert("Displaying article revisions & edits list");
+                    },
+                  },
+                  {
+                    id: "sidebar",
+                    label: "Sidebar",
+                    icon: PanelRight,
+                    onClick: () => setRightSidebarOpen(!rightSidebarOpen),
+                  },
+                ]
+          }
+          activeTab={rightSidebarOpen ? "sidebar" : (isEditing ? "edit" : undefined)}
+        />
       </>
     );
 }
