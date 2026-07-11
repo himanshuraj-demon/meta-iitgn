@@ -29,10 +29,10 @@ export default function WikiLayout({ children }: { children: React.ReactNode }) 
   });
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-gray-50/30 overflow-hidden font-sans">
-      {/* Top Header Bar */}
+    <div className="relative h-screen w-screen bg-gray-50/30 overflow-hidden font-sans">
+      {/* Top Header Bar - Overlayed */}
       {!hideNavbar && (
-        <div className={`z-45 relative transition-transform duration-300 ease-in-out`}>
+        <div className="z-45 fixed top-0 left-0 right-0 transition-transform duration-300 ease-in-out">
           <Navbar 
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
             currentTier={currentTier}
@@ -41,8 +41,8 @@ export default function WikiLayout({ children }: { children: React.ReactNode }) 
         </div>
       )}
 
-      {/* Main Content Workspace */}
-      <div className="flex flex-1 overflow-hidden w-full relative">
+      {/* Main Content Workspace - Starts from Top 0 */}
+      <div className="flex h-full w-full overflow-hidden relative">
         {/* Left Collapsible Sidebar */}
         <Sidebar 
           isOpen={sidebarOpen} 

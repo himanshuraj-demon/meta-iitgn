@@ -6,7 +6,6 @@ import {
   FlaskConical,
   Shield,
   Sparkles,
-  HelpCircle,
   LucideIcon
 } from "lucide-react";
 
@@ -19,44 +18,63 @@ export interface SearchableItem {
 
 export const allSearchableItems: SearchableItem[] = [
   {
-    title: "IIT Gandhinagar Campus & Architecture",
-    category: "Campus",
-    path: "/wiki/page/1",
+    title: "Computer Science & Engineering",
+    category: "Academics",
+    path: "/wiki/departments/computer-science",
     description:
-      "Information about Palaj campus facilities, design, architecture, and construction.",
+      "A leading department focused on AI, machine learning, systems, theory, and cryptography.",
+  },
+  {
+    title: "Electrical Engineering",
+    category: "Academics",
+    path: "/wiki/departments/electrical-engineering",
+    description:
+      "Pioneering research in power systems, microelectronics, control systems, and signal processing.",
   },
   {
     title: "Amalthea Technical Summit",
     category: "Fests",
-    path: "/wiki/page/1",
-    description: "The student-organized technical summit of IIT Gandhinagar.",
+    path: "/wiki/fests/amalthea",
+    description: "IITGN's annual student-run technical festival showcasing global tech innovations.",
   },
   {
-    title: "Hostels and Student Life",
+    title: "Aibaan Hostel & Life",
     category: "Campus",
-    path: "/wiki/page/1",
+    path: "/wiki/hostels/aibaan-hostel",
     description:
-      "Everything about hostels, Mess dining, and student council rules.",
+      "Everything about hostel capacities, mascots, mess dining, and residential guidelines.",
   },
   {
-    title: "Technical Council & Clubs",
+    title: "The Coding Club",
     category: "Clubs",
-    path: "/wiki/page/1",
+    path: "/wiki/clubs/coding-club",
     description:
-      "Explore robotics, coding, animanga, astronomy, and developer clubs.",
+      "The premier student developers community holding hackathons, developer talks, and programming contests.",
   },
   {
-    title: "Computer Science Curriculum",
+    title: "CS 101: Introduction to Computing",
     category: "Academics",
-    path: "/wiki/page/1",
-    description: "Undergraduate curriculum and course plans for CS major.",
+    path: "/wiki/courses/cs-101",
+    description: "Foundational coursework introducing Python programming, algorithms, and computational logic.",
   },
   {
-    title: "Research Labs & Facilities",
+    title: "Cognitive Science Research Laboratory",
     category: "Research",
-    path: "/wiki/page/1",
+    path: "/wiki/research/cognitive-science-lab",
     description:
-      "Directory of advanced research instrumentation and centers.",
+      "Directory of advanced research instrumentation combining neuroscience, AI, and cognitive behavior studies.",
+  },
+  {
+    title: "Sports Complex",
+    category: "Campus",
+    path: "/wiki/facilities/sports-complex",
+    description: "Olympic size swimming pool, squash, badminton, and state-of-the-art gym amenities.",
+  },
+  {
+    title: "Academic Grading Policies",
+    category: "Policies",
+    path: "/wiki/policies/grading-policy",
+    description: "Details on letter grades, cumulative performance indices (CPI), and graduation criteria guidelines.",
   },
 ];
 

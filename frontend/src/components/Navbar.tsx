@@ -1,69 +1,120 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { BeautifulSearchBox } from "@/components/SearchDesign";
 import {
   Menu,
   Search,
   ChevronDown,
-  User,
-  Settings,
-  LogOut,
   Sparkles,
+  Award,
+  Users2,
+  Trash2,
+  Calendar,
+  BookOpen,
+  Languages,
   ArrowLeft,
   MoreVertical,
   Share2,
-  Download,
+  Bookmark,
   History,
-  Trash2,
+  FileEdit,
+  User,
+  Settings,
+  LogOut,
+  Download,
   Printer,
   Moon,
   AlertTriangle,
-  Bookmark,
 } from "lucide-react";
-import { TIERS } from "@/lib/constants";
 
 interface NavbarProps {
-  onToggleSidebar: () => void;
-  currentTier?: string;
-  onChangeTier?: (tier: string) => void;
+  onToggleSidebar?: () => void;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
+  hideSearch?: boolean;
 }
+
+const TIERS = {
+  bronze: {
+    name: "Bronze Editor",
+    edits: "5 edits",
+    xp: "250 XP",
+    rank: "#4,102",
+    percent: 30,
+    badgeBg: "bg-amber-100 text-amber-800 border-amber-200",
+    progressBar: "bg-gradient-to-r from-amber-400 to-amber-500",
+    avatarBorder: "border-amber-400",
+    benefits: ["Basic Editing", "Add Comments"],
+    nextTier: "Silver",
+    iconComponent: Award,
+    activeButton: "bg-amber-50 text-amber-800 border-amber-200 shadow-xs",
+  },
+  silver: {
+    name: "Silver Contributor",
+    edits: "28 edits",
+    xp: "1,450 XP",
+    rank: "#1,840",
+    percent: 65,
+    badgeBg: "bg-slate-100 text-slate-800 border-slate-200",
+    progressBar: "bg-gradient-to-r from-slate-400 to-slate-500",
+    avatarBorder: "border-slate-400",
+    benefits: ["Create Pages", "Upload Images", "Markdown Editor"],
+    nextTier: "Gold",
+    iconComponent: Users2,
+    activeButton: "bg-slate-50 text-slate-800 border-slate-200 shadow-xs",
+  },
+  gold: {
+    name: "Gold Admin",
+    edits: "156 edits",
+    xp: "8,920 XP",
+    rank: "#234",
+    percent: 90,
+    badgeBg: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    progressBar: "bg-gradient-to-r from-yellow-400 to-amber-500",
+    avatarBorder: "border-yellow-400",
+    benefits: ["Approve Edits", "Lock Pages", "Rollback Tool", "Custom Badges"],
+    nextTier: null,
+    iconComponent: Sparkles,
+    activeButton: "bg-yellow-50 text-yellow-800 border-yellow-200 shadow-xs",
+  },
+};
 
 export default function Navbar({
   onToggleSidebar,
-  currentTier,
-  onChangeTier,
+  searchQuery: externalQuery,
+  setSearchQuery: setExternalQuery,
+  hideSearch = false,
 }: NavbarProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const isWiki = pathname ? pathname.startsWith("/wiki") : false;
+
+  const [searchQuery, setSearchQuery] = useState(externalQuery || "");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const [localTier, setLocalTier] = useState("gold");
+  const [activeTier, setActiveTier] = useState<"bronze" | "silver" | "gold">("gold");
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
-  const pathname = usePathname();
-  const segments = pathname?.split("/").filter(Boolean) ?? [];
-  const isWiki = segments[0] === "wiki" && segments.length >= 3;
 
-  const activeTier = currentTier || localTier;
-  const setActiveTier = onChangeTier || setLocalTier;
+  const activeTierData = TIERS[activeTier];
 
-  const activeTierData = TIERS[activeTier as keyof typeof TIERS] || TIERS.gold;
+  useEffect(() => {
+    if (externalQuery !== undefined) {
+      setSearchQuery(externalQuery);
+    }
+  }, [externalQuery]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
       }
-      if (
-        moreMenuRef.current &&
-        !moreMenuRef.current.contains(event.target as Node)
-      ) {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
         setMoreMenuOpen(false);
       }
     }
@@ -73,16 +124,22 @@ export default function Navbar({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search-results?query=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      router.push("/search-results");
+    const q = searchQuery.trim();
+    if (setExternalQuery) {
+      setExternalQuery(q);
     }
+    router.push(`/search-results?query=${encodeURIComponent(q)}`);
   };
 
   return (
-    <header className="h-16 shrink-0 bg-white/95 backdrop-blur-md sticky top-0 z-40 select-none shadow-sm border-b border-gray-200/80 w-full transition-all duration-200">
+    <header className={`h-16 shrink-0 sticky top-0 z-40 select-none w-full transition-all duration-200 ${
+      isWiki
+        ? "bg-white border-b border-slate-200 shadow-sm"
+        : "bg-transparent border-none"
+    }`}>
+      {/* Actual Nav Content */}
       <div className="max-w-7xl mx-auto w-full h-full flex items-center justify-between px-4 lg:px-8">
+        
         {/* Left side: Hamburger and Logo */}
         <div className="flex items-center gap-2">
           {isWiki ? (
@@ -94,7 +151,7 @@ export default function Navbar({
                   router.push("/");
                 }
               }}
-              className="p-2 bg-slate-50/90 hover:bg-slate-100 border border-slate-200/80 rounded-lg text-slate-850 hover:text-black transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center shadow-xs"
+              className="p-2 bg-slate-50/90 hover:bg-slate-100 border border-slate-200/80 rounded-lg text-slate-855 hover:text-black transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center shadow-xs"
               aria-label="Go Back"
             >
               <ArrowLeft className="h-5 w-5 text-slate-800 font-bold" />
@@ -102,7 +159,7 @@ export default function Navbar({
           ) : (
             <button
               onClick={onToggleSidebar}
-              className="p-2 bg-slate-50/90 hover:bg-slate-100 border border-slate-200/80 rounded-lg text-slate-850 hover:text-black transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center shadow-xs"
+              className="p-2 bg-slate-50/90 hover:bg-slate-100 border border-slate-200/80 rounded-lg text-slate-855 hover:text-black transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center shadow-xs"
               aria-label="Toggle Sidebar"
             >
               <Menu className="h-5 w-5 text-slate-800" />
@@ -117,35 +174,25 @@ export default function Navbar({
               <span className="font-serif text-2xl font-extrabold tracking-tight text-blue-600 group-hover:text-blue-700 transition-colors duration-200">
                 META
               </span>
-              <span className="ml-1 text-sm font-semibold uppercase tracking-wider text-gray-650 group-hover:text-gray-800 transition-colors duration-200">
+              <span className="ml-1 text-sm font-semibold uppercase tracking-wider text-gray-655 group-hover:text-gray-800 transition-colors duration-200">
                 IITGN
               </span>
             </div>
           </Link>
         </div>
 
-        {/* Middle: Search input */}
-        <form
-          onSubmit={handleSearchSubmit}
-          className="hidden md:flex flex-1 max-w-lg mx-8 relative items-center"
-        >
-          <div className="relative w-full flex items-center h-10 bg-slate-50/90 hover:bg-slate-100/70 focus-within:bg-white border border-gray-250 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100/40 rounded-full px-4 transition-all duration-200 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.035)]">
-            <input
-              type="text"
-              placeholder="Search IITGN Wiki..."
+        {/* Middle: Embedded Search input */}
+        {!hideSearch && (
+          <div className="hidden md:block flex-1 max-w-lg mx-8">
+            <BeautifulSearchBox
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-sm text-gray-800 placeholder:text-gray-500 bg-transparent focus:outline-none pr-8 h-full"
+              onChange={setSearchQuery}
+              onSubmit={handleSearchSubmit}
+              placeholder="Search IITGN Wiki..."
+              variant="compact"
             />
-            <button
-              type="submit"
-              className="absolute right-4 text-gray-500 hover:text-blue-600 transition-colors cursor-pointer"
-              aria-label="Submit search"
-            >
-              <Search className="h-4 w-4" />
-            </button>
           </div>
-        </form>
+        )}
 
         {/* Right side: User avatar & dropdown & Kebab Actions */}
         <div className="flex items-center gap-2">
@@ -196,7 +243,7 @@ export default function Navbar({
                         {activeTier}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-450 truncate mt-0.5">
+                    <p className="text-xs text-slate-455 truncate mt-0.5">
                       alex.carter@iitgn.ac.in
                     </p>
                   </div>
@@ -274,11 +321,11 @@ export default function Navbar({
                       return (
                         <button
                           key={tierKey}
-                          onClick={() => setActiveTier(tierKey)}
+                          onClick={() => setActiveTier(tierKey as "bronze" | "silver" | "gold")}
                           className={`flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-bold rounded-lg border transition-all duration-150 select-none cursor-pointer hover:scale-102 active:scale-98 ${
                             isSelected
                               ? t.activeButton
-                              : "bg-white text-slate-600 border-slate-200 hover:border-slate-350 hover:bg-slate-50"
+                              : "bg-white text-slate-655 border-slate-200 hover:border-slate-350 hover:bg-slate-50"
                           }`}
                         >
                           <IconComp className="h-3.5 w-3.5" />
@@ -336,7 +383,7 @@ export default function Navbar({
                 <MoreVertical className="h-5 w-5 text-slate-800" />
               </button>
               {moreMenuOpen && (
-                <div className="absolute right-0 top-12 mt-2 w-52 bg-white border border-slate-200 shadow-xl py-1 z-50 select-none animate-in fade-in duration-200">
+                <div className="absolute -right-2 md:right-0 top-10 mt-1 w-52 max-h-[calc(100vh-80px)] overflow-y-auto bg-white border border-slate-200 shadow-[0_0_25px_rgba(0,0,0,0.15)] py-1 z-[100] select-none animate-in fade-in duration-200 rounded-xl no-scrollbar">
                   <button
                     onClick={() => {
                       alert("Sharing link copied!");
@@ -359,6 +406,26 @@ export default function Navbar({
                   </button>
                   <button
                     onClick={() => {
+                      alert("Opening history logs...");
+                      setMoreMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+                  >
+                    <History className="h-4.5 w-4.5 text-slate-500 shrink-0" />
+                    <span>Page History</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      alert("Redirecting to editor...");
+                      setMoreMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
+                  >
+                    <FileEdit className="h-4.5 w-4.5 text-slate-500 shrink-0" />
+                    <span>Edit Article</span>
+                  </button>
+                  <button
+                    onClick={() => {
                       alert("Exporting to PDF...");
                       setMoreMenuOpen(false);
                     }}
@@ -369,9 +436,7 @@ export default function Navbar({
                   </button>
                   <button
                     onClick={() => {
-                      window.dispatchEvent(
-                        new CustomEvent("show-wiki-revisions")
-                      );
+                      window.dispatchEvent(new CustomEvent("show-wiki-revisions"));
                       setMoreMenuOpen(false);
                     }}
                     className="w-full text-left px-4 py-2.5 text-xs text-slate-800 hover:text-slate-950 hover:bg-slate-100 font-semibold transition-colors flex items-center gap-3 whitespace-nowrap truncate cursor-pointer rounded-none"
@@ -410,6 +475,7 @@ export default function Navbar({
                     <Settings className="h-4.5 w-4.5 text-slate-500 shrink-0" />
                     <span>Page Settings</span>
                   </button>
+                  <div className="border-t border-slate-100 my-1" />
                   <button
                     onClick={() => {
                       alert("Report page submitted.");
@@ -420,7 +486,6 @@ export default function Navbar({
                     <AlertTriangle className="h-4.5 w-4.5 text-slate-500 shrink-0" />
                     <span>Report Content</span>
                   </button>
-                  <div className="border-t border-slate-100 my-1" />
                 </div>
               )}
             </div>
