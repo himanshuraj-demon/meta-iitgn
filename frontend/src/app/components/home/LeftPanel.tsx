@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import { QUICK_PORTALS } from "@/lib/constants";
+import { BeautifulSearchBox } from "@/components/SearchDesign";
 
 interface LeftPanelProps {
   sidebarOpen: boolean;
@@ -132,29 +133,13 @@ export default function LeftPanel({
           </div>
 
           {/* Search Form */}
-          <form
+          <BeautifulSearchBox
+            value={searchQuery}
+            onChange={setSearchQuery}
             onSubmit={handleSearchSubmit}
-            className="relative flex items-center"
-          >
-            <div
-              className="w-full flex items-center h-11 bg-slate-50 border border-slate-200 focus-within:border-blue-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-105 rounded-full px-4 transition-all duration-200"
-            >
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full text-xs text-gray-800 placeholder:text-gray-400 bg-transparent focus:outline-none pr-8 h-full"
-              />
-              <button
-                type="submit"
-                className="text-slate-400 hover:text-blue-600 transition-colors absolute right-4 cursor-pointer"
-                aria-label="Search"
-              >
-                <Search className="h-4 w-4" />
-              </button>
-            </div>
-          </form>
+            placeholder="Search..."
+            variant="compact"
+          />
 
           {/* Category Cards (Modern box type redirecting to category sub-pages) */}
           <div className="space-y-2 mt-6 lg:mt-8">
@@ -175,10 +160,9 @@ export default function LeftPanel({
                   </span>
                 </Link>
               ))}
-            </div>
           </div>
         </div>
-
+      </div>
         {/* Credits Footer */}
         <div className="pt-4 border-t hidden lg:flex border-slate-100  flex-col items-center text-center gap-1.5 select-none mt-6">
           <div className="text-[10px] text-gray-400 font-medium flex items-center gap-1.5">

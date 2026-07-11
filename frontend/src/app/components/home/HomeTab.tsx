@@ -17,6 +17,8 @@ import {
   Heart,
 } from "lucide-react";
 
+import ParallaxBackground from "@/components/ParallaxBackground";
+
 interface HomeTabProps {
   mousePos: { x: number; y: number };
   imageLoaded: boolean;
@@ -36,16 +38,12 @@ export default function HomeTab({
     <>
       {/* Mountain Hero Banner */}
       <div className="relative w-full h-[85vh] lg:h-dvh min-h-125 hidden md:flex flex-col items-center justify-center text-center p-6 bg-slate-900 overflow-hidden select-none">
-        {/* Background Image with Dark Gradient Wash */}
-        <div
-          className="absolute top-0 inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: "url('/homepage_bg.png')",
-            transform: `translate(${mousePos.x}px, ${mousePos.y}px) scale(1.15)`,
-            transition: "transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)",
-          }}
+        {/* Reusable Parallax Background Component */}
+        <ParallaxBackground
+          mousePos={mousePos}
+          imageSrc="/homepage_bg.png"
+          overlayClass="bg-linear-to-b via-slate-900/45 to-slate-950/65"
         />
-        <div className="absolute inset-0 bg-linear-to-b via-slate-900/45 to-slate-950/65" />
 
         <style>{`
           @keyframes gradient-x {
@@ -101,12 +99,14 @@ export default function HomeTab({
       {/* Scrollable Highlights Feed Container */}
       <div
         id="right-highlights-feed"
-        className="p-6 md:p-8 lg:p-10 bg-[#FCFCFD] space-y-10"
+        className="p-6 pb-28 md:p-8 lg:p-10 bg-[#FCFCFD] space-y-10"
       >
-        {/* Double Column: Featured Article & In the News */}
-        <div className="grid grid-cols-1 gap-8">
+
+
+        {/* Double Column: Featured Article & In the News split side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Featured Article */}
-          <div className="lg:col-span-8 space-y-4">
+          <div className="lg:col-span-7 flex flex-col h-full space-y-4">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
               <h2 className="text-xl sm:text-2xl font-serif font-black text-gray-900 tracking-tight">
                 Featured Article
@@ -116,22 +116,24 @@ export default function HomeTab({
                 Special Feature
               </span>
             </div>
-            <div className="rounded-2xl border border-slate-150 bg-white overflow-hidden shadow-depth shadow-depth-hover">
+            <div className="rounded-2xl border border-slate-150 bg-white overflow-hidden shadow-depth shadow-depth-hover flex flex-col flex-1 h-full">
               <img
                 src="/iitgn_campus.png"
                 alt="IIT Gandhinagar Campus"
                 className="w-full h-56 md:h-64 object-cover"
               />
-              <div className="p-6 space-y-3 text-left">
-                <h3 className="text-lg font-black text-gray-800 font-serif">
-                  IIT Gandhinagar Campus Design & Architecture
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-700 leading-relaxed font-semibold">
-                  An overview of the unique climate-resilient architecture, passive cooling design, and ecological corridors that make up the greenest campus in India. Known for its 5-star GRIHA LD rating, the campus blends cutting-edge civil engineering with natural contours.
-                </p>
+              <div className="p-6 space-y-3 text-left flex flex-col flex-1 justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-gray-800 font-serif">
+                    IIT Gandhinagar Campus Design & Architecture
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed font-semibold mt-1">
+                    An overview of the unique climate-resilient architecture, passive cooling design, and ecological corridors that make up the greenest campus in India. Known for its 5-star GRIHA LD rating, the campus blends cutting-edge civil engineering with natural contours.
+                  </p>
+                </div>
                 <Link
                   href="/wiki/page/1"
-                  className="inline-flex items-center gap-1 text-[11px] font-extrabold text-blue-500 hover:text-blue-800 uppercase tracking-wider pt-2"
+                  className="inline-flex items-center gap-1 text-[11px] font-extrabold text-blue-500 hover:text-blue-800 uppercase tracking-wider pt-2 self-start"
                 >
                   Read full article <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
@@ -140,7 +142,7 @@ export default function HomeTab({
           </div>
 
           {/* In the News */}
-          <div className="lg:col-span-8 space-y-4 flex flex-col justify-center">
+          <div className="lg:col-span-5 flex flex-col h-full space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h2 className="text-xl sm:text-2xl font-serif font-black text-gray-900 tracking-tight">
                 In the News
@@ -152,7 +154,7 @@ export default function HomeTab({
                 View all
               </Link>
             </div>
-            <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth space-y-4 text-left h-94 flex flex-col justify-between">
+            <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth shadow-depth-hover space-y-4 text-left flex flex-col flex-1 h-full justify-between">
               <div className="space-y-4">
                 {/* Item 1 */}
                 <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
@@ -185,7 +187,7 @@ export default function HomeTab({
                 </div>
 
                 {/* Item 3 */}
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
                   <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
                     <Trophy className="h-4.5 w-4.5 text-purple-500" />
                   </div>
@@ -198,11 +200,41 @@ export default function HomeTab({
                     </span>
                   </div>
                 </div>
+
+                {/* Item 4 */}
+                <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+                    <Trophy className="h-4.5 w-4.5 text-amber-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 hover:text-amber-650 transition-colors line-clamp-2 cursor-pointer">
+                      Sports Council announces Hallabol 2026, the night sports festival starting next month.
+                    </h4>
+                    <span className="text-[10px] text-slate-400 mt-0.5 block font-semibold">
+                      2 days ago
+                    </span>
+                  </div>
+                </div>
+
+                {/* Item 5 */}
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                    <Sparkles className="h-4.5 w-4.5 text-blue-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 hover:text-blue-500 transition-colors line-clamp-2 cursor-pointer">
+                      IIT Gandhinagar Library hosts week-long book exhibition and reader workshop.
+                    </h4>
+                    <span className="text-[10px] text-slate-400 mt-0.5 block font-semibold">
+                      3 days ago
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <Link
                 href="/wiki/page/1"
-                className="inline-flex items-center gap-1 text-[11px] font-extrabold text-blue-500 hover:text-blue-800 uppercase tracking-wider pt-2"
+                className="inline-flex items-center gap-1 text-[11px] font-extrabold text-blue-500 hover:text-blue-800 uppercase tracking-wider pt-2 self-start"
               >
                 More campus news <ArrowRight className="h-3.5 w-3.5" />
               </Link>
@@ -210,10 +242,10 @@ export default function HomeTab({
           </div>
         </div>
 
-        {/* Three Column Highlights Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-2">
-          {/* Column 1: Did You Know? */}
-          <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth shadow-depth-hover flex flex-col justify-between h-56 text-left">
+        {/* Three Column Highlights Section with Balanced Heights */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-2 items-stretch select-none">
+          {/* Card 1: Did You Know? */}
+          <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth shadow-depth-hover flex flex-col justify-between h-full text-left">
             <div>
               <h3 className="text-sm font-black text-slate-900 font-serif mb-2.5">
                 Did You Know?
@@ -230,8 +262,8 @@ export default function HomeTab({
             </Link>
           </div>
 
-          {/* Column 2: On This Day */}
-          <div className="p-5 rounded-2xl border border-slate-150 bg-white hover:shadow-md transition-shadow duration-200 flex flex-col justify-between h-56 text-left">
+          {/* Card 2: On This Day */}
+          <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth shadow-depth-hover flex flex-col justify-between h-full text-left">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="h-4 w-4 text-blue-500" />
@@ -257,8 +289,8 @@ export default function HomeTab({
             </Link>
           </div>
 
-          {/* Column 3: Get Involved */}
-          <div className="p-5 rounded-2xl border border-slate-150 bg-white hover:shadow-md transition-shadow duration-200 flex flex-col justify-between h-56 text-left">
+          {/* Card 3: Get Involved */}
+          <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth shadow-depth-hover flex flex-col justify-between h-full text-left">
             <div>
               <h3 className="text-sm font-black text-slate-900 font-serif mb-2.5">
                 Get Involved
@@ -269,17 +301,17 @@ export default function HomeTab({
             </div>
             <Link
               href="/wiki/page/1"
-              className="inline-flex items-center justify-center w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97"
+              className="inline-flex items-center justify-center w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97 mt-4"
             >
               Start Contributing
             </Link>
           </div>
         </div>
 
-        {/* Three Column Recent Activity Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-          {/* Column 1: New Pages */}
-          <div className="p-5 rounded-2xl border border-slate-150 bg-white hover:shadow-md transition-shadow duration-200 flex flex-col justify-between h-64 text-left">
+        {/* Three Column Recent Activity Section with Balanced Heights */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 items-stretch select-none">
+          {/* Card 4: New Pages */}
+          <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth shadow-depth-hover flex flex-col justify-between h-full text-left">
             <div>
               <h3 className="text-sm font-black text-slate-900 font-serif mb-2.5">
                 New Pages
@@ -317,8 +349,8 @@ export default function HomeTab({
             </Link>
           </div>
 
-          {/* Column 2: Updated Pages */}
-          <div className="p-5 rounded-2xl border border-slate-150 bg-white hover:shadow-md transition-shadow duration-200 flex flex-col justify-between h-64 text-left">
+          {/* Card 5: Updated Pages */}
+          <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth shadow-depth-hover flex flex-col justify-between h-full text-left">
             <div>
               <h3 className="text-sm font-black text-slate-900 font-serif mb-2.5">
                 Updated Pages
@@ -356,8 +388,8 @@ export default function HomeTab({
             </Link>
           </div>
 
-          {/* Column 3: Pending Pages */}
-          <div className="p-5 rounded-2xl border border-slate-150 bg-white hover:shadow-md transition-shadow duration-200 flex flex-col justify-between h-64 text-left">
+          {/* Card 6: Pending Pages */}
+          <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth shadow-depth-hover flex flex-col justify-between h-full text-left">
             <div>
               <h3 className="text-sm font-black text-slate-900 font-serif mb-2.5">
                 Pending Pages
@@ -390,7 +422,7 @@ export default function HomeTab({
                   );
                 }, 250);
               }}
-              className="inline-flex items-center justify-center w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97"
+              className="inline-flex items-center justify-center w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97 mt-4"
             >
               Review Pending Changes
             </button>

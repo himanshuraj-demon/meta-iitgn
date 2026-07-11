@@ -2,100 +2,85 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import {
-  Search,
-  Building2,
-  BookOpen,
-  Users2,
-  Trophy,
-  FlaskConical,
-  Shield,
-  Sparkles,
-  HelpCircle,
-  LucideIcon,
-} from "lucide-react";
+import { Search } from "lucide-react";
+import ParallaxBackground from "@/components/ParallaxBackground";
+import { BeautifulSearchBox } from "@/components/SearchDesign";
 
 interface SearchTabProps {
   searchTabQuery: string;
   setSearchTabQuery: (query: string) => void;
+  mousePos?: { x: number; y: number };
 }
-
-const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
-  Campus: Building2,
-  Academics: BookOpen,
-  Clubs: Users2,
-  Fests: Trophy,
-  Research: FlaskConical,
-  Policies: Shield,
-  All: Sparkles,
-};
 
 export default function SearchTab({
   searchTabQuery,
   setSearchTabQuery,
+  mousePos,
 }: SearchTabProps) {
   const router = useRouter();
 
+  const handleSearch = (query: string) => {
+    const q = query.trim();
+    if (q) {
+      router.push(`/search-results?query=${encodeURIComponent(q)}`);
+    } else {
+      router.push("/search-results");
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col items-center justify-center bg-[#FCFCFD] p-6 md:p-12">
-      <div className="max-w-xl w-full text-center space-y-6">
-        <div className="space-y-2 select-none">
-          <h1 className="text-3xl font-serif font-black text-slate-900 tracking-tight">
-            Search Wiki
-          </h1>
-          <p className="text-sm text-slate-500 font-medium max-w-sm mx-auto">
-            Explore courses, clubs, hostels, and campus resources at IITGN.
-          </p>
-        </div>
+    <div className="relative w-full min-h-screen lg:min-h-dvh flex flex-col items-center justify-center text-center p-4 md:p-8 bg-slate-900 overflow-hidden select-none">
+      {/* Shared Reusable Parallax Background Component */}
+      <ParallaxBackground
+        mousePos={mousePos}
+        imageSrc="/homepage_bg.png"
+        overlayClass="bg-linear-to-b via-slate-900/45 to-slate-950/65"
+      />
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (searchTabQuery.trim()) {
-              router.push(`/search-results?query=${encodeURIComponent(searchTabQuery.trim())}`);
-            } else {
-              router.push("/search-results");
-            }
-          }}
-          className="relative w-full flex items-center h-12 bg-white border border-slate-200 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-105 rounded-2xl px-4 transition-all duration-200 shadow-sm"
-        >
-          <Search className="h-5 w-5 text-slate-400 shrink-0" />
-          <input
-            type="text"
-            placeholder="Type query and press Enter to search..."
+      <style>{`
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          55% { background-position: 100% 50%; }
+        }
+        @keyframes slide-up-fade {
+          0% { opacity: 0; transform: translateY(120px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-gradient-text {
+          background-size: 200% auto;
+          animation: gradient-x 6s ease infinite;
+        }
+        .animate-hero-content {
+          animation: slide-up-fade 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
+
+      {/* Centered Content with Entry slide-up and fade-in animation */}
+      <div className="relative z-10 max-w-2xl w-full px-4 space-y-10 flex flex-col items-center animate-hero-content pb-28 md:pb-0">
+        
+        {/* Large Brand Header with high contrast shadow drop */}
+        <h1 className="select-none leading-none drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] filter">
+          <span className="text-3xl sm:text-5xl lg:text-[60px] font-serif font-light tracking-wide bg-linear-to-r from-white to-slate-200 bg-clip-text text-transparent block">
+            Search
+          </span>
+          <span className="text-4xl sm:text-6xl lg:text-[85px] font-sans font-bold tracking-widest bg-linear-to-r from-blue-400 via-indigo-300 to-cyan-400 bg-clip-text text-transparent block mt-3 filter drop-shadow-[0_2px_12px_rgba(59,130,246,0.5)] animate-gradient-text uppercase">
+            META IITGN
+          </span>
+        </h1>
+
+        {/* Oversized Glassmorphic Search Bar */}
+        <div className="w-full">
+          <BeautifulSearchBox
             value={searchTabQuery}
-            onChange={(e) => setSearchTabQuery(e.target.value)}
-            className="w-full text-sm text-slate-800 placeholder:text-gray-400 bg-transparent focus:outline-none px-3 h-full"
-            autoFocus
+            onChange={setSearchTabQuery}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearch(searchTabQuery);
+            }}
+            placeholder="Find articles, pages, policies..."
           />
-          {searchTabQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchTabQuery("")}
-              className="text-slate-400 hover:text-slate-600 text-xs font-bold px-2.5 py-1 bg-slate-100 rounded-lg transition-colors cursor-pointer"
-            >
-              Clear
-            </button>
-          )}
-        </form>
-
-        <div className="flex flex-wrap gap-2 justify-center select-none pt-2">
-          {["Campus", "Academics", "Clubs", "Fests"].map((cat) => {
-            const Icon = CATEGORY_ICON_MAP[cat] || HelpCircle;
-            return (
-              <button
-                key={cat}
-                onClick={() => {
-                  router.push(`/search-results?query=&category=${cat}`);
-                }}
-                className="px-3.5 py-1.5 rounded-xl text-[10px] font-extrabold border bg-white text-slate-600 border-slate-200 hover:border-slate-350 hover:bg-slate-55 transition-all duration-200 cursor-pointer flex items-center gap-1.5"
-              >
-                <Icon className="h-3 w-3 shrink-0 text-slate-400" />
-                {cat}
-              </button>
-            );
-          })}
         </div>
+
       </div>
     </div>
   );

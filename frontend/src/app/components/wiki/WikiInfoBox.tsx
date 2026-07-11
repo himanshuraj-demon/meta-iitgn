@@ -57,7 +57,7 @@ export default function WikiInfoBox({
         className={`
           border-l border-gray-200 shrink-0 overflow-y-auto overflow-x-hidden bg-white flex flex-col select-none right-sidebar-mobile-toggle no-scrollbar
           transition-transform duration-300 ease-in-out order-3
-          fixed lg:static inset-y-0 right-0 z-50 lg:z-auto lg:h-full
+          fixed lg:relative inset-y-0 right-0 z-50 lg:z-50 lg:h-full
           ${
             rightSidebarOpen
               ? "translate-x-0 w-80 shadow-2xl lg:shadow-none"

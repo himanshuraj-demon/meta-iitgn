@@ -15,6 +15,7 @@ interface BottomNavbarProps {
   activeTab?: string;
   className?: string;
   style?: React.CSSProperties;
+  showLabels?: boolean;
 }
 
 export default function BottomNavbar({
@@ -22,6 +23,7 @@ export default function BottomNavbar({
   activeTab,
   className = "fixed bottom-6 left-1/2 transform -translate-x-1/2",
   style,
+  showLabels = true,
 }: BottomNavbarProps) {
   return (
     <div
@@ -58,9 +60,11 @@ export default function BottomNavbar({
               </div>
 
               {/* Text Label */}
-              <span className="text-[8px] uppercase tracking-wider font-black transition-all duration-200">
-                {tab.label}
-              </span>
+              {showLabels && (
+                <span className="text-[8px] uppercase tracking-wider font-black transition-all duration-200">
+                  {tab.label}
+                </span>
+              )}
             </button>
           );
         })}

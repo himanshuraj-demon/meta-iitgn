@@ -64,23 +64,47 @@ export default function HomePage() {
       const defaultBookmarks = [
         {
           id: "1",
-          title: "IIT Gandhinagar Campus & Architecture",
-          category: "Campus",
+          title: "Computer Science & Engineering",
+          category: "departments",
+          slug: "computer-science",
           description:
-            "Overview of the greenest campus in India and its GRIHA LD rating.",
+            "A leading department focused on AI, machine learning, systems, theory, and cryptography.",
         },
         {
           id: "2",
-          title: "Amalthea Technical Summit",
-          category: "Fests",
+          title: "Amalthea",
+          category: "fests",
+          slug: "amalthea",
           description:
-            "The annual student-run technical festival of IIT Gandhinagar.",
+            "IITGN's annual technical summit showcasing innovations, technical contests, and guest lectures.",
         },
         {
           id: "3",
-          title: "Academic Courses Directory",
-          category: "Academics",
-          description: "Directory of undergraduate and postgraduate courses.",
+          title: "CS 101: Introduction to Computing",
+          category: "courses",
+          slug: "cs-101",
+          description: "A foundational course introducing algorithms, Python programming, and computational thinking.",
+        },
+        {
+          id: "4",
+          title: "The Coding Club",
+          category: "clubs",
+          slug: "coding-club",
+          description: "The premier student tech hub for developers, competitive programmers, and designers.",
+        },
+        {
+          id: "5",
+          title: "Cognitive Science Laboratory",
+          category: "research",
+          slug: "cognitive-science-lab",
+          description: "Interdisciplinary research combining neuroscience, psychology, and artificial intelligence.",
+        },
+        {
+          id: "6",
+          title: "Grading Policy",
+          category: "policies",
+          slug: "grading-policy",
+          description: "Details on letter grades, cumulative performance indices (CPI), and minimum passing scores.",
         },
       ];
       setBookmarks(defaultBookmarks);
@@ -175,7 +199,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen lg:h-screen bg-gray-50/30 overflow-y-auto lg:overflow-hidden font-sans">
       {/* Main Container */}
-      <div className="flex flex-1 relative overflow-visible lg:overflow-hidden w-full h-auto lg:h-full">
+      <div className="flex flex-col lg:flex-row flex-1 relative overflow-visible lg:overflow-hidden w-full h-auto lg:h-full">
         {/* Left panel & collapsible sidebar */}
         <LeftPanel
           sidebarOpen={sidebarOpen}
@@ -257,12 +281,15 @@ export default function HomePage() {
               <SearchTab
                 searchTabQuery={searchTabQuery}
                 setSearchTabQuery={setSearchTabQuery}
+                mousePos={mousePos}
               />
             ) : activeTab === "bookmarks" ? (
               <BookmarksTab
                 bookmarks={bookmarks}
                 setBookmarks={setBookmarks}
                 removeBookmark={removeBookmark}
+                setActiveTab={setActiveTab}
+                mousePos={mousePos}
               />
             ) : null}
           </div>
@@ -272,6 +299,7 @@ export default function HomePage() {
           <BottomNavbar
             tabs={homeTabs}
             activeTab={activeTab}
+            showLabels={false}
             className="fixed lg:hidden bottom-6 left-1/2 transform -translate-x-1/2 lg:left-[calc(50vw+15rem)] z-9999"
           />
         )}

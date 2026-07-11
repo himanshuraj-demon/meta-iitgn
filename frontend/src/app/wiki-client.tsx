@@ -259,7 +259,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing }: WikiClie
       {/* Main Content Wrapper */}
       <div className="flex flex-1 h-full w-full min-w-full lg:min-w-0 overflow-hidden order-1">
         {/* Main Scrollable Article Body */}
-        <main className="flex-1 min-w-full lg:min-w-0 px-4 md:px-8 pt-8 pb-28 overflow-y-auto bg-white relative scroll-smooth">
+        <main className="flex-1 min-w-full lg:min-w-0 px-4 md:px-8 pt-20 pb-28 overflow-y-auto bg-white relative scroll-smooth">
           <article className="w-full max-w-5xl mx-auto space-y-6">
             {/* Teleported editor toolbar container */}
             {isEditing && (
