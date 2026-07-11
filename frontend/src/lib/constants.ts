@@ -216,19 +216,28 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
     title: "NAVIGATION",
     items: [
       { name: "Main Page", path: "/", iconName: "Home" },
-      { name: "Academic Calendar", path: "/wiki/calendar", iconName: "Calendar" },
-      { name: "Placement Stats", path: "/wiki/placements", iconName: "TrendingUp" },
+      { name: "All Categories", path: "/wiki/categories", iconName: "Shuffle" },
     ],
   },
   {
-    title: "BROWSE WIKI",
+    title: "ACADEMICS & CAREERS",
     items: [
       { name: "Departments", path: "/wiki/departments", iconName: "Building2" },
       { name: "Faculty Profiles", path: "/wiki/faculty", iconName: "Users2" },
+      { name: "Research Labs", path: "/wiki/research", iconName: "FlaskConical" },
+      { name: "Placement Stats", path: "/wiki/placements", iconName: "TrendingUp" },
       { name: "Courses Info", path: "/wiki/courses", iconName: "BookOpen" },
+    ],
+  },
+  {
+    title: "CAMPUS & POLICIES",
+    items: [
       { name: "Hostels Guide", path: "/wiki/hostels", iconName: "Tent" },
-      { name: "Campus Facilities", path: "/wiki/facilities", iconName: "MapPin" },
       { name: "Student Clubs", path: "/wiki/clubs", iconName: "Trophy" },
+      { name: "Institute Fests", path: "/wiki/fests", iconName: "Sparkles" },
+      { name: "Institute Policies", path: "/wiki/policies", iconName: "Shield" },
+      { name: "Academic Calendar", path: "/wiki/calendar", iconName: "Calendar" },
+      { name: "Campus Facilities", path: "/wiki/facilities", iconName: "MapPin" },
     ],
   },
 ];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { parseMarkdown, stringifyMarkdown } from "@/lib/utils";
 import { InfoboxData } from "@/lib/types";
@@ -16,6 +16,7 @@ import {
   PanelRight,
   ArrowLeft,
   PlusCircle,
+  HelpCircle,
 } from "lucide-react";
 import BottomNavbar from "@/components/BottomNavbar";
 
@@ -34,9 +35,11 @@ interface WikiClientProps {
   defaultEditing?: boolean;
   dbPageId?: number;
   version?: number;
+  categorySlug?: string;
+  initialMetadata?: any;
 }
 
-export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, version }: WikiClientProps) {
+export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, version, categorySlug, initialMetadata }: WikiClientProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(defaultEditing || false);
   const [markdown, setMarkdown] = useState(initialMarkdown);
@@ -46,10 +49,38 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
   const [toolbarContainer, setToolbarContainer] = useState<HTMLDivElement | null>(null);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
 
+  const isNews = useMemo(() => {
+    return parsed.infobox?.rows?.some((row: any) => 
+      row.label?.toLowerCase() === "category" && typeof row.value === "string" && row.value?.toLowerCase() === "news"
+    ) || false;
+  }, [parsed]);
+
+  const hideSidebar = isNews && isEditing;
+  const actualSidebarOpen = rightSidebarOpen && !hideSidebar;
+
   const [rightWidth, setRightWidth] = useState(320);
   const [isMobile, setIsMobile] = useState(false);
   const [showRevisions, setShowRevisions] = useState(false);
   const [showPendingChanges, setShowPendingChanges] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const fetchPendingCount = useCallback(async () => {
+    try {
+      const data = await apiService.getPendingDrafts(dbPageId);
+      const count = data.filter((d: any) => d.status === "in_review").length;
+      setPendingCount(count);
+    } catch (err) {
+      console.error("Error fetching pending drafts count:", err);
+    }
+  }, [dbPageId]);
+
+  useEffect(() => {
+    fetchPendingCount();
+    window.addEventListener("wiki-pending-updated", fetchPendingCount);
+    return () => {
+      window.removeEventListener("wiki-pending-updated", fetchPendingCount);
+    };
+  }, [fetchPendingCount]);
 
   useEffect(() => {
     const savedRight = localStorage.getItem("wiki-right-sidebar-width");
@@ -151,44 +182,53 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
     setMarkdown(newMarkdown);
   };
 
-  const handleSave = async () => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://meta-iitgn-vercel.onrender.com";
-    const targetUrl = `${apiBase}/drafts`;
+  const normalizeCategoryToSlug = (value: string): string => {
+    const normalized = value.toLowerCase().trim();
+    if (normalized === "campus facilities" || normalized === "facilities") return "facilities";
+    if (normalized === "faculty profiles" || normalized === "faculty") return "faculty";
+    if (normalized === "courses info" || normalized === "courses") return "courses";
+    if (normalized === "research labs" || normalized === "research") return "research";
+    if (normalized === "hostels guide" || normalized === "hostels") return "hostels";
+    if (normalized === "student clubs" || normalized === "clubs") return "clubs";
+    if (normalized === "institute fests" || normalized === "fests") return "fests";
+    if (normalized === "placement stats" || normalized === "placements") return "placements";
+    if (normalized === "institute policies" || normalized === "policies") return "policies";
+    if (normalized === "academic calendar" || normalized === "calendar") return "calendar";
+    return normalized;
+  };
 
+  const handleSave = async () => {
     try {
+      let category = categorySlug || initialMetadata?.category || "campus";
+      const categoryRow = parsed.infobox?.rows?.find((row: any) => 
+        row.label?.toLowerCase() === "category"
+      );
+      if (categoryRow && categoryRow.value && typeof categoryRow.value === "string") {
+        category = normalizeCategoryToSlug(categoryRow.value);
+      } else {
+        category = normalizeCategoryToSlug(category);
+      }
+
       const payload = {
         page_id: dbPageId ? Number(dbPageId) : null,
         title: parsed.title || "Untitled Page",
         content: markdownRef.current,
-        metadata: {},
+        metadata: { category: category },
         editor_id: 0, // Simulated default editor_id
         base_version: version !== undefined ? Number(version) : null,
       };
 
-      const response = await fetch(targetUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await apiService.submitDraft(payload);
 
-      if (response.ok) {
-        if (!dbPageId) {
-          alert("Page successfully published!");
-        } else {
-          alert("Draft successfully submitted for review!");
-        }
+      if (response) {
+        alert("Draft successfully submitted for review!");
         // Keep the local editor state updated with the unsaved changes for immediate feedback
         setMarkdown(markdownRef.current);
-      } else {
-        const errData = await response.json().catch(() => ({}));
-        console.error("Failed to submit draft. Server returned status:", response.status, errData);
-        alert(`Failed to submit draft: ${errData.detail || "Unknown error"}`);
+        fetchPendingCount();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting draft to backend:", error);
-      const detail = error.response?.data?.detail || error.response?.data?.error || "Unknown error";
+      const detail = error.response?.data?.detail || error.response?.data?.error || error.response?.data?.message || error.message || "Unknown error";
       alert(`Failed to submit draft: ${detail}`);
     }
     setIsEditing(false);
@@ -278,7 +318,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
       {/* Mobile backdrop for the drawer — tap to close instead of shifting the whole page */}
       {isMobile && rightSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-[1px] z-40 lg:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/30 backdrop-blur-[1px] z-[10000] lg:hidden animate-in fade-in duration-200"
           onClick={() => setRightSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -323,17 +363,18 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
           {/* Material Design 3 Bottom Navigation Bar */}
           <BottomNavbar
             tabs={
-              isEditing
+              (isEditing
                 ? [
                     {
-                      id: "back",
-                      label: "Back",
-                      icon: ArrowLeft,
+                      id: "help",
+                      label: "Help",
+                      icon: HelpCircle,
                       onClick: () => {
-                        if (window.history.length > 1) {
-                          router.back();
-                        } else {
-                          router.push("/");
+                        const proceed = window.confirm(
+                          "You are being redirected to an external site (Markdown Guide) for formatting help. Do you want to continue?"
+                        );
+                        if (proceed) {
+                          window.open("https://www.markdownguide.org/basic-syntax/", "_blank");
                         }
                       },
                     },
@@ -342,6 +383,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
                       label: "Save",
                       icon: Check,
                       onClick: handleSave,
+                      colorClass: "bg-emerald-50 text-emerald-600 border border-emerald-200/60 hover:bg-emerald-100/80 hover:text-emerald-700",
                     },
                     {
                       id: "cancel",
@@ -350,8 +392,17 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
                       onClick: () => {
                         setMarkdown(initialMarkdown);
                         markdownRef.current = initialMarkdown;
-                        setIsEditing(false);
+                        if (dbPageId) {
+                          setIsEditing(false);
+                        } else {
+                          if (window.history.length > 1) {
+                            router.back();
+                          } else {
+                            router.push("/");
+                          }
+                        }
                       },
+                      colorClass: "bg-rose-50 text-rose-600 border border-rose-200/60 hover:bg-rose-100/80 hover:text-rose-700",
                     },
                     {
                       id: "sidebar",
@@ -362,10 +413,12 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
                   ]
                 : [
                     {
-                      id: "edit",
-                      label: "Edit Page",
-                      icon: Edit3,
-                      onClick: () => setIsEditing(true),
+                      id: "new",
+                      label: "New Page",
+                      icon: PlusCircle,
+                      onClick: () => {
+                        router.push("/wiki/campus/new");
+                      },
                     },
                     {
                       id: "changes",
@@ -376,15 +429,13 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
                         setShowRevisions(false);
                         window.dispatchEvent(new CustomEvent("show-wiki-pending"));
                       },
-                      badgeCount: 2,
+                      badgeCount: pendingCount,
                     },
                     {
-                      id: "new",
-                      label: "New Page",
-                      icon: PlusCircle,
-                      onClick: () => {
-                        router.push("/wiki/campus/new");
-                      },
+                      id: "edit",
+                      label: "Edit Page",
+                      icon: Edit3,
+                      onClick: () => setIsEditing(true),
                     },
                     {
                       id: "sidebar",
@@ -393,10 +444,11 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
                       onClick: () => setRightSidebarOpen(!rightSidebarOpen),
                     },
                   ]
+              ).filter(tab => tab.id !== "sidebar" || !hideSidebar)
             }
-            activeTab={rightSidebarOpen ? "sidebar" : (isEditing ? "edit" : undefined)}
+            activeTab={actualSidebarOpen ? "sidebar" : (isEditing ? "edit" : undefined)}
             style={{
-              left: !isMobile && rightSidebarOpen ? `calc((100vw - ${rightWidth}px) / 2)` : "50%",
+              left: !isMobile && actualSidebarOpen ? `calc((100vw - ${rightWidth}px) / 2)` : "50%",
             }}
             className="fixed bottom-6 transform -translate-x-1/2 z-[9999]"
           />
@@ -405,7 +457,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
 
       {/* InfoBox (Right Sidebar) */}
       <WikiInfoBox
-        rightSidebarOpen={rightSidebarOpen}
+        rightSidebarOpen={actualSidebarOpen}
         setRightSidebarOpen={setRightSidebarOpen}
         isMobile={isMobile}
         rightWidth={rightWidth}

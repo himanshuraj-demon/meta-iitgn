@@ -25,7 +25,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "metaIITGN - Campus Wiki",
+  title: "META IITGN",
   description: "The collaborative campus wiki for IIT Gandhinagar.",
 };
 

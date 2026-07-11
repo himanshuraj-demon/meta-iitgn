@@ -21,11 +21,10 @@ export default function SearchTab({
 
   const handleSearch = (query: string) => {
     const q = query.trim();
-    if (q) {
-      router.push(`/search-results?query=${encodeURIComponent(q)}`);
-    } else {
-      router.push("/search-results");
+    if (!q) {
+      return;
     }
+    router.push(`/search-results?query=${encodeURIComponent(q)}`);
   };
 
   return (

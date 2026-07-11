@@ -1,15 +1,220 @@
 "use client";
 
 import Link from "next/link";
-import { CATEGORIES_DATA } from "@/lib/placeholder-articles";
-import { ArrowRight, BookOpen, ChevronRight, FileText, PlusCircle } from "lucide-react";
+import { Article } from "@/lib/placeholder-articles";
+import { getAllCategories } from "@/lib/categories";
+import { ArrowRight, ArrowLeft, BookOpen, ChevronRight, FileText, PlusCircle, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { apiService } from "@/lib/api";
+import { parseMarkdown } from "@/lib/utils";
 
 interface CategoryPageProps {
   categorySlug: string;
 }
 
 export default function CategoryPage({ categorySlug }: CategoryPageProps) {
-  const category = CATEGORIES_DATA[categorySlug];
+  const categories = getAllCategories();
+  const category = categories[categorySlug];
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCategoryArticles() {
+      try {
+        // Fetch recent pages to categorize dynamically
+        const [recentNewList, recentUpdatedList] = await Promise.all([
+          apiService.getRecentNewPages(200),
+          apiService.getRecentUpdatedPages(200),
+        ]);
+
+        const merged = [...recentNewList, ...recentUpdatedList];
+        const uniquePagesMap = new Map();
+        for (const page of merged) {
+          uniquePagesMap.set(page.slug || page.page_id, page);
+        }
+        const uniquePages = Array.from(uniquePagesMap.values());
+
+        // Map and filter pages matching this categorySlug
+        const filtered = uniquePages.filter((page: any) => {
+          const meta = page.metadata || {};
+          const metaCategory = (meta.category || "").toLowerCase();
+          
+          let parsedCategory = "";
+          if (page.content) {
+            try {
+              const parsed = parseMarkdown(page.content);
+              const categoryRow = parsed.infobox?.rows?.find((row: any) => 
+                row.label?.toLowerCase() === "category"
+              );
+              if (categoryRow && categoryRow.value && typeof categoryRow.value === "string") {
+                parsedCategory = categoryRow.value.toLowerCase();
+              }
+            } catch (e) {
+              // ignore
+            }
+          }
+
+          let categoryName = (metaCategory || parsedCategory).trim().toLowerCase();
+          
+          if (categoryName === "campus facilities") categoryName = "facilities";
+          if (categoryName === "faculty profiles") categoryName = "faculty";
+          if (categoryName === "courses info") categoryName = "courses";
+          if (categoryName === "research labs") categoryName = "research";
+          if (categoryName === "hostels guide") categoryName = "hostels";
+          if (categoryName === "student clubs") categoryName = "clubs";
+          if (categoryName === "institute fests") categoryName = "fests";
+          if (categoryName === "placement stats") categoryName = "placements";
+          if (categoryName === "institute policies") categoryName = "policies";
+          if (categoryName === "academic calendar") categoryName = "calendar";
+
+          // 1-1 mapping: check if the pageCategory matches the categorySlug directly
+          if (categoryName === categorySlug) {
+            return true;
+          }
+
+          // Implement routing logic mapping DB categories back to frontend categories
+          if (categoryName === "academics") {
+            const title = (page.title || "").toLowerCase();
+            const slug = (page.slug || "").toLowerCase();
+            if (categorySlug === "faculty") {
+              return title.startsWith("prof.") || slug.includes("prof") || slug.includes("faculty");
+            }
+            if (categorySlug === "courses") {
+              return (
+                /^[a-z]{2,3}\s*\d{3}/i.test(title) ||
+                /^[a-z]{2,3}-\d{3}/i.test(slug) ||
+                title.includes(":")
+              );
+            }
+            if (categorySlug === "departments") {
+              return (
+                !title.startsWith("prof.") &&
+                !slug.includes("prof") &&
+                !slug.includes("faculty") &&
+                !/^[a-z]{2,3}\s*\d{3}/i.test(title) &&
+                !/^[a-z]{2,3}-\d{3}/i.test(slug) &&
+                !title.includes(":")
+              );
+            }
+          }
+
+          if (categoryName === "research") {
+            return categorySlug === "research";
+          }
+
+          if (categoryName === "campus") {
+            const title = (page.title || "").toLowerCase();
+            const slug = (page.slug || "").toLowerCase();
+            if (categorySlug === "hostels") {
+              return title.includes("hostel") || slug.includes("hostel");
+            }
+            if (categorySlug === "facilities") {
+              return !title.includes("hostel") && !slug.includes("hostel");
+            }
+          }
+
+          if (categoryName === "clubs") {
+            return categorySlug === "clubs";
+          }
+
+          if (categoryName === "fests") {
+            return categorySlug === "fests";
+          }
+
+          if (categoryName === "policies") {
+            const title = (page.title || "").toLowerCase();
+            const slug = (page.slug || "").toLowerCase();
+            if (categorySlug === "calendar") {
+              return title.includes("calendar") || title.includes("date") || slug.includes("calendar") || slug.includes("date");
+            }
+            if (categorySlug === "placements") {
+              return title.includes("placement") || slug.includes("placement");
+            }
+            if (categorySlug === "policies") {
+              return (
+                !title.includes("calendar") && !title.includes("date") && !slug.includes("calendar") && !slug.includes("date") &&
+                !title.includes("placement") && !slug.includes("placement")
+              );
+            }
+          }
+
+          // Fallback heuristic if categoryName is empty: guess from title or slug
+          if (!categoryName) {
+            const title = (page.title || "").toLowerCase();
+            const slug = (page.slug || "").toLowerCase();
+            
+            if (categorySlug === "faculty") {
+              return title.startsWith("prof.") || slug.includes("prof") || slug.includes("faculty");
+            }
+            if (categorySlug === "courses") {
+              return (
+                /^[a-z]{2,3}\s*\d{3}/i.test(title) ||
+                /^[a-z]{2,3}-\d{3}/i.test(slug) ||
+                title.includes(":")
+              );
+            }
+            if (categorySlug === "hostels") {
+              return title.includes("hostel") || slug.includes("hostel");
+            }
+            if (categorySlug === "facilities") {
+              return slug.includes("sports") || slug.includes("complex") || slug.includes("shop") || slug.includes("canteen") || slug.includes("center") || slug.includes("facility");
+            }
+            if (categorySlug === "clubs") {
+              return slug.includes("club") || title.includes("club");
+            }
+            if (categorySlug === "fests") {
+              return slug.includes("fest") || title.includes("fest") || slug.includes("amalthea") || slug.includes("blith");
+            }
+            if (categorySlug === "research") {
+              return slug.includes("research") || slug.includes("lab") || title.includes("laboratory");
+            }
+            if (categorySlug === "calendar") {
+              return title.includes("calendar") || title.includes("date") || slug.includes("calendar") || slug.includes("date");
+            }
+            if (categorySlug === "placements") {
+              return title.includes("placement") || slug.includes("placement");
+            }
+            if (categorySlug === "departments") {
+              return (
+                !title.startsWith("prof.") &&
+                !slug.includes("prof") &&
+                !slug.includes("faculty") &&
+                !/^[a-z]{2,3}\s*\d{3}/i.test(title) &&
+                !/^[a-z]{2,3}-\d{3}/i.test(slug) &&
+                !title.includes(":") &&
+                (slug.includes("department") || slug.includes("engineering") || title.includes("engineering"))
+              );
+            }
+          }
+
+          return false;
+        });
+
+        // Map to Article format
+        const mappedArticles: Article[] = filtered.map((page: any) => {
+          let snippet = "";
+          if (page.content) {
+            const clean = page.content.replace(/^---[\s\S]*?---/, "").trim();
+            snippet = clean.length > 150 ? clean.substring(0, 150) + "..." : clean;
+          }
+          return {
+            slug: page.slug,
+            title: page.title || "Untitled",
+            snippet,
+            content: page.content || "",
+          };
+        });
+
+        setArticles(mappedArticles);
+      } catch (err) {
+        console.error("Error loading category articles:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCategoryArticles();
+  }, [categorySlug]);
 
   if (!category) {
     return (
@@ -72,13 +277,17 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
             Articles in this Category
           </h2>
 
-          {category.articles.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+            </div>
+          ) : articles.length === 0 ? (
             <div className="p-8 text-center border border-dashed border-gray-200 rounded-2xl text-gray-400 text-sm">
               No articles are currently listed under this category.
             </div>
           ) : (
             <div className="flex flex-col md:flex-row gap-6 flex-wrap">
-              {category.articles.map((article) => (
+              {articles.map((article) => (
                 <div
                   key={article.slug}
                   className="flex-1 min-w-75 md:max-w-[48%] lg:max-w-[32%] flex flex-col justify-between p-6 bg-white border border-gray-150 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-blue-200 transition-all duration-300 group"
@@ -116,4 +325,4 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
       </div>
     </main>
   );
-}
+}

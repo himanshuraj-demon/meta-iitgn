@@ -93,7 +93,8 @@ export default function Navbar({
   const router = useRouter();
   const pathname = usePathname();
   const segments = pathname?.split("/").filter(Boolean) ?? [];
-  const isWiki = segments[0] === "wiki" && segments.length >= 3;
+  const isWiki = (segments[0] === "wiki" && segments.length >= 2) || segments[0] === "search-results";
+  const isWikiArticlePage = segments[0] === "wiki" && segments.length >= 3;
 
   const [searchQuery, setSearchQuery] = useState(externalQuery || "");
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -135,6 +136,9 @@ export default function Navbar({
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQuery.trim();
+    if (!q) {
+      return;
+    }
     if (setExternalQuery) {
       setExternalQuery(q);
     }
@@ -158,7 +162,7 @@ export default function Navbar({
                   router.push("/");
                 }
               }}
-              className="p-2 bg-slate-50/90 hover:bg-slate-100 border border-slate-200/80 rounded-lg text-slate-855 hover:text-black transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center shadow-xs"
+              className="p-2 text-slate-800 hover:text-black transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center"
               aria-label="Go Back"
             >
               <ArrowLeft className="h-5 w-5 text-slate-800 font-bold" />
@@ -209,7 +213,7 @@ export default function Navbar({
                 e.stopPropagation();
                 setDropdownOpen(!dropdownOpen);
               }}
-              className="flex items-center gap-2 bg-slate-50/90 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 py-1.5 px-3 rounded-full shadow-xs transition-all duration-200 cursor-pointer active:scale-97"
+              className="flex items-center gap-2 py-1.5 px-3 rounded-full transition-all duration-200 cursor-pointer active:scale-97"
             >
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-inner transition-colors duration-300 ${activeTierData.progressBar}`}
@@ -232,7 +236,7 @@ export default function Navbar({
             {/* Dropdown Menu */}
             {dropdownOpen && (
               <div
-                className={`absolute ${isWiki ? "-right-10" : "right-0"} top-12 mt-2 w-80 sm:w-88 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200`}
+                className={`absolute ${isWiki ? "-right-10" : "right-0"} top-12 mt-2 w-80 sm:w-88 bg-white rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200`}
               >
                 {/* Header info */}
                 <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
@@ -383,7 +387,7 @@ export default function Navbar({
           </div>
 
           {/* Kebab More Menu (Wiki Page Only) */}
-          {isWiki && (
+          {isWikiArticlePage && (
             <div className="relative flex items-center" ref={moreMenuRef}>
               <button
                 onClick={(e) => {

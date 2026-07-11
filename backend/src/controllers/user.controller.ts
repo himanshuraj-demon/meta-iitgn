@@ -27,3 +27,17 @@ export const createUser = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };
+
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const usersList = await prisma.users.findMany({
+      where: { deleted_at: null },
+      orderBy: { created_at: 'desc' },
+      take: 20,
+    });
+    return res.json(usersList);
+  } catch (error: any) {
+    console.error('Error in getUsers:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
