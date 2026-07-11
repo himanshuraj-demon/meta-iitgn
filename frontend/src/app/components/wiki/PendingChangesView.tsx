@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { apiService } from "../../../lib/api";
 
 interface PendingChangesViewProps {
   setShowPendingChanges: (show: boolean) => void;
@@ -34,14 +35,7 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
     setLoading(true);
     setError(null);
     try {
-      const url = pageId
-        ? `${apiBase}/drafts/pending?page_id=${pageId}`
-        : `${apiBase}/drafts/pending`;
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch pending drafts (status: ${response.status})`);
-      }
-      const data = await response.json();
+      const data = await apiService.getPendingDrafts(pageId);
       setDrafts(data);
     } catch (err: unknown) {
       console.error(err);
@@ -50,7 +44,7 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
     } finally {
       setLoading(false);
     }
-  }, [pageId, apiBase]);
+  }, [pageId]);
 
   useEffect(() => {
     fetchDrafts();
@@ -58,22 +52,11 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
 
   const handleReview = async (pendingId: number, action: "approve" | "reject") => {
     try {
-      const response = await fetch(`${apiBase}/drafts/${pendingId}/review`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          reviewer_id: 0, // Simulated current reviewer ID
-          action: action,
-          rejection_reason: action === "reject" ? "Rejected by reviewer/moderator." : undefined,
-        }),
+      await apiService.reviewDraft(pendingId, {
+        reviewer_id: 0, // Simulated current reviewer ID
+        action: action,
+        rejection_reason: action === "reject" ? "Rejected by reviewer/moderator." : undefined,
       });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.detail || `Failed to ${action} draft.`);
-      }
 
       alert(`Draft ${action === "approve" ? "approved and published" : "rejected"} successfully!`);
       

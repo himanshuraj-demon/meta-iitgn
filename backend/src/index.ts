@@ -1,0 +1,18 @@
+import { Router } from "express";
+
+import PageRouter from "./routes/pages.js"
+import DraftRouter from "./routes/drafts.js"
+import UserRouter from "./routes/user.js"
+
+const router = Router();
+
+// Users routes
+router.use("/users", UserRouter);
+
+// Pages routes
+router.use("/pages",PageRouter);
+
+// Drafts / Workflows routes
+router.use("/drafts",DraftRouter)
+
+export default router;

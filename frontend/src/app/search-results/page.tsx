@@ -3,6 +3,7 @@
 import { useState, Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { apiService } from "@/lib/api";
 import {
   Search,
   HelpCircle,

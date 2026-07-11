@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { parseMarkdown, stringifyMarkdown } from "@/lib/utils";
 import { InfoboxData } from "@/lib/types";
+import { apiService } from "@/lib/api";
 
 import { EditableCell } from "@/components/article/editable-cell";
 import { useRouter } from "next/navigation";
@@ -187,7 +188,8 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
       }
     } catch (error) {
       console.error("Error submitting draft to backend:", error);
-      alert("Error submitting draft to backend");
+      const detail = error.response?.data?.detail || error.response?.data?.error || "Unknown error";
+      alert(`Failed to submit draft: ${detail}`);
     }
     setIsEditing(false);
   };

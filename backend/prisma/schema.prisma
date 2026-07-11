@@ -1,0 +1,193 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum user_role {
+  Bronze
+  Silver
+  Gold
+  Platinum
+  Diamond
+  Stardust
+  Singularity
+}
+
+enum pending_status {
+  draft
+  in_review
+  approved
+  rejected
+}
+
+model users {
+  user_id                 Int                     @id @default(autoincrement())
+  name                    String
+  role                    user_role               @default(Bronze)
+  email                   String                  @unique
+  avatar_url              String?
+  is_banned               Boolean                 @default(false)
+  last_login_at           DateTime?
+  created_at              DateTime                @default(now())
+  updated_at              DateTime                @default(now()) @updatedAt
+  deleted_at              DateTime?
+
+  // Relations
+  live_pages_authored     live_pages[]            @relation("OriginalAuthor")
+  live_pages_updated      live_pages[]            @relation("Updater")
+  pending_pages_edited    pending_pages[]         @relation("Editor")
+  pending_pages_reviewed  pending_pages[]         @relation("Reviewer")
+  revision_pages_authored revision_pages[]        @relation("RevisionOriginalAuthor")
+  revision_pages_created  revision_pages[]        @relation("RevisionCreator")
+  pending_page_comments   pending_page_comments[]
+  media_assets            media_assets[]
+  bookmarks               bookmarks[]
+  audit_logs              audit_logs[]
+}
+
+model live_pages {
+  page_id            Int              @id @default(autoincrement())
+  title              String?
+  slug               String           @unique
+  content            String?
+  metadata           Json             @default("{}")
+  original_author_id Int
+  contributors       Json?
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @default(now()) @updatedAt
+  updated_by         Int?
+  deleted_at         DateTime?
+  version            Int?
+
+  // Relations
+  original_author    users            @relation("OriginalAuthor", fields: [original_author_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  updater            users?           @relation("Updater", fields: [updated_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+
+  pending_pages      pending_pages[]
+  revision_pages     revision_pages[]
+  bookmarks          bookmarks[]
+  incoming_links     page_links[]     @relation("TargetPage")
+  outgoing_links     page_links[]     @relation("SourcePage")
+
+  @@index([slug], name: "live_pages_index_0")
+}
+
+model pending_pages {
+  pending_id  Int                     @id @default(autoincrement())
+  page_id     Int?
+  title       String?
+  content     String?
+  metadata    Json                    @default("{}")
+  status      pending_status?
+  editor_id   Int
+  created_at  DateTime?               @default(now())
+  version     Int?
+  reviewer_id Int?
+
+  // Relations
+  editor      users                   @relation("Editor", fields: [editor_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  reviewer    users?                  @relation("Reviewer", fields: [reviewer_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  live_page   live_pages?             @relation(fields: [page_id], references: [page_id], onDelete: NoAction, onUpdate: NoAction)
+  comments    pending_page_comments[]
+
+  @@index([status], name: "pending_pages_index_0")
+}
+
+model pending_page_comments {
+  comment_id Int            @id @default(autoincrement())
+  pending_id Int
+  user_id    Int
+  content    String
+  created_at DateTime       @default(now())
+  updated_at DateTime       @default(now()) @updatedAt
+  deleted_at DateTime?
+
+  // Relations
+  pending    pending_pages  @relation(fields: [pending_id], references: [pending_id], onDelete: Cascade)
+  user       users          @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
+
+model revision_pages {
+  revision_id        Int        @id @default(autoincrement())
+  page_id            Int
+  created_by_user_id Int
+  commit_message     String?
+  title              String?
+  slug               String
+  content            String?
+  metadata           Json       @default("{}")
+  original_author_id Int
+  contributors       Json?
+  created_at         DateTime   @default(now())
+  updated_at         DateTime   @default(now()) @updatedAt
+  updated_by         Int?
+  deleted_at         DateTime?
+  version            Int?
+
+  // Relations
+  original_author    users      @relation("RevisionOriginalAuthor", fields: [original_author_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  creator            users      @relation("RevisionCreator", fields: [created_by_user_id], references: [user_id], onDelete: NoAction)
+  live_page          live_pages @relation(fields: [page_id], references: [page_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model media_assets {
+  media_id   Int       @id @default(autoincrement())
+  user_id    Int
+  file_url   String
+  file_type  String?
+  file_size  Int?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now()) @updatedAt
+  deleted_at DateTime?
+
+  // Relations
+  user       users     @relation(fields: [user_id], references: [user_id], onDelete: NoAction)
+}
+
+model bookmarks {
+  bookmark_id Int        @id @default(autoincrement())
+  user_id     Int
+  page_id     Int
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @default(now()) @updatedAt
+
+  // Relations
+  user        users      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  live_page   live_pages @relation(fields: [page_id], references: [page_id], onDelete: Cascade)
+
+  @@unique([user_id, page_id], name: "unique_user_bookmark")
+}
+
+model page_links {
+  link_id        Int        @id @default(autoincrement())
+  source_page_id Int
+  target_page_id Int
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @default(now()) @updatedAt
+
+  // Relations
+  source_page    live_pages @relation("SourcePage", fields: [source_page_id], references: [page_id], onDelete: Cascade)
+  target_page    live_pages @relation("TargetPage", fields: [target_page_id], references: [page_id], onDelete: Cascade)
+
+  @@unique([source_page_id, target_page_id], name: "unique_page_link")
+}
+
+model audit_logs {
+  log_id     Int      @id @default(autoincrement())
+  actor_id   Int
+  action     String
+  table_name String
+  record_id  Int
+  ip_address String?
+  created_at DateTime @default(now())
+
+  // Relations
+  actor      users    @relation(fields: [actor_id], references: [user_id], onDelete: NoAction)
+
+  @@index([actor_id], name: "idx_audit_actor")
+  @@index([table_name, record_id], name: "idx_audit_target")
+}
