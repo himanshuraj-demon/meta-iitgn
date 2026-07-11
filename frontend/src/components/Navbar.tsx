@@ -159,7 +159,7 @@ export default function Navbar({
 
           {/* Dropdown Menu */}
           {dropdownOpen && (
-            <div className="absolute right-0 top-12 mt-2 w-80 sm:w-88 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute -right-10 top-12 mt-2 w-80 sm:w-88 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               {/* Header info */}
               <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
                 <div
