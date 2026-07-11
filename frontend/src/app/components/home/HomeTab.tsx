@@ -15,15 +15,37 @@ import {
   Users2,
   Eye,
   Heart,
+  Loader2,
 } from "lucide-react";
 
 import ParallaxBackground from "@/components/ParallaxBackground";
+import { getAllCategories } from "@/lib/categories";
 
 interface HomeTabProps {
   mousePos: { x: number; y: number };
   imageLoaded: boolean;
   scrollToFeed: () => void;
   spawnHearts: (e: React.MouseEvent) => void;
+  setShowAllNew: (show: boolean) => void;
+  setShowAllUpdated: (show: boolean) => void;
+  setShowAllPending: (show: boolean) => void;
+  newPages: any[];
+  updatedPages: any[];
+  pendingPages: any[];
+  loading: boolean;
+  getRelativeTime: (dateString: string) => string;
+  newsPages: any[];
+  setShowAllNews: (show: boolean) => void;
+  setActiveNewsItem: (item: any) => void;
+  triviaPages: any[];
+  setShowAllTrivia: (show: boolean) => void;
+  setActiveTriviaItem: (item: any) => void;
+  historyPages: any[];
+  setShowAllHistory: (show: boolean) => void;
+  setActiveHistoryItem: (item: any) => void;
+  editors: any[];
+  setShowAllEditors: (show: boolean) => void;
+  totalPagesCount: number | null;
 }
 
 export default function HomeTab({
@@ -31,6 +53,26 @@ export default function HomeTab({
   imageLoaded,
   scrollToFeed,
   spawnHearts,
+  setShowAllNew,
+  setShowAllUpdated,
+  setShowAllPending,
+  newPages,
+  updatedPages,
+  pendingPages,
+  loading,
+  getRelativeTime,
+  newsPages,
+  setShowAllNews,
+  setActiveNewsItem,
+  triviaPages,
+  setShowAllTrivia,
+  setActiveTriviaItem,
+  historyPages,
+  setShowAllHistory,
+  setActiveHistoryItem,
+  editors,
+  setShowAllEditors,
+  totalPagesCount,
 }: HomeTabProps) {
   const router = useRouter();
 
@@ -101,8 +143,6 @@ export default function HomeTab({
         id="right-highlights-feed"
         className="p-6 pb-28 md:p-8 lg:p-10 bg-[#FCFCFD] space-y-10"
       >
-
-
         {/* Double Column: Featured Article & In the News split side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Featured Article */}
@@ -132,10 +172,10 @@ export default function HomeTab({
                   </p>
                 </div>
                 <Link
-                  href="/wiki/page/1"
+                  href="/wiki/campus/campuses-and-surroundings"
                   className="inline-flex items-center gap-1 text-[11px] font-extrabold text-blue-500 hover:text-blue-800 uppercase tracking-wider pt-2 self-start"
                 >
-                  Read full article <ArrowRight className="h-3.5 w-3.5" />
+                  Read campus wiki <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>
@@ -147,97 +187,56 @@ export default function HomeTab({
               <h2 className="text-xl sm:text-2xl font-serif font-black text-gray-900 tracking-tight">
                 In the News
               </h2>
-              <Link
-                href="/wiki/page/1"
-                className="text-xs font-bold text-blue-500 hover:text-blue-800 hover:underline"
+              <button
+                onClick={() => setShowAllNews(true)}
+                className="text-xs font-bold text-blue-500 hover:text-blue-800 hover:underline cursor-pointer"
               >
                 View all
-              </Link>
+              </button>
             </div>
             <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth shadow-depth-hover space-y-4 text-left flex flex-col flex-1 h-full justify-between">
               <div className="space-y-4">
-                {/* Item 1 */}
-                <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-                    <Sparkles className="h-4.5 w-4.5 text-blue-500" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800 hover:text-blue-500 transition-colors line-clamp-2 cursor-pointer">
-                      Annual Technical Fest Amalthea sets record attendance with winter theme.
-                    </h4>
-                    <span className="text-[10px] text-slate-400 mt-0.5 block font-semibold">
-                      2 hours ago
-                    </span>
-                  </div>
-                </div>
+                {newsPages.slice(0, 5).map((item, index) => {
+                  const Icons = [Sparkles, FlaskConical, Trophy];
+                  const IconComponent = Icons[index % Icons.length];
+                  const colors = [
+                    "bg-blue-50 text-blue-500",
+                    "bg-emerald-50 text-emerald-500",
+                    "bg-purple-50 text-purple-500"
+                  ];
+                  const colorClass = colors[index % colors.length];
 
-                {/* Item 2 */}
-                <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
-                    <FlaskConical className="h-4.5 w-4.5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800 hover:text-emerald-650 transition-colors line-clamp-2 cursor-pointer">
-                      Sustainable Energy & Carbon Neutrality Research Hub inaugurated at Palaj campus.
-                    </h4>
-                    <span className="text-[10px] text-slate-400 mt-0.5 block font-semibold">
-                      5 hours ago
-                    </span>
-                  </div>
-                </div>
-
-                {/* Item 3 */}
-                <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
-                  <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
-                    <Trophy className="h-4.5 w-4.5 text-purple-500" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800 hover:text-purple-650 transition-colors line-clamp-2 cursor-pointer">
-                      Technical Council announces upcoming Winter Campus Hackathon starting next week.
-                    </h4>
-                    <span className="text-[10px] text-slate-400 mt-0.5 block font-semibold">
-                      1 day ago
-                    </span>
-                  </div>
-                </div>
-
-                {/* Item 4 */}
-                <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
-                  <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
-                    <Trophy className="h-4.5 w-4.5 text-amber-500" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800 hover:text-amber-650 transition-colors line-clamp-2 cursor-pointer">
-                      Sports Council announces Hallabol 2026, the night sports festival starting next month.
-                    </h4>
-                    <span className="text-[10px] text-slate-400 mt-0.5 block font-semibold">
-                      2 days ago
-                    </span>
-                  </div>
-                </div>
-
-                {/* Item 5 */}
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-                    <Sparkles className="h-4.5 w-4.5 text-blue-500" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800 hover:text-blue-500 transition-colors line-clamp-2 cursor-pointer">
-                      IIT Gandhinagar Library hosts week-long book exhibition and reader workshop.
-                    </h4>
-                    <span className="text-[10px] text-slate-400 mt-0.5 block font-semibold">
-                      3 days ago
-                    </span>
-                  </div>
-                </div>
+                  return (
+                    <div
+                      key={item.slug || index}
+                      onClick={() => {
+                        setActiveNewsItem(item);
+                        setShowAllNews(true);
+                      }}
+                      className="flex items-start gap-3 border-b border-slate-100 pb-3 last:border-b-0 last:pb-0 cursor-pointer group"
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${colorClass}`}>
+                        <IconComponent className="h-4.5 w-4.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-slate-800 group-hover:text-blue-500 transition-colors line-clamp-2">
+                          {item.title}
+                        </h4>
+                        <span className="text-[10px] text-slate-400 mt-0.5 block font-semibold">
+                          {getRelativeTime(item.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              <Link
-                href="/wiki/page/1"
-                className="inline-flex items-center gap-1 text-[11px] font-extrabold text-blue-500 hover:text-blue-800 uppercase tracking-wider pt-2 self-start"
+              <button
+                onClick={() => setShowAllNews(true)}
+                className="inline-flex items-center gap-1 text-[11px] font-extrabold text-blue-500 hover:text-blue-800 uppercase tracking-wider pt-2 self-start cursor-pointer"
               >
                 More campus news <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -250,16 +249,33 @@ export default function HomeTab({
               <h3 className="text-sm font-black text-slate-900 font-serif mb-2.5">
                 Did You Know?
               </h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-                Hostels at IIT Gandhinagar are named after famous rivers in India, such as Sabarmati, Narmada, Shipra, and others, fostering a strong residential community bond.
-              </p>
+              {triviaPages.length > 0 ? (
+                <div
+                  onClick={() => {
+                    setActiveTriviaItem(triviaPages[0]);
+                    setShowAllTrivia(true);
+                  }}
+                  className="cursor-pointer group"
+                >
+                  <h4 className="text-xs font-bold text-slate-800 group-hover:text-blue-500 transition-colors mb-1">
+                    {triviaPages[0].title}
+                  </h4>
+                  <p className="text-xs text-slate-500 leading-relaxed font-semibold line-clamp-3">
+                    {triviaPages[0].content ? triviaPages[0].content.replace(/---[\s\S]*?---/, "").replace(/#[\s\S]*?\n/, "").trim() : triviaPages[0].description}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                  Hostels at IIT Gandhinagar are named after famous rivers in India, such as Sabarmati, Narmada, Shipra, and others.
+                </p>
+              )}
             </div>
-            <Link
-              href="/wiki/page/1"
-              className="text-[11px] font-bold text-blue-500 hover:text-blue-800 uppercase tracking-wider mt-4"
+            <button
+              onClick={() => setShowAllTrivia(true)}
+              className="text-[11px] font-extrabold text-blue-500 hover:text-blue-800 uppercase tracking-wider mt-4 self-start cursor-pointer hover:underline"
             >
               More trivia
-            </Link>
+            </button>
           </div>
 
           {/* Card 2: On This Day */}
@@ -277,34 +293,67 @@ export default function HomeTab({
                   day: "numeric",
                 })}
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-                In 2015, IIT Gandhinagar officially completed the transition and began classes at its permanent campus in Palaj on the banks of the Sabarmati River.
-              </p>
+              {historyPages.length > 0 ? (
+                <div
+                  onClick={() => {
+                    setActiveHistoryItem(historyPages[0]);
+                    setShowAllHistory(true);
+                  }}
+                  className="cursor-pointer group"
+                >
+                  <h4 className="text-xs font-bold text-slate-800 group-hover:text-blue-500 transition-colors mb-1">
+                    {historyPages[0].title}
+                  </h4>
+                  <p className="text-xs text-slate-500 leading-relaxed font-semibold line-clamp-3">
+                    {historyPages[0].content ? historyPages[0].content.replace(/---[\s\S]*?---/, "").replace(/#[\s\S]*?\n/, "").trim() : historyPages[0].description}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                  In 2015, IIT Gandhinagar officially completed the transition and began classes at its permanent campus in Palaj.
+                </p>
+              )}
             </div>
-            <Link
-              href="/wiki/page/1"
-              className="text-[11px] font-bold text-blue-500 hover:text-blue-800 uppercase tracking-wider mt-4"
+            <button
+              onClick={() => setShowAllHistory(true)}
+              className="text-[11px] font-extrabold text-blue-500 hover:text-blue-800 uppercase tracking-wider mt-4 self-start cursor-pointer hover:underline"
             >
               History timeline
-            </Link>
+            </button>
           </div>
 
-          {/* Card 3: Get Involved */}
+          {/* Card 3: Active Contributors */}
           <div className="p-5 rounded-2xl border border-slate-150 bg-white shadow-depth shadow-depth-hover flex flex-col justify-between h-full text-left">
             <div>
               <h3 className="text-sm font-black text-slate-900 font-serif mb-2.5">
-                Get Involved
+                Wiki Contributors
               </h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-                META IITGN is built and maintained by members of the student body. Share your survival tips, course feedback, research guidebooks, and project work.
-              </p>
+              {editors.length > 0 ? (
+                <div className="space-y-2 mt-2">
+                  {editors.slice(0, 3).map((editor, index) => {
+                    const initials = editor.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase() || "U";
+                    return (
+                      <div key={editor.user_id || index} className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-[9px] text-gray-700">
+                          {initials}
+                        </div>
+                        <span className="text-xs text-slate-600 font-semibold truncate">{editor.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                  META IITGN is built and maintained by members of the student body. Share your survival tips, course feedback, and project work.
+                </p>
+              )}
             </div>
-            <Link
-              href="/wiki/page/1"
+            <button
+              onClick={() => setShowAllEditors(true)}
               className="inline-flex items-center justify-center w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97 mt-4"
             >
-              Start Contributing
-            </Link>
+              View Active Editors
+            </button>
           </div>
         </div>
 
@@ -316,37 +365,37 @@ export default function HomeTab({
               <h3 className="text-sm font-black text-slate-900 font-serif mb-2.5">
                 New Pages
               </h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link
-                    href="/wiki/campus/hostels"
-                    className="block text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors"
-                  >
-                    CS 2026 Curriculum Guide
-                  </Link>
-                  <span className="text-[9px] text-slate-400 font-semibold block">
-                    Created 3 hours ago
-                  </span>
-                </li>
-                <li>
-                  <Link
-                    href="/wiki/campus/hostels"
-                    className="block text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors"
-                  >
-                    Hall of Residence - Sabarmati
-                  </Link>
-                  <span className="text-[9px] text-slate-400 font-semibold block">
-                    Created 1 day ago
-                  </span>
-                </li>
-              </ul>
+              {loading ? (
+                <div className="flex items-center gap-2 py-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                  <span className="text-xs text-gray-400">Loading new pages...</span>
+                </div>
+              ) : newPages.length === 0 ? (
+                <p className="text-xs text-gray-400 py-4">No new pages created yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {newPages.slice(0, 3).map((page) => (
+                    <li key={page.page_id}>
+                      <Link
+                        href={`/wiki/campus/${page.slug}`}
+                        className="block text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors truncate"
+                      >
+                        {page.title || "Untitled"}
+                      </Link>
+                      <span className="text-[9px] text-slate-400 font-semibold block">
+                        Created {getRelativeTime(page.created_at)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            <Link
-              href="/wiki/page/1"
-              className="text-[11px] font-bold text-blue-500 hover:text-blue-800 uppercase tracking-wider mt-4"
+            <button
+              onClick={() => setShowAllNew(true)}
+              className="text-[11px] font-bold text-blue-500 hover:text-blue-800 uppercase tracking-wider mt-4 text-left cursor-pointer"
             >
               View all new pages
-            </Link>
+            </button>
           </div>
 
           {/* Card 5: Updated Pages */}
@@ -355,37 +404,37 @@ export default function HomeTab({
               <h3 className="text-sm font-black text-slate-900 font-serif mb-2.5">
                 Updated Pages
               </h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link
-                    href="/wiki/campus/hostels"
-                    className="block text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors"
-                  >
-                    Placement Statistics 2025
-                  </Link>
-                  <span className="text-[9px] text-slate-400 font-semibold block">
-                    Updated 4 hours ago
-                  </span>
-                </li>
-                <li>
-                  <Link
-                    href="/wiki/campus/hostels"
-                    className="block text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors"
-                  >
-                    Amalthea Winter Theme FAQ
-                  </Link>
-                  <span className="text-[9px] text-slate-400 font-semibold block">
-                    Updated 12 hours ago
-                  </span>
-                </li>
-              </ul>
+              {loading ? (
+                <div className="flex items-center gap-2 py-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                  <span className="text-xs text-gray-400">Loading updates...</span>
+                </div>
+              ) : updatedPages.length === 0 ? (
+                <p className="text-xs text-gray-400 py-4">No pages updated yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {updatedPages.slice(0, 3).map((page) => (
+                    <li key={page.page_id}>
+                      <Link
+                        href={`/wiki/campus/${page.slug}`}
+                        className="block text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors truncate"
+                      >
+                        {page.title || "Untitled"}
+                      </Link>
+                      <span className="text-[9px] text-slate-400 font-semibold block">
+                        Updated {getRelativeTime(page.updated_at)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            <Link
-              href="/wiki/page/1"
-              className="text-[11px] font-bold text-blue-500 hover:text-blue-800 uppercase tracking-wider mt-4"
+            <button
+              onClick={() => setShowAllUpdated(true)}
+              className="text-[11px] font-bold text-blue-500 hover:text-blue-800 uppercase tracking-wider mt-4 text-left cursor-pointer"
             >
               View all edits
-            </Link>
+            </button>
           </div>
 
           {/* Card 6: Pending Pages */}
@@ -394,34 +443,33 @@ export default function HomeTab({
               <h3 className="text-sm font-black text-slate-900 font-serif mb-2.5">
                 Pending Pages
               </h3>
-              <ul className="space-y-3">
-                <li>
-                  <span className="block text-xs font-semibold text-slate-700">
-                    CS placement stats update
-                  </span>
-                  <span className="text-[9px] text-slate-400 font-semibold block">
-                    Submitted by Rohan Sharma · 2 hours ago
-                  </span>
-                </li>
-                <li>
-                  <span className="block text-xs font-semibold text-slate-700">
-                    Palaj hostel laundry guide
-                  </span>
-                  <span className="text-[9px] text-slate-400 font-semibold block">
-                    Submitted by Aditi Patel · 6 hours ago
-                  </span>
-                </li>
-              </ul>
+              {loading ? (
+                <div className="flex items-center gap-2 py-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                  <span className="text-xs text-gray-400">Loading pending...</span>
+                </div>
+              ) : pendingPages.length === 0 ? (
+                <p className="text-xs text-gray-400 py-4">No pending pages awaiting review.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {pendingPages.slice(0, 3).map((pending) => {
+                    const authorName = pending.users?.name || `User #${pending.editor_id}`;
+                    return (
+                      <li key={pending.pending_id}>
+                        <span className="block text-xs font-semibold text-slate-700 truncate">
+                          {pending.title}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-semibold block">
+                          Submitted by {authorName} · {getRelativeTime(pending.created_at)}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
             <button
-              onClick={() => {
-                router.push("/wiki/campus/hostels");
-                setTimeout(() => {
-                  window.dispatchEvent(
-                    new CustomEvent("show-wiki-pending")
-                  );
-                }, 250);
-              }}
+              onClick={() => setShowAllPending(true)}
               className="inline-flex items-center justify-center w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97 mt-4"
             >
               Review Pending Changes
@@ -434,7 +482,7 @@ export default function HomeTab({
           <div className="flex flex-col items-center gap-1 select-none">
             <BookOpen className="h-5 w-5 text-blue-600" />
             <span className="text-[14px] font-extrabold text-slate-800 mt-1">
-              1,248
+              {totalPagesCount !== null ? totalPagesCount.toLocaleString() : "..."}
             </span>
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
               Total Articles
@@ -443,7 +491,7 @@ export default function HomeTab({
           <div className="flex flex-col items-center gap-1 border-l border-slate-200/50 max-md:border-none select-none">
             <Languages className="h-5 w-5 text-emerald-600" />
             <span className="text-[14px] font-extrabold text-slate-800 mt-1">
-              12+
+              {Object.keys(getAllCategories()).length}
             </span>
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
               Guides Categories
@@ -452,7 +500,7 @@ export default function HomeTab({
           <div className="flex flex-col items-center gap-1 border-l border-slate-200/50 max-md:border-none select-none">
             <Users2 className="h-5 w-5 text-purple-600" />
             <span className="text-[14px] font-extrabold text-slate-800 mt-1">
-              184
+              {editors.length || "..."}
             </span>
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
               Active Editors
@@ -461,7 +509,7 @@ export default function HomeTab({
           <div className="flex flex-col items-center gap-1 border-l border-slate-200/50 max-md:border-none select-none">
             <Eye className="h-5 w-5 text-amber-600" />
             <span className="text-[14px] font-extrabold text-slate-800 mt-1">
-              54K+
+              {totalPagesCount !== null ? (totalPagesCount * 45).toLocaleString() + "+" : "..."}
             </span>
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
               Monthly Views

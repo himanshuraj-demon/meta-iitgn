@@ -33,20 +33,26 @@ Write your content here...`;
   }
 
   let pageContent = "Failed to load content.";
+  let dbPageId: number | undefined = undefined;
+  let version: number | undefined = undefined;
   let found = false;
+  let initialMetadata: any = undefined;
 
   try {
     // Runs on the server automatically inside a Server Component —
     // no "use server" directive needed for a plain data fetch.
     const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://meta-iitgn-vercel.onrender.com";
     const response = await fetch(
-      `${apiBase}/pages/${slug}`,
+      `${apiBase}/api/pages/${slug}`,
       { cache: "no-store" }
     );
 
     if (response.ok) {
       const data = await response.json();
       pageContent = data.content;
+      dbPageId = data.page_id;
+      version = data.version;
+      initialMetadata = data.metadata || {};
       found = true;
     }
   } catch (error) {
@@ -77,5 +83,12 @@ Write your content here...`;
     );
   }
 
-  return <WikiClient initialMarkdown={pageContent} />;
+  return (
+    <WikiClient
+      initialMarkdown={pageContent}
+      dbPageId={dbPageId}
+      version={version}
+      initialMetadata={initialMetadata}
+    />
+  );
 }

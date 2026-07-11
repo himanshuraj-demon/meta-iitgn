@@ -33,7 +33,7 @@ fs.unlinkSync('./extract_temp.js');
         os.remove('extract.js')
         
     # 2. Iterate and call API
-    api_url = "http://127.0.0.1:8000"
+    api_url = "http://127.0.0.1:3001"
     
     category_map = {
         "departments": "Academics",

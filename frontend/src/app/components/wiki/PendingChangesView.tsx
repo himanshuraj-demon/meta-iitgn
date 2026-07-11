@@ -60,8 +60,15 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
 
       alert(`Draft ${action === "approve" ? "approved and published" : "rejected"} successfully!`);
       
-      // Update state by removing the processed draft
-      setDrafts((prev) => prev.filter((d) => d.pending_id !== pendingId));
+      // Update state status
+      setDrafts((prev) =>
+        prev.map((d) =>
+          d.pending_id === pendingId
+            ? { ...d, status: action === "approve" ? "approved" : "rejected" }
+            : d
+        )
+      );
+      window.dispatchEvent(new CustomEvent("wiki-pending-updated"));
     } catch (err: unknown) {
       console.error(err);
       const errMsg = err instanceof Error ? err.message : `Error processing review`;
@@ -152,22 +159,39 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
                                 v{pending.version}
                               </span>
                             )}
+                            {pending.status === "approved" && (
+                              <span className="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Approved
+                              </span>
+                            )}
+                            {pending.status === "rejected" && (
+                              <span className="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                Rejected
+                              </span>
+                            )}
+                            {pending.status === "in_review" && (
+                              <span className="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                Pending Review
+                              </span>
+                            )}
                           </div>
 
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => handleReview(pending.pending_id, "approve")}
-                              className="text-xs font-extrabold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer duration-150"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleReview(pending.pending_id, "reject")}
-                              className="text-xs font-extrabold text-rose-600 hover:text-rose-700 transition-colors cursor-pointer duration-150"
-                            >
-                              Reject
-                            </button>
-                          </div>
+                          {pending.status === "in_review" && (
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => handleReview(pending.pending_id, "approve")}
+                                className="text-xs font-extrabold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer duration-150"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleReview(pending.pending_id, "reject")}
+                                className="text-xs font-extrabold text-rose-600 hover:text-rose-700 transition-colors cursor-pointer duration-150"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

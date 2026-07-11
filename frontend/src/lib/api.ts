@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const apiBase = `${process.env.NEXT_PUBLIC_API_URL}/api` || 'http://localhost:3001/api';
+const apiBase = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api` : 'http://localhost:3001/api';
 
 export const api = axios.create({
   baseURL: apiBase,
@@ -36,6 +36,10 @@ export const apiService = {
     const response = await api.post('/users', data);
     return response.data;
   },
+  getUsers: async () => {
+    const response = await api.get('/users');
+    return response.data;
+  },
 
   // Pages
   getRecentNewPages: async (limit = 5) => {
@@ -55,6 +59,11 @@ export const apiService = {
 
   getPage: async (slug: string) => {
     const response = await api.get(`/pages/${slug}`);
+    return response.data;
+  },
+
+  getPageStats: async () => {
+    const response = await api.get('/pages/stats');
     return response.data;
   },
 

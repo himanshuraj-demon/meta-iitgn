@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { apiService } from "@/lib/api";
 import {
   Menu,
   Heart,
@@ -57,6 +58,22 @@ export default function LeftPanel({
   setActiveTab,
   spawnHearts,
 }: LeftPanelProps) {
+  const [pageCount, setPageCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const stats = await apiService.getPageStats();
+        if (stats && typeof stats.totalPages === "number") {
+          setPageCount(stats.totalPages);
+        }
+      } catch (err) {
+        console.error("Failed to load page stats count:", err);
+      }
+    }
+    loadStats();
+  }, []);
+
   const renderPortalIcon = (
     iconName: string,
     colorTheme: { bg: string; icon: string }
@@ -124,7 +141,7 @@ export default function LeftPanel({
             </Link>
             <div className="mt-4">
               <span className="block text-2xl font-serif font-black text-slate-900 tracking-tight">
-                1,248
+                {pageCount !== null ? pageCount.toLocaleString() : "..."}
               </span>
               <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest">
                 Articles & Campus Pages

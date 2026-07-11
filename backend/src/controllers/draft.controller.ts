@@ -9,9 +9,10 @@ import { prisma } from '../lib/prisma.js';
  */
 export const submitDraft = async (req: Request, res: Response) => {
   try {
+    console.log('Received submitDraft request body:', req.body);
     const { page_id, title, content, metadata, editor_id, base_version } = req.body;
 
-    if (!title || !editor_id) {
+    if (!title || editor_id === undefined || editor_id === null) {
       return res.status(400).json({ error: 'Title and editor_id are required' });
     }
 
@@ -46,7 +47,6 @@ export const listPendingDrafts = async (req: Request, res: Response) => {
 
     const drafts = await prisma.pending_pages.findMany({
       where: {
-        status: 'in_review',
         page_id: page_id !== undefined ? page_id : undefined,
       },
       include: {
@@ -55,7 +55,7 @@ export const listPendingDrafts = async (req: Request, res: Response) => {
         },
       },
       orderBy: {
-        created_at: 'asc',
+        created_at: 'desc',
       },
     });
 
@@ -81,7 +81,7 @@ export const reviewDraft = async (req: Request, res: Response) => {
     const pending_id = parseInt(req.params.pending_id as string, 10);
     const { reviewer_id, action } = req.body;
 
-    if (!reviewer_id || !action) {
+    if (reviewer_id === undefined || reviewer_id === null || !action) {
       return res.status(400).json({ error: 'reviewer_id and action are required' });
     }
 

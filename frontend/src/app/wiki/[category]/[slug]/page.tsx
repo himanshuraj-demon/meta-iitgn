@@ -1,6 +1,7 @@
 import { CATEGORIES_DATA } from "@/lib/placeholder-articles";
 import WikiClient from "../../../wiki-client";
 import Link from "next/link";
+import { apiService } from "@/lib/api";
 
 interface ArticlePageProps {
   params: Promise<{
@@ -15,12 +16,13 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const categoryInfo = CATEGORIES_DATA[category];
 
   if (slug === "new") {
+    const displayCategoryName = categoryInfo ? categoryInfo.name : (category.charAt(0).toUpperCase() + category.slice(1));
     const template = `---
 image: https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600
 imageAlt: New Article
 rows:
   - label: Category
-    value: Untitled
+    value: ${displayCategoryName}
     type: text
   - label: Status
     value: Draft
@@ -31,12 +33,30 @@ rows:
 
 Write your content here...`;
 
-    return <WikiClient initialMarkdown={template} defaultEditing={true} />;
+    return <WikiClient initialMarkdown={template} defaultEditing={true} categorySlug={category} />;
   }
 
   const article = categoryInfo?.articles.find((a) => a.slug === slug);
+  let articleContent = article?.content;
+  let dbPageId: number | undefined = undefined;
+  let version: number | undefined = undefined;
+  let initialMetadata: any = undefined;
 
-  if (!article) {
+  if (!articleContent) {
+    try {
+      const dbArticle = await apiService.getPage(slug);
+      if (dbArticle) {
+        articleContent = dbArticle.content;
+        dbPageId = dbArticle.page_id;
+        version = dbArticle.version;
+        initialMetadata = dbArticle.metadata;
+      }
+    } catch (e) {
+      console.warn("Could not find article in db:", slug, e);
+    }
+  }
+
+  if (!articleContent) {
     return (
       <main className="flex-1 p-6 md:p-8 lg:p-12 bg-[#FCFCFD]">
         <div className="max-w-4xl mx-auto text-center py-20">
@@ -53,5 +73,13 @@ Write your content here...`;
     );
   }
 
-  return <WikiClient initialMarkdown={article.content} />;
+  return (
+    <WikiClient
+      initialMarkdown={articleContent}
+      dbPageId={dbPageId}
+      version={version}
+      categorySlug={category}
+      initialMetadata={initialMetadata}
+    />
+  );
 }

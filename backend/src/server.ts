@@ -38,6 +38,7 @@ if (process.env.NODE_ENV === 'development') {
 
 
 app.use("/api", routes);
+app.use("/", routes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

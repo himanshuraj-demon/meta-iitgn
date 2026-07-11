@@ -32,7 +32,7 @@ export default function WikiLayout({ children }: { children: React.ReactNode }) 
     <div className="relative h-screen w-screen bg-white overflow-hidden font-sans">
       {/* Top Header Bar - Overlayed */}
       {!hideNavbar && (
-        <div className="z-45 fixed top-0 left-0 right-0 transition-transform duration-300 ease-in-out">
+        <div className="z-[10010] fixed top-0 left-0 right-0 transition-transform duration-300 ease-in-out">
           <Navbar 
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
             currentTier={currentTier}

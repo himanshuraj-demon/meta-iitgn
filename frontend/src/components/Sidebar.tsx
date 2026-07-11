@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -62,6 +63,27 @@ export default function Sidebar({
   currentTier,
 }: SidebarProps) {
   const pathname = usePathname();
+  const [maxItems, setMaxItems] = useState(5);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const height = window.innerHeight;
+      if (height < 650) {
+        setMaxItems(1);
+      } else if (height < 720) {
+        setMaxItems(2);
+      } else if (height < 820) {
+        setMaxItems(3);
+      } else if (height < 920) {
+        setMaxItems(4);
+      } else {
+        setMaxItems(5);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const user: userType = {
     name: "Meta IITGN",
@@ -104,71 +126,12 @@ export default function Sidebar({
             : "w-0 -translate-x-full lg:border-r-0"
         }`}
       >
-        {/* Brand Header */}
-        <div className="flex justify-between items-center px-4 py-4 border-b border-gray-100 shrink-0">
-          <Link
-            href="/"
-            onClick={() => {
-              if (window.innerWidth < 1024) onClose();
-            }}
-            className="flex items-center gap-2 select-none cursor-pointer group"
-          >
-            <span className="font-serif text-2xl font-extrabold tracking-tight text-blue-500">
-              META
-            </span>
-            <span className="ml-1 text-sm font-semibold uppercase tracking-wider text-gray-500">
-              IITGN
-            </span>
-          </Link>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg text-gray-450  hover:text-gray-700 transition-colors duration-200 cursor-pointer active:scale-95"
-            aria-label="Close Sidebar"
-          >
-            <X className="h-6 w-6 text-black" />
-          </button>
-        </div>
 
-        {/* User Profile Card */}
-        {/* Use user.name and user.email and user.picture here after implemting user auth */}
-        <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/30 shrink-0">
-          {user ? (
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-inner transition-colors duration-300 shrink-0 ${activeTierData.progressBar}`}
-              >
-                {user?.image}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold text-gray-800 truncate">
-                  {user?.name}
-                </h4>
-                <p className="text-[11px] text-gray-400 truncate">
-                  {user?.email}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-inner transition-colors duration-300 shrink-0 ${activeTierData.progressBar}`}
-              >
-                G
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold text-gray-800 truncate">
-                  Guest
-                </h4>
-                <p className="text-[11px] text-gray-400 truncate">
-                  guest@iitgn.ac.in
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+
+
 
         {/* Navigation list area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin">
+        <div className="flex-1 overflow-hidden p-4 space-y-6">
           {SIDEBAR_SECTIONS.map((section) => (
             <div key={section.title} className="space-y-1.5">
               {/* Section Header */}
@@ -178,7 +141,7 @@ export default function Sidebar({
 
               {/* Section Items */}
               <div className="space-y-0.5">
-                {section.items.map((item) => {
+                {(section.title === "NAVIGATION" ? section.items : section.items.slice(0, maxItems)).map((item) => {
                   const isActive = pathname === item.path;
 
                   return (
@@ -341,16 +304,6 @@ export default function Sidebar({
               </div>
             </>
           )}
-        </div>
-
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0">
-          <p className="text-[10px] font-semibold text-gray-400">
-            © {new Date().getFullYear()} IIT Gandhinagar
-          </p>
-          <p className="text-[10px] text-gray-400 mt-0.5">
-            Community maintained
-          </p>
         </div>
       </aside>
     </>

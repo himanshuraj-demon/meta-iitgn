@@ -70,12 +70,8 @@ function SearchResultsContent() {
     const fetchResults = async () => {
       setLoading(true);
       try {
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://meta-iitgn-vercel.onrender.com";
-        const res = await fetch(`${apiBase}/pages/search?query=${encodeURIComponent(queryParam)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setResults(data);
-        }
+        const data = await apiService.searchPages(queryParam);
+        setResults(data);
       } catch (err) {
         console.error("Failed to fetch search results:", err);
       } finally {
@@ -93,8 +89,12 @@ function SearchResultsContent() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) {
+      return;
+    }
     router.push(
-      `/search-results?query=${encodeURIComponent(searchQuery.trim())}&category=${category}`
+      `/search-results?query=${encodeURIComponent(q)}&category=${category}`
     );
   };
 
@@ -188,7 +188,7 @@ function SearchResultsContent() {
                     };
                     return (
                       <Link
-                        key={item.title}
+                        key={item.path}
                         href={item.path}
                         className="p-5 bg-white border border-slate-150 hover:border-blue-200 rounded-2xl flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,0,0,0.03)] group text-left cursor-pointer"
                       >
@@ -224,16 +224,7 @@ function SearchResultsContent() {
               )}
             </div>
 
-            {/* Back Button */}
-            <div className="pt-6 flex justify-start select-none">
-              <Link
-                href="/"
-                className="flex items-center gap-2 px-4.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-97"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Dashboard
-              </Link>
-            </div>
+
 
           </div>
         </div>

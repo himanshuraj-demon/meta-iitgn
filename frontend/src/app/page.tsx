@@ -6,7 +6,11 @@ import {
   Search,
   Bookmark as BookmarkIcon,
   Home,
+  ArrowLeft,
+  Loader2,
+  Pencil,
 } from "lucide-react";
+import { apiService } from "@/lib/api";
 import BottomNavbar from "@/components/BottomNavbar";
 
 // Subcomponents
@@ -15,12 +19,284 @@ import HomeTab from "./components/home/HomeTab";
 import SearchTab from "./components/home/SearchTab";
 import BookmarksTab from "./components/home/BookmarksTab";
 
+// Overlays
+import NewPagesOverlay from "./components/home/overlays/NewPagesOverlay";
+import UpdatedPagesOverlay from "./components/home/overlays/UpdatedPagesOverlay";
+import PendingPagesOverlay from "./components/home/overlays/PendingPagesOverlay";
+import NewsOverlay from "./components/home/overlays/NewsOverlay";
+import TriviaOverlay from "./components/home/overlays/TriviaOverlay";
+import HistoryOverlay from "./components/home/overlays/HistoryOverlay";
+import EditorsOverlay from "./components/home/overlays/EditorsOverlay";
+
 export default function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false); // Collapsed by default
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  const [newPages, setNewPages] = useState<any[]>([]);
+  const [updatedPages, setUpdatedPages] = useState<any[]>([]);
+  const [pendingPages, setPendingPages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [showAllNew, setShowAllNew] = useState(false);
+  const [showAllUpdated, setShowAllUpdated] = useState(false);
+  const [showAllPending, setShowAllPending] = useState(false);
+  const [showAllNews, setShowAllNews] = useState(false);
+  const [showAllTrivia, setShowAllTrivia] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const [showAllEditors, setShowAllEditors] = useState(false);
+
+  const [newsPages, setNewsPages] = useState<any[]>([]);
+  const [activeNewsItem, setActiveNewsItem] = useState<any | null>(null);
+  const [showAddNewsForm, setShowAddNewsForm] = useState(false);
+  const [newNewsTitle, setNewNewsTitle] = useState("");
+  const [newNewsContent, setNewNewsContent] = useState("");
+  const [isSubmittingNews, setIsSubmittingNews] = useState(false);
+
+  const [triviaPages, setTriviaPages] = useState<any[]>([]);
+  const [activeTriviaItem, setActiveTriviaItem] = useState<any | null>(null);
+  const [showAddTriviaForm, setShowAddTriviaForm] = useState(false);
+  const [newTriviaTitle, setNewTriviaTitle] = useState("");
+  const [newTriviaContent, setNewTriviaContent] = useState("");
+  const [isSubmittingTrivia, setIsSubmittingTrivia] = useState(false);
+
+  const [historyPages, setHistoryPages] = useState<any[]>([]);
+  const [activeHistoryItem, setActiveHistoryItem] = useState<any | null>(null);
+  const [showAddHistoryForm, setShowAddHistoryForm] = useState(false);
+  const [newHistoryTitle, setNewHistoryTitle] = useState("");
+  const [newHistoryContent, setNewHistoryContent] = useState("");
+  const [isSubmittingHistory, setIsSubmittingHistory] = useState(false);
+
+  const [editors, setEditors] = useState<any[]>([]);
+  const [totalPagesCount, setTotalPagesCount] = useState<number | null>(null);
+
+  const loadHomeData = async () => {
+    try {
+      const [recentNew, recentUpdated, pending, users, stats] = await Promise.all([
+        apiService.getRecentNewPages(15),
+        apiService.getRecentUpdatedPages(15),
+        apiService.getPendingDrafts(),
+        apiService.getUsers(),
+        apiService.getPageStats(),
+      ]);
+      setNewPages(recentNew);
+      setUpdatedPages(recentUpdated);
+      setPendingPages(pending.filter((d: any) => d.status === "in_review"));
+      setEditors(users);
+      if (stats && typeof stats.totalPages === "number") {
+        setTotalPagesCount(stats.totalPages);
+      }
+
+      // Fetch 100 recent new and 100 recent updated pages, merge and filter
+      const [recentNewList, recentUpdatedList] = await Promise.all([
+        apiService.getRecentNewPages(100),
+        apiService.getRecentUpdatedPages(100)
+      ]);
+
+      const merged = [...recentNewList, ...recentUpdatedList];
+      const uniquePagesMap = new Map();
+      for (const page of merged) {
+        uniquePagesMap.set(page.slug || page.page_id, page);
+      }
+      const uniquePages = Array.from(uniquePagesMap.values());
+
+      const filteredNews = uniquePages.filter((p: any) => {
+        return p.metadata && typeof p.metadata === "object" && 
+          ((p.metadata as any).category?.toLowerCase() === "news");
+      });
+
+      // Sort by updated_at (or created_at fallback) desc
+      filteredNews.sort((a: any, b: any) => {
+        const dateA = new Date(a.updated_at || a.created_at || 0).getTime();
+        const dateB = new Date(b.updated_at || b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+
+      setNewsPages(filteredNews);
+
+      const filteredTrivia = uniquePages.filter((p: any) => {
+        return p.metadata && typeof p.metadata === "object" && 
+          ((p.metadata as any).category?.toLowerCase() === "trivia");
+      });
+      filteredTrivia.sort((a: any, b: any) => {
+        const dateA = new Date(a.updated_at || a.created_at || 0).getTime();
+        const dateB = new Date(b.updated_at || b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+      setTriviaPages(filteredTrivia);
+
+      const filteredHistory = uniquePages.filter((p: any) => {
+        return p.metadata && typeof p.metadata === "object" && 
+          ((p.metadata as any).category?.toLowerCase() === "history");
+      });
+      filteredHistory.sort((a: any, b: any) => {
+        const dateA = new Date(a.updated_at || a.created_at || 0).getTime();
+        const dateB = new Date(b.updated_at || b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+      setHistoryPages(filteredHistory);
+    } catch (err) {
+      console.error("Error loading home page activity lists:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadHomeData();
+  }, []);
+
+  const handleReview = async (pendingId: number, action: "approve" | "reject") => {
+    try {
+      await apiService.reviewDraft(pendingId, {
+        reviewer_id: 0,
+        action: action,
+        rejection_reason: action === "reject" ? "Rejected by reviewer/moderator." : undefined,
+      });
+      alert(`Draft ${action === "approve" ? "approved and published" : "rejected"} successfully!`);
+      loadHomeData();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error: ${err.message || "Failed to process review"}`);
+    }
+  };
+
+  const handleAddNews = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNewsTitle || !newNewsContent) return;
+    setIsSubmittingNews(true);
+    try {
+      const slug = "news-" + newNewsTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      const payload = {
+        page_id: null,
+        title: newNewsTitle,
+        content: `---
+image: https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600
+imageAlt: News Article
+rows:
+  - label: Category
+    value: News
+    type: text
+---
+
+# ${newNewsTitle}
+
+${newNewsContent}`,
+        metadata: { category: "news", slug },
+        editor_id: 0,
+        base_version: null,
+      };
+
+      await apiService.submitDraft(payload);
+      alert("News page submitted for review!");
+      setNewNewsTitle("");
+      setNewNewsContent("");
+      setShowAddNewsForm(false);
+      loadHomeData();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error submitting news: ${err.message || "Failed to submit"}`);
+    } finally {
+      setIsSubmittingNews(false);
+    }
+  };
+
+  const handleAddTrivia = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTriviaTitle || !newTriviaContent) return;
+    setIsSubmittingTrivia(true);
+    try {
+      const slug = "trivia-" + newTriviaTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      const payload = {
+        page_id: null,
+        title: newTriviaTitle,
+        content: `---
+image: https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600
+imageAlt: Trivia Article
+rows:
+  - label: Category
+    value: Trivia
+    type: text
+---
+
+# ${newTriviaTitle}
+
+${newTriviaContent}`,
+        metadata: { category: "trivia", slug },
+        editor_id: 0,
+        base_version: null,
+      };
+
+      await apiService.submitDraft(payload);
+      alert("Trivia page submitted for review!");
+      setNewTriviaTitle("");
+      setNewTriviaContent("");
+      setShowAddTriviaForm(false);
+      loadHomeData();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error submitting trivia: ${err.message || "Failed to submit"}`);
+    } finally {
+      setIsSubmittingTrivia(false);
+    }
+  };
+
+  const handleAddHistory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newHistoryTitle || !newHistoryContent) return;
+    setIsSubmittingHistory(true);
+    try {
+      const slug = "history-" + newHistoryTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      const payload = {
+        page_id: null,
+        title: newHistoryTitle,
+        content: `---
+image: https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600
+imageAlt: History Article
+rows:
+  - label: Category
+    value: History
+    type: text
+---
+
+# ${newHistoryTitle}
+
+${newHistoryContent}`,
+        metadata: { category: "history", slug },
+        editor_id: 0,
+        base_version: null,
+      };
+
+      await apiService.submitDraft(payload);
+      alert("History page submitted for review!");
+      setNewHistoryTitle("");
+      setNewHistoryContent("");
+      setShowAddHistoryForm(false);
+      loadHomeData();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error submitting history: ${err.message || "Failed to submit"}`);
+    } finally {
+      setIsSubmittingHistory(false);
+    }
+  };
+
+  function getRelativeTime(dateString: string) {
+    if (!dateString) return "some time ago";
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min${diffMins !== 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+    return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
+  }
 
   useEffect(() => {
     const img = new Image();
@@ -129,13 +405,13 @@ export default function HomePage() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(
-        `/search-results?query=${encodeURIComponent(searchQuery.trim())}`
-      );
-    } else {
-      router.push("/search-results");
+    const q = searchQuery.trim();
+    if (!q) {
+      return;
     }
+    router.push(
+      `/search-results?query=${encodeURIComponent(q)}`
+    );
   };
 
   const spawnHearts = (e: React.MouseEvent) => {
@@ -276,6 +552,26 @@ export default function HomePage() {
                 imageLoaded={imageLoaded}
                 scrollToFeed={scrollToFeed}
                 spawnHearts={spawnHearts}
+                setShowAllNew={setShowAllNew}
+                setShowAllUpdated={setShowAllUpdated}
+                setShowAllPending={setShowAllPending}
+                newPages={newPages}
+                updatedPages={updatedPages}
+                pendingPages={pendingPages}
+                loading={loading}
+                getRelativeTime={getRelativeTime}
+                newsPages={newsPages}
+                setShowAllNews={setShowAllNews}
+                setActiveNewsItem={setActiveNewsItem}
+                triviaPages={triviaPages}
+                setShowAllTrivia={setShowAllTrivia}
+                setActiveTriviaItem={setActiveTriviaItem}
+                historyPages={historyPages}
+                setShowAllHistory={setShowAllHistory}
+                setActiveHistoryItem={setActiveHistoryItem}
+                editors={editors}
+                setShowAllEditors={setShowAllEditors}
+                totalPagesCount={totalPagesCount}
               />
             ) : activeTab === "search" ? (
               <SearchTab
@@ -304,6 +600,85 @@ export default function HomePage() {
           />
         )}
       </div>
+      {/* Dynamic Overlays */}
+      <NewPagesOverlay
+        isOpen={showAllNew}
+        onClose={() => setShowAllNew(false)}
+        newPages={newPages}
+        getRelativeTime={getRelativeTime}
+      />
+
+      <UpdatedPagesOverlay
+        isOpen={showAllUpdated}
+        onClose={() => setShowAllUpdated(false)}
+        updatedPages={updatedPages}
+        getRelativeTime={getRelativeTime}
+      />
+
+      <PendingPagesOverlay
+        isOpen={showAllPending}
+        onClose={() => setShowAllPending(false)}
+        pendingPages={pendingPages}
+        getRelativeTime={getRelativeTime}
+        handleReview={handleReview}
+      />
+
+      <NewsOverlay
+        isOpen={showAllNews}
+        onClose={() => setShowAllNews(false)}
+        newsPages={newsPages}
+        activeNewsItem={activeNewsItem}
+        setActiveNewsItem={setActiveNewsItem}
+        showAddNewsForm={showAddNewsForm}
+        setShowAddNewsForm={setShowAddNewsForm}
+        newNewsTitle={newNewsTitle}
+        setNewNewsTitle={setNewNewsTitle}
+        newNewsContent={newNewsContent}
+        setNewNewsContent={setNewNewsContent}
+        isSubmittingNews={isSubmittingNews}
+        handleAddNews={handleAddNews}
+        getRelativeTime={getRelativeTime}
+      />
+
+      <TriviaOverlay
+        isOpen={showAllTrivia}
+        onClose={() => setShowAllTrivia(false)}
+        triviaPages={triviaPages}
+        activeTriviaItem={activeTriviaItem}
+        setActiveTriviaItem={setActiveTriviaItem}
+        showAddTriviaForm={showAddTriviaForm}
+        setShowAddTriviaForm={setShowAddTriviaForm}
+        newTriviaTitle={newTriviaTitle}
+        setNewTriviaTitle={setNewTriviaTitle}
+        newTriviaContent={newTriviaContent}
+        setNewTriviaContent={setNewTriviaContent}
+        isSubmittingTrivia={isSubmittingTrivia}
+        handleAddTrivia={handleAddTrivia}
+        getRelativeTime={getRelativeTime}
+      />
+
+      <HistoryOverlay
+        isOpen={showAllHistory}
+        onClose={() => setShowAllHistory(false)}
+        historyPages={historyPages}
+        activeHistoryItem={activeHistoryItem}
+        setActiveHistoryItem={setActiveHistoryItem}
+        showAddHistoryForm={showAddHistoryForm}
+        setShowAddHistoryForm={setShowAddHistoryForm}
+        newHistoryTitle={newHistoryTitle}
+        setNewHistoryTitle={setNewHistoryTitle}
+        newHistoryContent={newHistoryContent}
+        setNewHistoryContent={setNewHistoryContent}
+        isSubmittingHistory={isSubmittingHistory}
+        handleAddHistory={handleAddHistory}
+        getRelativeTime={getRelativeTime}
+      />
+
+      <EditorsOverlay
+        isOpen={showAllEditors}
+        onClose={() => setShowAllEditors(false)}
+        editors={editors}
+      />
     </div>
   );
 }

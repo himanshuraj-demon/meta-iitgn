@@ -93,7 +93,8 @@ export default function Navbar({
   const router = useRouter();
   const pathname = usePathname();
   const segments = pathname?.split("/").filter(Boolean) ?? [];
-  const isWiki = segments[0] === "wiki" && segments.length >= 3;
+  const isWiki = (segments[0] === "wiki" && segments.length >= 2) || segments[0] === "search-results";
+  const isWikiArticlePage = segments[0] === "wiki" && segments.length >= 3;
 
   const [searchQuery, setSearchQuery] = useState(externalQuery || "");
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -135,6 +136,9 @@ export default function Navbar({
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQuery.trim();
+    if (!q) {
+      return;
+    }
     if (setExternalQuery) {
       setExternalQuery(q);
     }
@@ -383,7 +387,7 @@ export default function Navbar({
           </div>
 
           {/* Kebab More Menu (Wiki Page Only) */}
-          {isWiki && (
+          {isWikiArticlePage && (
             <div className="relative flex items-center" ref={moreMenuRef}>
               <button
                 onClick={(e) => {
