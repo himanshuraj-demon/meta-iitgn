@@ -19,9 +19,10 @@ const __dirname = path.dirname(__filename);
 // Middlewares
 app.use(
   cors({
-    origin: ["http://localhost:3000", process.env.FRONTEND_URL || ""].filter(
-      Boolean,
-    ),
+    origin: (origin, callback) => {
+      // Dynamically allow any requesting origin to resolve all CORS issues
+      callback(null, true);
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
