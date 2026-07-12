@@ -11,19 +11,45 @@
     }
   },
   "bootstrap-sha": "HEAD",
-  "pr-title-pattern": "🚀 release: ${component} v${version}",
-  "separate-pull-requests": true,
+  "pr-title-pattern": "🚀 release: ${version}",
   "include-component-in-tag": true,
   "plugins": [],
   "changelog-sections": [
-    {"type": "feat", "section": "Features"},
-    {"type": "fix", "section": "Bug Fixes"},
-    {"type": "chore", "section": "Miscellaneous"},
-    {"type": "docs", "section": "Documentation"},
-    {"type": "style", "section": "Styles"},
-    {"type": "refactor", "section": "Code Refactoring"},
-    {"type": "perf", "section": "Performance Improvements"},
-    {"type": "test", "section": "Tests"},
-    {"type": "other", "section": "Other Changes"}
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes"
+    },
+    {
+      "type": "chore",
+      "section": "Miscellaneous"
+    },
+    {
+      "type": "docs",
+      "section": "Documentation"
+    },
+    {
+      "type": "style",
+      "section": "Styles"
+    },
+    {
+      "type": "refactor",
+      "section": "Code Refactoring"
+    },
+    {
+      "type": "perf",
+      "section": "Performance Improvements"
+    },
+    {
+      "type": "test",
+      "section": "Tests"
+    },
+    {
+      "type": "other",
+      "section": "Other Changes"
+    }
   ]
 }
