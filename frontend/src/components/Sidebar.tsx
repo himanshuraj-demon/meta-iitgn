@@ -86,7 +86,7 @@ export default function Sidebar({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const { user } = useAuth();
+  const { user, setSettingsTab } = useAuth();
 
   const roleToTier = (role: string): "bronze" | "silver" | "gold" => {
     const r = role?.toLowerCase();
@@ -237,26 +237,18 @@ export default function Sidebar({
                   />
                   <span className="truncate">My Contributions</span>
                 </Link>
-                <Link
-                  href="/user/settings"
+                <button
                   onClick={() => {
                     if (window.innerWidth < 1024) onClose();
+                    setSettingsTab("appearance");
                   }}
-                  className={`group flex items-center gap-3 px-3 py-2 text-[13px] font-semibold rounded-lg transition-all duration-200 ${
-                    pathname === "/user/settings"
-                      ? "bg-blue-50 text-blue-700 font-bold"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  className="w-full text-left group flex items-center gap-3 px-3 py-2 text-[13px] font-semibold rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-900 hover:bg-gray-55 cursor-pointer"
                 >
                   <Settings
-                    className={`h-5 w-5 transition-colors duration-200 ${
-                      pathname === "/user/settings"
-                        ? "text-blue-600"
-                        : "text-gray-400 group-hover:text-gray-650"
-                    }`}
+                    className="h-5 w-5 transition-colors duration-200 text-gray-400 group-hover:text-gray-655"
                   />
                   <span className="truncate">Settings</span>
-                </Link>
+                </button>
                 <Link
                   href="/logout"
                   onClick={() => {

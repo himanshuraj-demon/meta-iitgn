@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { apiService } from "@/api";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Menu,
   Heart,
@@ -16,7 +17,11 @@ import {
   Sparkles,
   Search,
   Building2,
+  Calendar,
+  Shield,
+  TrendingUp,
   LucideIcon,
+  Settings,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import { QUICK_PORTALS } from "@/lib/constants";
@@ -44,6 +49,9 @@ const PORTAL_ICON_MAP: Record<string, LucideIcon> = {
   MapPin,
   FlaskConical,
   Sparkles,
+  Calendar,
+  Shield,
+  TrendingUp,
 };
 
 export default function LeftPanel({
@@ -58,7 +66,28 @@ export default function LeftPanel({
   setActiveTab,
   spawnHearts,
 }: LeftPanelProps) {
+  const { categories, activeTier: globalActiveTier, setSettingsTab } = useAuth();
+  const isGold = globalActiveTier === "gold";
   const [pageCount, setPageCount] = useState<number | null>(null);
+
+  const portalsToDisplay = useMemo(() => {
+    const pinned = categories.filter((c) => c.is_pinned);
+    const colors = [
+      { bg: "bg-rose-50 text-rose-500", icon: "text-rose-500", textBg: "hover:bg-rose-50/50" },
+      { bg: "bg-amber-50 text-amber-600", icon: "text-amber-600", textBg: "hover:bg-amber-50/50" },
+      { bg: "bg-emerald-50 text-emerald-600", icon: "text-emerald-600", textBg: "hover:bg-emerald-50/50" },
+      { bg: "bg-indigo-50 text-indigo-600", icon: "text-indigo-600", textBg: "hover:bg-indigo-50/50" },
+      { bg: "bg-sky-50 text-sky-500", icon: "text-sky-500", textBg: "hover:bg-sky-50/50" },
+      { bg: "bg-purple-50 text-purple-500", icon: "text-purple-500", textBg: "hover:bg-purple-50/50" },
+    ];
+
+    return pinned.map((c, idx) => ({
+      name: c.name,
+      path: `/wiki/${c.slug}`,
+      iconName: c.icon || "BookOpen",
+      colorTheme: colors[idx % colors.length],
+    }));
+  }, [categories]);
 
   useEffect(() => {
     async function loadStats() {
@@ -115,20 +144,13 @@ export default function LeftPanel({
             >
               <Menu className="h-5.5 w-5.5 text-black" />
             </button>
-            <Link
-              href="/"
-              className="flex items-center gap-2 select-none cursor-pointer group"
-              onClick={() => setActiveTab("home")}
+            <button
+              onClick={() => setSettingsTab("appearance")}
+              className="p-2 hover:bg-slate-100 rounded-lg text-slate-650 transition-colors duration-200 cursor-pointer active:scale-95"
+              aria-label="Open Settings"
             >
-              <div className="block">
-                <span className="font-serif text-2xl font-extrabold tracking-tight  text-blue-500">
-                  META
-                </span>
-                <span className="ml-1 text-sm font-semibold uppercase tracking-wider text-gray-500">
-                  IITGN
-                </span>
-              </div>
-            </Link>
+              <Settings className="w-5.5 h-5.5 text-black" />
+            </button>
           </div>
 
           {/* Logo / Badge */}
@@ -160,12 +182,25 @@ export default function LeftPanel({
 
           {/* Category Cards (Modern box type redirecting to category sub-pages) */}
           <div className="space-y-2 mt-6 lg:mt-8">
-            <h2 className="text-xl font-serif text-center font-bold text-gray-900 tracking-tight">
-              Quick Portals
-            </h2>
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-12" /> {/* Left balance spacer */}
+              <h2 className="text-xl font-serif font-bold text-gray-900 tracking-tight">
+                Quick Portals
+              </h2>
+              {isGold ? (
+                <Link
+                  href="/wiki/categories"
+                  className="text-[10px] font-extrabold text-blue-500 hover:text-blue-700 hover:underline tracking-wider uppercase shrink-0"
+                >
+                  Manage
+                </Link>
+              ) : (
+                <div className="w-12" />
+              )}
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {QUICK_PORTALS.map((portal) => (
+              {portalsToDisplay.slice(0, 10).map((portal) => (
                 <Link
                   key={portal.name}
                   href={portal.path}
@@ -177,8 +212,19 @@ export default function LeftPanel({
                   </span>
                 </Link>
               ))}
+            </div>
+            {portalsToDisplay.length === 0 && (
+              <div className="text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                <p className="text-xs text-slate-400 font-semibold mb-2">No Quick Portals pinned</p>
+                <Link
+                  href="/wiki/categories"
+                  className="inline-flex text-[10px] font-extrabold text-blue-500 hover:text-blue-700 uppercase tracking-wider hover:underline"
+                >
+                  Pin Portals
+                </Link>
+              </div>
+            )}
           </div>
-        </div>
       </div>
         {/* Credits Footer */}
         <div className="pt-5 border-t hidden lg:flex border-slate-100/60 flex-col items-center text-center gap-1.5 select-none mt-6 w-full">

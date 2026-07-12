@@ -4,6 +4,7 @@ export interface UserCreateInput {
   name: string;
   email: string;
   avatar_url?: string | null;
+  role?: string;
 }
 
 export const getUsers = async () => {

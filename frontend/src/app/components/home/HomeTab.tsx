@@ -215,7 +215,7 @@ export default function HomeTab({
 
                   return (
                     <div
-                      key={item.slug || index}
+                      key={`news-${item.slug || index}`}
                       onClick={() => {
                         setActiveNewsItem(item);
                         setShowAllNews(true);
@@ -340,7 +340,7 @@ export default function HomeTab({
                   {editors.slice(0, 3).map((editor, index) => {
                     const initials = editor.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase() || "U";
                     return (
-                      <div key={editor.user_id || index} className="flex items-center gap-2">
+                      <div key={`editor-${editor.user_id || index}-${index}`} className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-[9px] text-gray-700">
                           {initials}
                         </div>
@@ -381,8 +381,8 @@ export default function HomeTab({
                 <p className="text-xs text-gray-400 py-4">No new pages created yet.</p>
               ) : (
                 <ul className="space-y-3">
-                  {newPages.slice(0, 3).map((page) => (
-                    <li key={page.page_id}>
+                  {newPages.slice(0, 3).map((page, index) => (
+                    <li key={`new-page-${page.page_id || index}`}>
                       <Link
                         href={`/wiki/campus/${page.slug}`}
                         className="block text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors truncate"
@@ -420,8 +420,8 @@ export default function HomeTab({
                 <p className="text-xs text-gray-400 py-4">No pages updated yet.</p>
               ) : (
                 <ul className="space-y-3">
-                  {updatedPages.slice(0, 3).map((page) => (
-                    <li key={page.page_id}>
+                  {updatedPages.slice(0, 3).map((page, index) => (
+                    <li key={`updated-page-${page.page_id || index}`}>
                       <Link
                         href={`/wiki/campus/${page.slug}`}
                         className="block text-xs font-semibold text-slate-700 hover:text-blue-600 transition-colors truncate"
@@ -459,10 +459,10 @@ export default function HomeTab({
                 <p className="text-xs text-gray-400 py-4">No pending pages awaiting review.</p>
               ) : (
                 <ul className="space-y-3">
-                  {pendingPages.slice(0, 3).map((pending) => {
+                  {pendingPages.slice(0, 3).map((pending, index) => {
                     const authorName = pending.users?.name || `User #${pending.editor_id}`;
                     return (
-                      <li key={pending.pending_id}>
+                      <li key={`pending-page-${pending.pending_id || index}`}>
                         <span className="block text-xs font-semibold text-slate-700 truncate">
                           {pending.title}
                         </span>

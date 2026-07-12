@@ -11,11 +11,14 @@ export const devBypass = async (req: Request, res: Response) => {
   }
 
   try {
-    const { name, email, avatar_url } = req.body;
+    const { name, email, avatar_url, role } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
+
+    const validRoles = ['normal', 'moderator', 'admin'];
+    const chosenRole = role && validRoles.includes(role.toLowerCase()) ? role.toLowerCase() : null;
 
     let user = await prisma.users.findUnique({
       where: { email }
@@ -27,9 +30,14 @@ export const devBypass = async (req: Request, res: Response) => {
           name: name || email.split('@')[0],
           email,
           avatar_url: avatar_url || null,
-          role: 'normal',
+          role: (chosenRole || 'normal') as any,
           points: 0,
         },
+      });
+    } else if (chosenRole && user.role !== chosenRole) {
+      user = await prisma.users.update({
+        where: { email },
+        data: { role: chosenRole as any }
       });
     }
 

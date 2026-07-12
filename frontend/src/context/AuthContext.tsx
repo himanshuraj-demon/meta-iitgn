@@ -18,6 +18,8 @@ export interface Category {
   name: string;
   description: string;
   total_articles: number;
+  is_pinned?: boolean;
+  icon?: string;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +36,10 @@ interface AuthContextType {
   setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
   addCategoryState: (newCat: Category) => void;
   updateCategoryState: (updatedCat: Category) => void;
+  activeTier: "bronze" | "silver" | "gold";
+  setActiveTier: React.Dispatch<React.SetStateAction<"bronze" | "silver" | "gold">>;
+  settingsTab: "appearance" | "layout" | "search" | "alerts" | null;
+  setSettingsTab: React.Dispatch<React.SetStateAction<"appearance" | "layout" | "search" | "alerts" | null>>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

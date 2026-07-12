@@ -61,7 +61,7 @@ export const getCategories = async (req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, icon } = req.body;
     if (!name || !description) {
       return res.status(400).json({ error: "Name and description are required" });
     }
@@ -89,6 +89,7 @@ export const createCategory = async (req: Request, res: Response) => {
         slug,
         name,
         description,
+        icon: icon || "BookOpen",
         total_articles: 0
       }
     });
@@ -106,7 +107,7 @@ export const createCategory = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    const { name, description } = req.body;
+    const { name, description, is_pinned, icon } = req.body;
 
     if (isNaN(id)) {
       return res.status(400).json({ error: "Invalid category ID" });
@@ -123,6 +124,14 @@ export const updateCategory = async (req: Request, res: Response) => {
     const data: any = {};
     if (description !== undefined) {
       data.description = description;
+    }
+
+    if (is_pinned !== undefined) {
+      data.is_pinned = is_pinned;
+    }
+
+    if (icon !== undefined) {
+      data.icon = icon;
     }
 
     if (name !== undefined) {

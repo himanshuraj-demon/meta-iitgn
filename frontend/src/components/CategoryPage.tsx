@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Article } from "@/lib/placeholder-articles";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, ArrowLeft, BookOpen, ChevronRight, FileText, PlusCircle, Loader2 } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronRight, PlusCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiService } from "@/api";
 import { parseMarkdown } from "@/lib/utils";
@@ -14,7 +14,7 @@ interface CategoryPageProps {
 
 export default function CategoryPage({ categorySlug }: CategoryPageProps) {
   const { categories } = useAuth();
-  const category = categories.find(c => c.slug === categorySlug);
+  const category = categories?.find(c => c.slug === categorySlug);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -290,15 +290,10 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
               {articles.map((article) => (
                 <div
                   key={article.slug}
-                  className="flex-1 min-w-75 md:max-w-[48%] lg:max-w-[32%] flex flex-col justify-between p-6 bg-white border border-gray-150 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-blue-200 transition-all duration-300 group"
+                  className="flex-1 min-w-75 md:max-w-[48%] lg:max-w-[32%] flex flex-col justify-between p-4 md:p-6 bg-white border border-gray-150 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-blue-200 transition-all duration-300 group"
                 >
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                      <FileText className="h-3.5 w-3.5 text-gray-400" />
-                      <span>Article</span>
-                    </div>
-                    
-                    <h3 className="text-base font-bold text-gray-800 font-serif group-hover:text-blue-600 transition-colors duration-300">
+                  <div className="space-y-2 md:space-y-3">
+                    <h3 className="text-sm md:text-base font-bold text-gray-800 font-serif group-hover:text-blue-600 transition-colors duration-300">
                       {article.title}
                     </h3>
                     

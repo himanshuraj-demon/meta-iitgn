@@ -7,6 +7,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [auth, setAuth] = useState<boolean | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [activeTier, setActiveTier] = useState<"bronze" | "silver" | "gold">("bronze");
+  const [settingsTab, setSettingsTab] = useState<"appearance" | "layout" | "search" | "alerts" | null>(null);
+
+  useEffect(() => {
+    if (user?.role) {
+      const r = user.role.toLowerCase();
+      if (r === "admin") setActiveTier("gold");
+      else if (r === "moderator") setActiveTier("silver");
+      else setActiveTier("bronze");
+    }
+  }, [user?.role]);
 
   const logout = async () => {
     try {
@@ -44,16 +55,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCategories = useCallback(async () => {
     try {
+      const res = await api.get("/categories");
+      setCategories(res.data);
+      localStorage.setItem("wiki-categories", JSON.stringify(res.data));
+    } catch (err) {
+      console.error("Error fetching categories:", err);
       const cached = localStorage.getItem("wiki-categories");
       if (cached) {
         setCategories(JSON.parse(cached));
-      } else {
-        const res = await api.get("/categories");
-        setCategories(res.data);
-        localStorage.setItem("wiki-categories", JSON.stringify(res.data));
       }
-    } catch (err) {
-      console.error("Error fetching categories:", err);
     }
   }, []);
 
@@ -101,6 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCategories,
         addCategoryState,
         updateCategoryState,
+        activeTier,
+        setActiveTier,
+        settingsTab,
+        setSettingsTab,
       }}>
       {children}
     </AuthContext.Provider>

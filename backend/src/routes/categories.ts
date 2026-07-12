@@ -5,7 +5,7 @@ import { protect } from "../middlewares/auth.js";
 const router = Router();
 
 router.get("/", getCategories);
-router.post("/", protect("admin", "moderator"), createCategory);
-router.patch("/:id", protect("admin", "moderator"), updateCategory);
+router.post("/", protect(), createCategory);
+router.patch("/:id", protect("admin"), updateCategory);
 
 export default router;

@@ -3,18 +3,33 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { ArrowRight, BookOpen, ChevronRight, FolderPlus, PlusCircle, Search, Sparkles, Pencil, X } from "lucide-react";
+import { BookOpen, ChevronRight, FolderPlus, PlusCircle, Search, Sparkles, Pencil, X, Pin, Building2, Users2, Trophy, Tent, MapPin, FlaskConical, Calendar, Shield, TrendingUp, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiService } from "@/api";
 import { Category } from "@/context/AuthContext";
 
+const ICON_MAP: Record<string, any> = {
+  BookOpen,
+  Building2,
+  Users2,
+  Trophy,
+  Tent,
+  MapPin,
+  FlaskConical,
+  Sparkles,
+  Calendar,
+  Shield,
+  TrendingUp,
+};
+
 interface CategoryFormInput {
   name: string;
   description: string;
+  icon: string;
 }
 
 export default function CategoriesPage() {
-  const { user, categories, addCategoryState, updateCategoryState } = useAuth();
+  const { user, categories, addCategoryState, updateCategoryState, activeTier } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   
   // Add Category form states
@@ -24,18 +39,27 @@ export default function CategoriesPage() {
   // Edit Category form states
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editError, setEditError] = useState("");
+  const [pinningCategoryId, setPinningCategoryId] = useState<number | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CategoryFormInput>();
-  const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, setValue: setValueEdit, formState: { errors: editErrors } } = useForm<CategoryFormInput>();
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CategoryFormInput>({
+    defaultValues: { icon: "BookOpen" }
+  });
+  const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, setValue: setValueEdit, watch: watchEdit, formState: { errors: editErrors } } = useForm<CategoryFormInput>({
+    defaultValues: { icon: "BookOpen" }
+  });
 
   const canManage = user?.role === "admin" || user?.role === "moderator";
+  const isGold = activeTier === "gold";
+  const selectedIcon = watch("icon") || "BookOpen";
+  const selectedIconEdit = watchEdit("icon") || "BookOpen";
 
   const onCreateSubmit = async (data: CategoryFormInput) => {
     try {
       setError("");
       const newCat = await apiService.createCategory({
         name: data.name.trim(),
-        description: data.description.trim()
+        description: data.description.trim(),
+        icon: data.icon || "BookOpen"
       });
       addCategoryState(newCat);
       reset();
@@ -50,6 +74,7 @@ export default function CategoriesPage() {
     setEditingCategory(cat);
     setValueEdit("name", cat.name);
     setValueEdit("description", cat.description);
+    setValueEdit("icon", cat.icon || "BookOpen");
   };
 
   const onEditSubmit = async (data: CategoryFormInput) => {
@@ -58,7 +83,8 @@ export default function CategoriesPage() {
       setEditError("");
       const updatedCat = await apiService.updateCategory(editingCategory.category_id, {
         name: data.name.trim(),
-        description: data.description.trim()
+        description: data.description.trim(),
+        icon: data.icon || "BookOpen"
       });
       updateCategoryState(updatedCat);
       resetEdit();
@@ -107,7 +133,7 @@ export default function CategoriesPage() {
             </p>
           </div>
           
-          {canManage && (
+          {user && (
             <div className="shrink-0 mb-1">
               <button
                 onClick={() => {
@@ -115,7 +141,7 @@ export default function CategoriesPage() {
                   reset();
                   setError("");
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs md:text-sm font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs md:text-sm font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
               >
                 <PlusCircle className="h-4.5 w-4.5" />
                 <span>Create Category</span>
@@ -172,6 +198,37 @@ export default function CategoriesPage() {
               )}
             </div>
 
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-750 uppercase block">
+                Category Icon
+              </label>
+              <input type="hidden" {...register("icon", { required: "Category icon is required" })} />
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/60 max-w-lg">
+                {Object.keys(ICON_MAP).map((iconKey) => {
+                  const IconComponent = ICON_MAP[iconKey];
+                  const isSelected = selectedIcon === iconKey;
+                  return (
+                    <button
+                      key={iconKey}
+                      type="button"
+                      onClick={() => setValue("icon", iconKey)}
+                      className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${
+                        isSelected
+                          ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20 scale-105"
+                          : "bg-white border-gray-200 text-gray-500 hover:text-gray-850 hover:border-gray-350"
+                      }`}
+                      title={iconKey}
+                    >
+                      <IconComponent className="h-5 w-5" />
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.icon && (
+                <span className="text-[10px] text-rose-500 font-semibold">{errors.icon.message}</span>
+              )}
+            </div>
+
             <div className="flex items-center gap-2 justify-end pt-2">
               <button
                 type="button"
@@ -224,7 +281,7 @@ export default function CategoriesPage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700 uppercase">
+                <label className="text-xs font-bold text-gray-770 uppercase">
                   Category Name
                 </label>
                 <input
@@ -252,6 +309,37 @@ export default function CategoriesPage() {
                 )}
               </div>
 
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-750 uppercase block">
+                  Category Icon
+                </label>
+                <input type="hidden" {...registerEdit("icon", { required: "Category icon is required" })} />
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/60 max-w-lg">
+                  {Object.keys(ICON_MAP).map((iconKey) => {
+                    const IconComponent = ICON_MAP[iconKey];
+                    const isSelected = selectedIconEdit === iconKey;
+                    return (
+                      <button
+                        key={iconKey}
+                        type="button"
+                        onClick={() => setValueEdit("icon", iconKey)}
+                        className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${
+                          isSelected
+                            ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20 scale-105"
+                            : "bg-white border-gray-200 text-gray-500 hover:text-gray-850 hover:border-gray-350"
+                        }`}
+                        title={iconKey}
+                      >
+                        <IconComponent className="h-5 w-5" />
+                      </button>
+                    );
+                  })}
+                </div>
+                {editErrors.icon && (
+                  <span className="text-[10px] text-rose-500 font-semibold">{editErrors.icon.message}</span>
+                )}
+              </div>
+
               <div className="flex items-center gap-2 justify-end pt-2">
                 <button
                   type="button"
@@ -259,7 +347,7 @@ export default function CategoriesPage() {
                     setEditingCategory(null);
                     setEditError("");
                   }}
-                  className="px-3.5 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+                  className="px-3.5 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-55 transition-colors"
                 >
                   Cancel
                 </button>
@@ -291,23 +379,76 @@ export default function CategoriesPage() {
           {filteredCategories.map((cat) => (
             <div
               key={cat.slug}
-              className="flex flex-col justify-between p-6 bg-white border border-gray-150 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-blue-200 transition-all duration-300 group"
+              className={`relative flex flex-col justify-between p-4 md:p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer ${
+                cat.is_pinned 
+                  ? "bg-blue-50/80 border-2 border-blue-400 hover:border-blue-500" 
+                  : "bg-white border border-gray-150 hover:border-blue-200"
+              }`}
             >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                    <Sparkles className="h-3 w-3 text-blue-500" />
-                    <span>Category</span>
+              {/* Overlay Link to make the whole card clickable */}
+              <Link href={`/wiki/${cat.slug}`} className="absolute inset-0 z-0 rounded-2xl" aria-label={`Explore ${cat.name}`} />
+
+              <div className="space-y-2 relative z-10 pointer-events-none">
+                {/* Header Row: Icon & Title on left, Buttons on right */}
+                <div className="flex items-center justify-between gap-3 pointer-events-auto">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50/80 border border-blue-100 flex items-center justify-center shrink-0 shadow-sm transition-all duration-300 group-hover:bg-blue-100/50">
+                      {(() => {
+                        const IconComponent = ICON_MAP[cat.icon || "BookOpen"] || Sparkles;
+                        return <IconComponent className="h-4 w-4 text-blue-600" />;
+                      })()}
+                    </div>
+                    <h3 className="text-sm md:text-base font-bold text-gray-800 font-serif group-hover:text-blue-600 transition-colors duration-300 truncate">
+                      {cat.name}
+                    </h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {cat.total_articles > 0 && (
                       <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full select-none">
-                        {cat.total_articles} articles
+                        {cat.total_articles}<span className="hidden sm:inline"> articles</span>
                       </span>
                     )}
-                    {canManage && (
+                    {isGold && (
                       <button
-                        onClick={() => handleStartEdit(cat)}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const pinnedCount = categories.filter((c) => c.is_pinned).length;
+                          if (!cat.is_pinned && pinnedCount >= 10) {
+                            alert("Quick Portals is full! You can pin a maximum of 10 categories. Please unpin another category first.");
+                            return;
+                          }
+                          setPinningCategoryId(cat.category_id);
+                          try {
+                            const updated = await apiService.updateCategory(cat.category_id, {
+                              is_pinned: !cat.is_pinned
+                            });
+                            updateCategoryState(updated);
+                          } catch (err) {
+                            console.error(err);
+                            alert("Failed to toggle pin");
+                          } finally {
+                            setPinningCategoryId(null);
+                          }
+                        }}
+                        disabled={pinningCategoryId === cat.category_id}
+                        className={`p-1 rounded-lg hover:bg-slate-100 transition-all duration-150 cursor-pointer disabled:cursor-not-allowed ${
+                          cat.is_pinned ? "text-blue-600 hover:text-blue-700 bg-blue-50/50" : "text-gray-400 hover:text-blue-600"
+                        }`}
+                        title={cat.is_pinned ? "Unpin from Quick Portal" : "Pin to Quick Portal"}
+                      >
+                        {pinningCategoryId === cat.category_id ? (
+                          <Loader2 className="h-3.5 w-3.5 text-blue-600 animate-spin" />
+                        ) : (
+                          <Pin className={`h-3.5 w-3.5 ${cat.is_pinned ? 'fill-blue-600' : ''}`} style={{ transform: cat.is_pinned ? 'rotate(45deg)' : 'none' }} />
+                        )}
+                      </button>
+                    )}
+                    {isGold && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartEdit(cat);
+                        }}
                         className="p-1 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-55 transition-all duration-150 cursor-pointer"
                         title="Edit Category"
                       >
@@ -316,24 +457,11 @@ export default function CategoriesPage() {
                     )}
                   </div>
                 </div>
-                
-                <h3 className="text-base font-bold text-gray-800 font-serif group-hover:text-blue-600 transition-colors duration-300">
-                  {cat.name}
-                </h3>
-                
-                <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">
+
+                {/* Body: Description */}
+                <p className="text-xs text-gray-500 leading-relaxed line-clamp-4 md:pl-10.5">
                   {cat.description || "No description provided."}
                 </p>
-              </div>
-
-              <div className="pt-6">
-                <Link
-                  href={`/wiki/${cat.slug}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors uppercase tracking-wider cursor-pointer"
-                >
-                  <span>Explore Category</span>
-                  <ArrowRight className="h-3.5 w-3.5 transform group-hover:translate-x-1 transition-transform" />
-                </Link>
               </div>
             </div>
           ))}

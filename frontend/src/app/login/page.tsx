@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { devBypass } from "@/api/user";
-import { BookOpen, AlertCircle, CheckCircle, ShieldAlert, Cpu } from "lucide-react";
+import { BookOpen, AlertCircle, CheckCircle, ShieldAlert, Cpu, X, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,9 +17,22 @@ export default function LoginPage() {
     message: "",
   });
 
+  const DEV_ACCOUNTS = [
+    { name: "Gold User A (Gold)", email: "gold1@meta-iitgn.edu", role: "admin" },
+    { name: "Gold User B (Gold)", email: "gold2@meta-iitgn.edu", role: "admin" },
+    { name: "Gold User C (Gold)", email: "gold3@meta-iitgn.edu", role: "admin" },
+    { name: "Silver User A (Silver)", email: "silver1@meta-iitgn.edu", role: "moderator" },
+    { name: "Silver User B (Silver)", email: "silver2@meta-iitgn.edu", role: "moderator" },
+    { name: "Silver User C (Silver)", email: "silver3@meta-iitgn.edu", role: "moderator" },
+    { name: "Bronze User A (Bronze)", email: "bronze1@meta-iitgn.edu", role: "normal" },
+    { name: "Bronze User B (Bronze)", email: "bronze2@meta-iitgn.edu", role: "normal" },
+    { name: "Bronze User C (Bronze)", email: "bronze3@meta-iitgn.edu", role: "normal" },
+  ];
+
   // Dev bypass form state
-  const [devEmail, setDevEmail] = useState("admin@meta-iitgn.edu");
-  const [devName, setDevName] = useState("Admin User");
+  const [devEmail, setDevEmail] = useState(DEV_ACCOUNTS[0].email);
+  const [devName, setDevName] = useState("Gold User A");
+  const [devRole, setDevRole] = useState(DEV_ACCOUNTS[0].role);
   const [showDevBypass, setShowDevBypass] = useState(false);
 
   // If already authenticated, redirect to home page
@@ -79,6 +92,7 @@ export default function LoginPage() {
       const response = await devBypass({
         email: devEmail,
         name: devName,
+        role: devRole,
       });
 
       if (response.success) {
@@ -100,43 +114,59 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-white/60 overflow-hidden font-sans">
-      {/* Abstract background blobs */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 overflow-hidden font-sans p-4">
+      {/* Background decoration blobs inside popover */}
+      <div className="absolute top-1/3 left-1/3 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Main card */}
-      <div className="relative w-full max-w-md mx-4 p-8 bg-white backdrop-blur-xl border border-zinc-800/80 rounded-2xl shadow-2xl flex flex-col items-center">
+      {/* Popover container card */}
+      <div className="relative w-full max-w-md bg-white border border-slate-200/80 rounded-3xl shadow-[0_30px_70px_rgba(0,0,0,0.25)] p-8 flex flex-col items-center animate-in zoom-in-95 duration-200">
+        
+        {/* Close Button */}
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/");
+            }
+          }}
+          className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all duration-200 cursor-pointer active:scale-95"
+          aria-label="Close Login Modal"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
-            <BookOpen className="w-5 h-5 text-black" />
+        <div className="flex items-center gap-2.5 mb-2 mt-2">
+          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/25 shrink-0">
+            <BookOpen className="w-4.5 h-4.5 text-white" />
           </div>
-          <span className="text-2xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-black via-zinc-500 to-blue-400">
-            META IITGN
+          <span className="text-xl font-serif font-black tracking-tight text-slate-900">
+            META <span className="text-blue-600">IITGN</span>
           </span>
         </div>
-        <p className="text-zinc-400 text-sm text-center mb-8 font-serif italic">
+        <p className="text-slate-400 text-xs text-center mb-8 font-medium tracking-wide uppercase">
           The Collaborative Campus Wiki
         </p>
 
         {/* Notifications */}
         {status.type && (
           <div
-            className={`w-full mb-6 p-4 rounded-xl flex items-start gap-3 border text-sm transition-all duration-300 ${
+            className={`w-full mb-5 p-3.5 rounded-2xl flex items-start gap-3 border text-xs transition-all duration-300 ${
               status.type === "success"
-                ? "bg-emerald-950/40 border-emerald-800/50 text-emerald-300"
-                : "bg-rose-950/40 border-rose-800/50 text-rose-300"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : "bg-rose-50 border-rose-200 text-rose-800"
             }`}
           >
             {status.type === "success" ? (
-              <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" />
+              <CheckCircle className="w-4.5 h-4.5 shrink-0 text-emerald-600" />
             ) : (
-              <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
+              <AlertCircle className="w-4.5 h-4.5 shrink-0 text-rose-600" />
             )}
             <div>
-              <p className="font-semibold">{status.type === "success" ? "Success" : "Error"}</p>
-              <p className="mt-0.5 opacity-90">{status.message}</p>
+              <p className="font-bold">{status.type === "success" ? "Success" : "Error"}</p>
+              <p className="mt-0.5 opacity-90 font-medium leading-relaxed">{status.message}</p>
             </div>
           </div>
         )}
@@ -145,9 +175,9 @@ export default function LoginPage() {
         <button
           onClick={() => handleGoogleLogin()}
           disabled={loading}
-          className="w-full h-12 flex items-center justify-center gap-3 px-6 bg-white hover:bg-zinc-100 disabled:bg-zinc-300 text-zinc-950 font-semibold rounded-xl shadow-lg transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:cursor-not-allowed"
+          className="w-full h-11 flex items-center justify-center gap-3 px-6 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-350 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:cursor-not-allowed select-none active:scale-98 text-sm"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
+          <svg className="w-4.5 h-4.5 text-white fill-current shrink-0" viewBox="0 0 24 24">
             <path
               fill="#4285F4"
               d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.58c-.28 1.48-1.12 2.74-2.38 3.58v2.98h3.84c2.24-2.06 3.53-5.1 3.53-8.41z"
@@ -165,69 +195,82 @@ export default function LoginPage() {
               d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.43-3.43C17.95 1.19 15.24 0 12 0 7.43 0 3.42 2.91 1.44 6.56l3.8 2.97c.95-2.88 3.61-5.01 6.76-5.01z"
             />
           </svg>
-          {loading ? "Signing in..." : "Sign in with Google"}
+          {loading ? "Signing in..." : "Continue with Google"}
         </button>
 
         {/* Divider */}
         <div className="w-full flex items-center my-6">
-          <div className="flex-1 h-px bg-zinc-800" />
-          <span className="px-3 text-xs text-zinc-500 font-mono">OR</span>
-          <div className="flex-1 h-px bg-zinc-800" />
+          <div className="flex-1 h-px bg-slate-150" />
+          <span className="px-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">or bypass</span>
+          <div className="flex-1 h-px bg-slate-150" />
         </div>
 
         {/* Dev Bypass Section */}
         <div className="w-full">
           <button
             onClick={() => setShowDevBypass(!showDevBypass)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-zinc-500 hover:text-zinc-300 text-xs font-mono border border-dashed border-zinc-800 hover:border-zinc-700 rounded-lg transition-colors cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 py-2 text-slate-500 hover:text-slate-800 text-xs font-bold border border-dashed border-slate-300 hover:border-slate-400 rounded-xl transition-all duration-200 cursor-pointer bg-slate-50/50 hover:bg-slate-50"
           >
-            <Cpu className="w-4 h-4" />
-            {showDevBypass ? "Hide Dev Bypass" : "Show Dev Bypass (Development)"}
+            <Cpu className="w-3.5 h-3.5 text-slate-500" />
+            {showDevBypass ? "Hide Sandbox Bypass" : "Show Sandbox Bypass"}
           </button>
 
           {showDevBypass && (
-            <form onSubmit={handleDevBypass} className="mt-4 p-4 rounded-xl bg-zinc-950/50 border border-zinc-800/60 flex flex-col gap-3 transition-all duration-300">
-              <div className="flex items-center gap-2 text-amber-500 text-xs font-mono mb-1">
-                <ShieldAlert className="w-4 h-4" />
-                <span>Dev Bypass Login</span>
+            <form onSubmit={handleDevBypass} className="mt-3.5 p-4 rounded-2xl bg-slate-50 border border-slate-150 flex flex-col gap-3.5 transition-all duration-300">
+              <div className="flex items-center gap-1.5 text-amber-600 text-xs font-bold">
+                <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Local Sandbox Login Bypass</span>
               </div>
 
-              <div>
-                <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-500 mb-1">
-                  Mock Email
+               <div className="space-y-1">
+                <label className="block text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                  Select Dev Account (Role/Tier)
                 </label>
-                <input
-                  type="email"
+                <select
                   value={devEmail}
-                  onChange={(e) => setDevEmail(e.target.value)}
-                  className="w-full h-9 px-3 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:border-violet-600 transition-colors"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-500 mb-1">
-                  Mock Name
-                </label>
-                <input
-                  type="text"
-                  value={devName}
-                  onChange={(e) => setDevName(e.target.value)}
-                  className="w-full h-9 px-3 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:border-violet-600 transition-colors"
-                  required
-                />
+                  onChange={(e) => {
+                    const selected = DEV_ACCOUNTS.find(acc => acc.email === e.target.value);
+                    if (selected) {
+                      setDevEmail(selected.email);
+                      setDevName(selected.name.replace(/\s*\(.*\)/, ""));
+                      setDevRole(selected.role);
+                    }
+                  }}
+                  className="w-full h-9.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
+                >
+                  {DEV_ACCOUNTS.map((acc) => (
+                    <option key={acc.email} value={acc.email}>
+                      {acc.name} ({acc.email})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-9 mt-1 flex items-center justify-center bg-violet-600 hover:bg-violet-700 disabled:bg-violet-800 text-white text-xs font-semibold rounded-lg shadow-md cursor-pointer transition-colors"
+                className="w-full h-9 flex items-center justify-center bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer transition-colors active:scale-98"
               >
-                {loading ? "Logging in..." : "Bypass with Dev Account"}
+                {loading ? "Logging in..." : "Bypass with Selected Account"}
               </button>
             </form>
           )}
         </div>
+
+        {/* Go Back button */}
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/");
+            }
+          }}
+          className="mt-6 text-xs font-bold text-slate-400 hover:text-slate-650 hover:underline cursor-pointer flex items-center justify-center gap-1 active:scale-95 transition-all select-none"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Go Back</span>
+        </button>
       </div>
     </div>
   );
