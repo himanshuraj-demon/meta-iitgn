@@ -53,7 +53,7 @@ export default function NewPagesOverlay({
                   }}
                   className="p-5 border border-gray-250/60 bg-white rounded-2xl shadow-xs hover:shadow-md hover:border-blue-400 transition-all duration-150 cursor-pointer text-left"
                 >
-                  <h4 className="text-base font-bold text-gray-850">{page.title}</h4>
+                  <h4 className="text-base font-bold text-blue-500">{page.title}</h4>
                   <p className="text-[10px] text-gray-400 font-semibold mt-1">
                     Created: {getRelativeTime(page.created_at)} ({new Date(page.created_at).toLocaleString()})
                   </p>
