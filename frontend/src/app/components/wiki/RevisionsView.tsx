@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
 interface RevisionsViewProps {
   setShowRevisions: (show: boolean) => void;
@@ -20,7 +20,7 @@ export default function RevisionsView({ setShowRevisions }: RevisionsViewProps) 
           className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors duration-200 cursor-pointer active:scale-95 flex items-center justify-center"
           aria-label="Back to Wiki"
         >
-          <ArrowLeft className="h-6 w-6 text-base-content" />
+          <ChevronLeft className="h-6 w-6 text-base-content" />
         </button>
         <span className="text-sm font-bold text-base-content uppercase tracking-wider">Changes</span>
       </header>

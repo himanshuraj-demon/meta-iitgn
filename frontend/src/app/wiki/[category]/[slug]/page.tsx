@@ -10,12 +10,13 @@ interface ArticlePageProps {
   }>;
   searchParams: Promise<{
     title?: string;
+    edit?: string;
   }>;
 }
 
 export default async function ArticlePage({ params, searchParams }: ArticlePageProps) {
   const { category, slug } = await params;
-  const { title } = await searchParams;
+  const { title, edit } = await searchParams;
 
   const categoryInfo = CATEGORIES_DATA[category];
 
@@ -85,6 +86,7 @@ Write your content here...`;
       version={version}
       categorySlug={category}
       initialMetadata={initialMetadata}
+      defaultEditing={edit === "true"}
     />
   );
 }

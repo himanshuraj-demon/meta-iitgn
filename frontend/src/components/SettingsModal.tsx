@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Eye, Layout, Bell, Settings, ChevronLeft, Search, User, Shield, HelpCircle, HardDrive, Cpu, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { WIKI_THEMES, DARK_THEMES } from "@/lib/constants";
@@ -15,46 +15,60 @@ type TabType = "appearance" | "layout" | "search" | "alerts" | "account" | "lang
 export default function SettingsModal({ onClose, initialTab = "appearance" }: SettingsModalProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
-  
+
   // Mobile view navigation layer state: "list" shows settings categories, "details" shows the setting controls
   const [mobileView, setMobileView] = useState<"list" | "details">("list");
-  
+
   // User settings states (persisted to localStorage)
   const [theme, setTheme] = useState("light");
   const [fontSize, setFontSize] = useState("normal");
-  const [showAllThemes, setShowAllThemes] = useState(false);
+  const [fontStyle, setFontStyle] = useState("sans");
   const [zoomLevel, setZoomLevel] = useState("100%");
-  
   const [compactLayout, setCompactLayout] = useState(false);
   const [enableSound, setEnableSound] = useState(true);
   const [readingProgress, setReadingProgress] = useState(true);
-  
+
   const [autoFocusSearch, setAutoFocusSearch] = useState(true);
   const [historyLimit, setHistoryLimit] = useState(10);
   const [openInNewTab, setOpenInNewTab] = useState(false);
-  
+
   const [emailDigest, setEmailDigest] = useState(true);
   const [articleEditsAlert, setArticleEditsAlert] = useState(true);
- 
+  const themeTransitionTimer = useRef<number | null>(null);
+
+  const withThemeTransition = (updateFn: () => void) => {
+    document.documentElement.classList.add("theme-changing");
+    if (themeTransitionTimer.current) {
+      window.clearTimeout(themeTransitionTimer.current);
+    }
+    updateFn();
+    themeTransitionTimer.current = window.setTimeout(() => {
+      document.documentElement.classList.remove("theme-changing");
+      themeTransitionTimer.current = null;
+    }, 280);
+  };
+
   useEffect(() => {
     // Load settings from localStorage
     const savedTheme = localStorage.getItem("wiki_theme") || "light";
     const savedFontSize = localStorage.getItem("wiki_font_size") || "normal";
+    const savedFontStyle = localStorage.getItem("wiki_font_style") || "sans";
     const savedZoom = localStorage.getItem("wiki_zoom_level") || "100%";
-    
+
     const savedCompact = localStorage.getItem("wiki_compact_layout") === "true";
     const savedSound = localStorage.getItem("wiki_enable_sound") !== "false";
     const savedProgress = localStorage.getItem("wiki_reading_progress") !== "false";
-    
+
     const savedAutoFocus = localStorage.getItem("wiki_autofocus_search") !== "false";
     const savedHistoryLimit = Number(localStorage.getItem("wiki_history_limit") || "10");
     const savedNewTab = localStorage.getItem("wiki_open_new_tab") === "true";
-    
+
     const savedDigest = localStorage.getItem("wiki_email_digest") !== "false";
     const savedEditsAlert = localStorage.getItem("wiki_article_edits_alert") !== "false";
-    
+
     setTheme(savedTheme);
     setFontSize(savedFontSize);
+    setFontStyle(savedFontStyle);
     setZoomLevel(savedZoom);
     setCompactLayout(savedCompact);
     setEnableSound(savedSound);
@@ -64,35 +78,46 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
     setOpenInNewTab(savedNewTab);
     setEmailDigest(savedDigest);
     setArticleEditsAlert(savedEditsAlert);
-    
+
     if (initialTab) {
       setActiveTab(initialTab);
       setMobileView("details");
     }
-    
+
     // Disable background scrolling when modal is open
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
+      if (themeTransitionTimer.current) {
+        window.clearTimeout(themeTransitionTimer.current);
+      }
     };
   }, [initialTab]);
- 
+
   const handleSaveTheme = (newTheme: string) => {
-    setTheme(newTheme);
-    localStorage.setItem("wiki_theme", newTheme);
-    localStorage.setItem("wiki_daisyui_theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-    if (DARK_THEMES.includes(newTheme)) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    window.dispatchEvent(new Event("wiki_settings_changed"));
+    withThemeTransition(() => {
+      setTheme(newTheme);
+      localStorage.setItem("wiki_theme", newTheme);
+      localStorage.setItem("wiki_daisyui_theme", newTheme);
+      document.documentElement.setAttribute("data-theme", newTheme);
+      if (DARK_THEMES.includes(newTheme)) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      window.dispatchEvent(new Event("wiki_settings_changed"));
+    });
   };
 
   const handleSaveFontSize = (size: string) => {
     setFontSize(size);
     localStorage.setItem("wiki_font_size", size);
+    window.dispatchEvent(new Event("wiki_settings_changed"));
+  };
+
+  const handleSaveFontStyle = (style: string) => {
+    setFontStyle(style);
+    localStorage.setItem("wiki_font_style", style);
     window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
@@ -153,14 +178,13 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
   );
 
   return (
-    <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-transparent overflow-hidden font-sans p-0 sm:p-4">
+    <div className="fixed inset-0 z-[20000] flex min-h-screen items-center justify-center bg-transparent overflow-hidden font-sans p-0 sm:p-4">
       {/* Settings Dialog Card - Exactly matches sidebar height alignment & gray borders */}
-      <div className="relative w-full h-full sm:h-[680px] sm:min-h-[680px] sm:max-h-[680px] max-w-5xl bg-base-100 border-0 sm:border border-base-200 rounded-none sm:rounded-lg shadow-xl flex overflow-hidden animate-in zoom-in-95 duration-200 shrink-0 grow-0">
-        
+      <div className="relative box-border flex h-full w-full max-w-5xl shrink-0 grow-0 overflow-hidden rounded-none border-0 bg-base-100 shadow-xl animate-in zoom-in-95 duration-200 transition-colors duration-300 ease-in-out sm:h-[min(680px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200">
+
         {/* Left Panel: Navigation Categories list */}
-        <div className={`w-full sm:w-[280px] bg-base-100 border-r border-base-200 p-4 flex flex-col justify-between shrink-0 select-none overflow-hidden ${
-          mobileView === "details" ? "hidden sm:flex" : "flex"
-        }`}>
+        <div className={`w-full sm:w-[280px] bg-base-100 border-r border-base-200 p-4 flex flex-col justify-between shrink-0 select-none overflow-hidden ${mobileView === "details" ? "hidden sm:flex" : "flex"
+          }`}>
           <div className="flex flex-col gap-6 h-full overflow-hidden">
             {/* Header info */}
             <div className="flex items-center justify-between gap-2 px-3 pb-1 border-b border-base-200 sm:border-0">
@@ -180,7 +204,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
             </div>
 
             {/* Navigation Tabs */}
-            <ul className="menu bg-base-100 p-0 gap-1.5 overflow-y-auto flex-1 grid grid-cols-1">
+            <ul className="menu bg-base-100 p-0 gap-1.5 flex-1 grid grid-cols-1">
               {[
                 { id: "appearance", label: "Appearance", desc: "Theme, font styles, colors", icon: Eye },
                 { id: "layout", label: "Layout & Reading", desc: "List styling & reading bar", icon: Layout },
@@ -201,11 +225,10 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                         setActiveTab(tab.id as TabType);
                         setMobileView("details");
                       }}
-                      className={`flex items-start gap-3 p-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
-                        isAct
-                          ? "bg-primary! text-primary-content!"
-                          : "text-base-content hover:bg-base-200 bg-transparent"
-                      }`}
+                      className={`flex items-start gap-3 p-2.5 rounded-lg transition-all duration-200 cursor-pointer ${isAct
+                        ? "bg-primary! text-primary-content!"
+                        : "text-base-content hover:bg-base-200 bg-transparent"
+                        }`}
                     >
                       <IconComponent className={`h-4.5 w-4.5 mt-0.5 transition-colors duration-200 ${isAct ? "text-primary-content" : "text-base-content/70"}`} />
                       <div>
@@ -223,10 +246,9 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
         </div>
 
         {/* Right Panel: Detail Configuration View */}
-        <div className={`flex-1 flex flex-col justify-between overflow-hidden bg-base-100 ${
-          mobileView === "list" ? "hidden sm:flex" : "flex"
-        }`}>
-          
+        <div className={`flex-1 flex flex-col justify-between overflow-hidden bg-base-100 ${mobileView === "list" ? "hidden sm:flex" : "flex"
+          }`}>
+
           {/* Header Action Bar */}
           <div className="px-5 sm:px-6 py-4 border-b border-base-200 flex items-center justify-between shrink-0 bg-base-100">
             <div className="flex items-center gap-1">
@@ -239,7 +261,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                 <ChevronLeft className="w-6 h-6 shrink-0 text-base-content" />
               </button>
             </div>
-            
+
             {/* Save Preferences Button */}
             <button
               onClick={onClose}
@@ -251,7 +273,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
 
           {/* Active Category Settings Content */}
           <div className="flex-1 p-6 overflow-y-auto min-h-0 space-y-6 bg-base-100">
-            
+
             {/* Tab: Appearance */}
             {activeTab === "appearance" && (
               <div className="space-y-5 animate-in fade-in duration-200">
@@ -259,7 +281,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   <h4 className="text-[13px] font-bold text-base-content">Appearance Settings</h4>
                   <p className="text-[11px] text-base-content/60">Configure visual themes, sizing scaling, and colors.</p>
                 </div>
-                
+
                 <div className="space-y-4 bg-base-200/40 p-4 rounded-xl border border-base-200">
                   {/* Font Size */}
                   <div className="space-y-2">
@@ -275,11 +297,10 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                           <button
                             key={f.id}
                             onClick={() => handleSaveFontSize(f.id)}
-                            className={`flex items-center justify-center px-3 py-2 rounded-lg text-xs font-semibold border transition-all duration-150 cursor-pointer active:scale-95 ${
-                              isSel 
-                                ? "bg-primary/10 border-primary text-primary font-bold" 
-                                : "bg-base-100 text-base-content border-base-300 hover:bg-base-200/60"
-                            }`}
+                            className={`flex items-center justify-center px-3 py-2 rounded-lg text-xs font-semibold border transition-all duration-150 cursor-pointer active:scale-95 ${isSel
+                              ? "bg-primary/10 border-primary text-primary font-bold"
+                              : "bg-base-100 text-base-content border-base-300 hover:bg-base-200/60"
+                              }`}
                           >
                             {f.label}
                           </button>
@@ -299,19 +320,15 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                         { id: "serif", label: "Serif" },
                         { id: "mono", label: "Monospace" }
                       ].map((fontItem) => {
-                        const isSel = localStorage.getItem("wiki_font_style") === fontItem.id || (fontItem.id === "sans" && !localStorage.getItem("wiki_font_style"));
+                        const isSel = fontStyle === fontItem.id;
                         return (
                           <button
                             key={fontItem.id}
-                            onClick={() => {
-                              localStorage.setItem("wiki_font_style", fontItem.id);
-                              window.dispatchEvent(new Event("wiki_settings_changed"));
-                            }}
-                            className={`flex items-center justify-center px-3 py-2 rounded-lg text-xs font-semibold border transition-all duration-150 cursor-pointer active:scale-95 ${
-                              isSel 
-                                ? "bg-primary/10 border-primary text-primary font-bold" 
-                                : "bg-base-100 text-base-content border-base-300 hover:bg-base-200/60"
-                            }`}
+                            onClick={() => handleSaveFontStyle(fontItem.id)}
+                            className={`flex items-center justify-center px-3 py-2 rounded-lg text-xs font-semibold border transition-all duration-150 cursor-pointer active:scale-95 ${isSel
+                              ? "bg-primary/10 border-primary text-primary font-bold"
+                              : "bg-base-100 text-base-content border-base-300 hover:bg-base-200/60"
+                              }`}
                           >
                             {fontItem.label}
                           </button>
@@ -336,11 +353,10 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                           <button
                             key={z.id}
                             onClick={() => handleSaveZoomLevel(z.id)}
-                            className={`flex items-center justify-center px-3 py-2 rounded-lg text-xs font-semibold border transition-all duration-150 cursor-pointer active:scale-95 ${
-                              isSel 
-                                ? "bg-primary/10 border-primary text-primary font-bold" 
-                                : "bg-base-100 text-base-content border-base-300 hover:bg-base-200/60"
-                            }`}
+                            className={`flex items-center justify-center px-3 py-2 rounded-lg text-xs font-semibold border transition-all duration-150 cursor-pointer active:scale-95 ${isSel
+                              ? "bg-primary/10 border-primary text-primary font-bold"
+                              : "bg-base-100 text-base-content border-base-300 hover:bg-base-200/60"
+                              }`}
                           >
                             {z.label}
                           </button>
@@ -354,15 +370,14 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   {/* Theme Mode */}
                   <div className="space-y-2">
                     <label className="text-[12px] font-semibold text-base-content block">Interface Theme</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(showAllThemes ? WIKI_THEMES : WIKI_THEMES.slice(0, 6)).map((t) => {
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pr-1">
+                      {WIKI_THEMES.map((t) => {
                         const isSel = theme === t.id;
                         return (
                           <label
                             key={t.id}
-                            className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold border transition-all duration-150 cursor-pointer bg-base-100 border-base-300 text-base-content hover:bg-base-200/60 ${
-                              isSel ? "border-primary ring-1 ring-primary bg-base-200" : ""
-                            }`}
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold border transition-all duration-150 cursor-pointer bg-base-100 border-base-300 text-base-content hover:bg-base-200/60 ${isSel ? "border-primary ring-1 ring-primary bg-base-200" : ""
+                              }`}
                           >
                             <input
                               type="radio"
@@ -374,26 +389,16 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                             />
                             <span>{t.label}</span>
                             <div data-theme={t.id} className="flex gap-0.5 shrink-0 ml-1 bg-transparent">
-                              <span className="w-2.5 h-2.5 rounded-full block border border-black/5" style={{ backgroundColor: "oklch(var(--p))" }}></span>
-                              <span className="w-2.5 h-2.5 rounded-full block border border-black/5" style={{ backgroundColor: "oklch(var(--s))" }}></span>
-                              <span className="w-2.5 h-2.5 rounded-full block border border-black/5" style={{ backgroundColor: "oklch(var(--a))" }}></span>
-                              <span className="w-2.5 h-2.5 rounded-full block border border-black/5" style={{ backgroundColor: "oklch(var(--n))" }}></span>
+                              <span className="w-2.5 h-2.5 rounded-full border border-base-300 bg-primary" />
+                              <span className="w-2.5 h-2.5 rounded-full border border-base-300 bg-secondary" />
+                              <span className="w-2.5 h-2.5 rounded-full border border-base-300 bg-accent" />
+                              <span className="w-2.5 h-2.5 rounded-full border border-base-300 bg-neutral" />
                             </div>
                           </label>
                         );
                       })}
                     </div>
 
-                    <div className="flex justify-center pt-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setShowAllThemes(!showAllThemes)}
-                        className="btn btn-ghost btn-xs text-blue-500 font-bold hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        <span>{showAllThemes ? "Show Fewer Themes" : "Show All Themes"}</span>
-                        {showAllThemes ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -406,7 +411,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   <h4 className="text-[13px] font-bold text-base-content">Layout Settings</h4>
                   <p className="text-[11px] text-base-content/50">Configure presentation structure and micro-interactions.</p>
                 </div>
-                
+
                 <div className="space-y-3 bg-base-200/40 p-4 rounded-xl border border-base-200">
                   <div className="flex items-center justify-between">
                     <div>
@@ -415,9 +420,9 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                     </div>
                     <Switch checked={compactLayout} onChange={handleSaveCompact} />
                   </div>
-                  
+
                   <div className="border-t border-base-300/60 my-1" />
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-base-content/85 block text-[12px]">Show article reading progress bar</span>
@@ -425,9 +430,9 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                     </div>
                     <Switch checked={readingProgress} onChange={handleSaveProgress} />
                   </div>
-                  
+
                   <div className="border-t border-base-300/60 my-1" />
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-base-content/85 block text-[12px]">Enable micro sound effects</span>
@@ -446,7 +451,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   <h4 className="text-[13px] font-bold text-base-content">Search Engine Behavior</h4>
                   <p className="text-[11px] text-base-content/50">Customize lookup defaults and query indexing preferences.</p>
                 </div>
-                
+
                 <div className="space-y-3 bg-base-200/40 p-4 rounded-xl border border-base-200">
                   <div className="flex items-center justify-between">
                     <div>
@@ -455,9 +460,9 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                     </div>
                     <Switch checked={autoFocusSearch} onChange={handleSaveAutoFocus} />
                   </div>
-                  
+
                   <div className="border-t border-base-300/60 my-1" />
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-base-content/85 block text-[12px]">Open links in new tab</span>
@@ -465,9 +470,9 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                     </div>
                     <Switch checked={openInNewTab} onChange={handleSaveNewTab} />
                   </div>
-                  
+
                   <div className="border-t border-base-300/60 my-1" />
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-base-content/85 block text-[12px]">Search history limit</span>
@@ -495,7 +500,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   <h4 className="text-[13px] font-bold text-base-content">Weekly Summaries & Digests</h4>
                   <p className="text-[11px] text-base-content/50">Set up alert schedules for edits on bookmarked articles.</p>
                 </div>
-                
+
                 <div className="space-y-3 bg-base-200/40 p-4 rounded-xl border border-base-200">
                   <div className="flex items-center justify-between">
                     <div>
@@ -504,9 +509,9 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                     </div>
                     <Switch checked={emailDigest} onChange={handleSaveDigest} />
                   </div>
-                  
+
                   <div className="border-t border-base-300/60 my-1" />
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-base-content/85 block text-[12px]">Bookmarked page edit alerts</span>
@@ -525,14 +530,14 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   <h4 className="text-[13px] font-bold text-base-content">Account & Security</h4>
                   <p className="text-[11px] text-base-content/50">Configure login sessions, API tokens, and access roles.</p>
                 </div>
-                
+
                 <div className="space-y-3 bg-base-200/40 p-4 rounded-xl border border-base-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-base-content/85 block text-[12px]">Remember active session</span>
                       <span className="text-[10px] text-base-content/50 block">Keep you signed in on this browser for 30 days.</span>
                     </div>
-                    <Switch checked={true} onChange={() => {}} />
+                    <Switch checked={true} onChange={() => { }} />
                   </div>
                   <div className="border-t border-base-300/60 my-1" />
                   <div className="flex items-center justify-between">
@@ -540,7 +545,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                       <span className="font-semibold text-base-content/85 block text-[12px]">Two-Factor authentication</span>
                       <span className="text-[10px] text-base-content/50 block">Request verification codes when logging in.</span>
                     </div>
-                    <Switch checked={false} onChange={() => {}} />
+                    <Switch checked={false} onChange={() => { }} />
                   </div>
                 </div>
               </div>
@@ -553,7 +558,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   <h4 className="text-[13px] font-bold text-base-content">Language & Translation</h4>
                   <p className="text-[11px] text-base-content/50">Select language preferences for the portal content.</p>
                 </div>
-                
+
                 <div className="space-y-3 bg-base-200/40 p-4 rounded-xl border border-base-200">
                   <div className="flex items-center justify-between">
                     <div>
@@ -572,7 +577,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                       <span className="font-semibold text-base-content/85 block text-[12px]">Auto-translate articles</span>
                       <span className="text-[10px] text-base-content/50 block">Translate external resources dynamically.</span>
                     </div>
-                    <Switch checked={false} onChange={() => {}} />
+                    <Switch checked={false} onChange={() => { }} />
                   </div>
                 </div>
               </div>
@@ -585,14 +590,14 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   <h4 className="text-[13px] font-bold text-base-content">Cache & Offline Storage</h4>
                   <p className="text-[11px] text-base-content/50">Manage downloaded articles and saved browser cache space.</p>
                 </div>
-                
+
                 <div className="space-y-3 bg-base-200/40 p-4 rounded-xl border border-base-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-base-content/85 block text-[12px]">Save bookmarked pages offline</span>
                       <span className="text-[10px] text-base-content/50 block">Downloads bookmarks for reading without internet.</span>
                     </div>
-                    <Switch checked={true} onChange={() => {}} />
+                    <Switch checked={true} onChange={() => { }} />
                   </div>
                   <div className="border-t border-base-300/60 my-1" />
                   <div className="flex items-center justify-between">
@@ -613,14 +618,14 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   <h4 className="text-[13px] font-bold text-base-content">Performance</h4>
                   <p className="text-[11px] text-base-content/50">Manage rendering preferences for maximum system speed.</p>
                 </div>
-                
+
                 <div className="space-y-3 bg-base-200/40 p-4 rounded-xl border border-base-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-semibold text-base-content/85 block text-[12px]">Enable interface animations</span>
                       <span className="text-[10px] text-base-content/50 block">Disable transitions to boost rendering speed.</span>
                     </div>
-                    <Switch checked={true} onChange={() => {}} />
+                    <Switch checked={true} onChange={() => { }} />
                   </div>
                   <div className="border-t border-base-300/60 my-1" />
                   <div className="flex items-center justify-between">
@@ -628,7 +633,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                       <span className="font-semibold text-base-content/85 block text-[12px]">Hardware acceleration</span>
                       <span className="text-[10px] text-base-content/50 block">Leverage GPU computing for loading articles.</span>
                     </div>
-                    <Switch checked={true} onChange={() => {}} />
+                    <Switch checked={true} onChange={() => { }} />
                   </div>
                 </div>
               </div>
@@ -641,7 +646,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   <h4 className="text-[13px] font-bold text-base-content">Help & About</h4>
                   <p className="text-[11px] text-base-content/50">View wiki version specifications and licensing references.</p>
                 </div>
-                
+
                 {/* Centered mI circle logo */}
                 <div className="flex flex-col items-center justify-center py-4">
                   <div className="w-16 h-16 bg-primary text-primary-content rounded-full flex items-center justify-center font-serif font-black text-2xl shadow-sm">
@@ -657,7 +662,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                       <span className="text-[10px] text-base-content/50 block">v1.12.4-stable</span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between py-1.5 border-b border-base-300/50">
                     <div>
                       <span className="font-semibold text-base-content/85 block text-[12px]">Application Engine</span>

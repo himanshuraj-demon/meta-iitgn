@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { apiService } from "../../../api";
 
 interface PendingChangesViewProps {
@@ -88,7 +88,7 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
           className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors duration-200 cursor-pointer active:scale-95 flex items-center justify-center animate-in fade-in"
           aria-label="Back to Wiki"
         >
-          <ArrowLeft className="h-6 w-6 text-base-content" />
+          <ChevronLeft className="h-6 w-6 text-base-content" />
         </button>
         <span className="text-sm font-bold text-base-content uppercase tracking-wider">Changes</span>
       </header>

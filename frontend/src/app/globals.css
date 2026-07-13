@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 @plugin "daisyui" {
   themes: all;
 }
@@ -7,10 +8,24 @@
   --background: #ffffff;
   --foreground: #171717;
 }
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
 
 @theme inline {
   --color-background: var(--color-base-100, var(--b1, var(--background)));
@@ -99,6 +114,12 @@ body {
   font-family: var(--font-geist-sans), sans-serif;
 }
 
+html.theme-changing *,
+html.theme-changing *::before,
+html.theme-changing *::after {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, fill 0.25s ease, stroke 0.25s ease !important;
+}
+
 /* Typography System mapping for global consistency */
 .font-sans {
   font-family: var(--font-geist-sans), sans-serif !important;
@@ -112,6 +133,18 @@ body {
   font-family: var(--font-playfair), Georgia, serif !important;
 }
 
+html[data-font-style="sans"] .font-style-sensitive {
+  font-family: var(--font-geist-sans), sans-serif !important;
+}
+
+html[data-font-style="serif"] .font-style-sensitive {
+  font-family: var(--font-lora), serif !important;
+}
+
+html[data-font-style="mono"] .font-style-sensitive {
+  font-family: var(--font-geist-mono), monospace !important;
+}
+
 /* Eliminate empty space and padding inside milkdown editor */
 .milkdown-container .milkdown,
 .milkdown-container .editor,
@@ -122,14 +155,15 @@ body {
   padding-right: 0px !important;
 }
 
-.milkdown-container .prose > :first-child,
-.milkdown-container [contenteditable] > :first-child {
+.milkdown-container .prose> :first-child,
+.milkdown-container [contenteditable]> :first-child {
   margin-top: 0px !important;
 }
 
 
 /* Prevent toolbar from wrapping to a second row during the width transition on desktop, but allow wrapping on mobile */
 @media (min-width: 640px) {
+
   .milkdown-top-bar,
   .top-bar-inner {
     flex-wrap: nowrap !important;
@@ -137,6 +171,7 @@ body {
 }
 
 @media (max-width: 639px) {
+
   .milkdown-top-bar,
   .top-bar-inner {
     flex-wrap: wrap !important;
@@ -167,6 +202,7 @@ body {
 
 /* Responsive styles for editor toolbars on small screens */
 @media (max-width: 1023px) {
+
   /* Hide the floating tooltip/bubble menu/toolbar in editors */
   .milkdown-toolbar,
   .milkdown .milkdown-toolbar,
@@ -199,9 +235,12 @@ body {
 
 /* Custom animated moving gradient for premium headers, buttons and tags */
 @keyframes gradient-xy {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -230,9 +269,12 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none !important;
 }
+
 .no-scrollbar {
-  -ms-overflow-style: none !important;  /* IE and Edge */
-  scrollbar-width: none !important;  /* Firefox */
+  -ms-overflow-style: none !important;
+  /* IE and Edge */
+  scrollbar-width: none !important;
+  /* Firefox */
 }
 
 /* Font Size scaling rule applied on wiki article text */
@@ -242,12 +284,14 @@ html[data-font-size="small"] p,
 html[data-font-size="small"] article {
   font-size: 0.75rem !important;
 }
+
 html[data-font-size="normal"] .milkdown-container,
 html[data-font-size="normal"] .prose,
 html[data-font-size="normal"] p,
 html[data-font-size="normal"] article {
   font-size: 1rem !important;
 }
+
 html[data-font-size="large"] .milkdown-container,
 html[data-font-size="large"] .prose,
 html[data-font-size="large"] p,
@@ -262,12 +306,14 @@ html[data-font-style="sans"] p,
 html[data-font-style="sans"] article {
   font-family: var(--font-geist-sans), sans-serif !important;
 }
+
 html[data-font-style="serif"] .milkdown-container,
 html[data-font-style="serif"] .prose,
 html[data-font-style="serif"] p,
 html[data-font-style="serif"] article {
   font-family: var(--font-lora), serif !important;
 }
+
 html[data-font-style="mono"] .milkdown-container,
 html[data-font-style="mono"] .prose,
 html[data-font-style="mono"] p,

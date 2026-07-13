@@ -19,6 +19,7 @@ import {
   PlusCircle,
   HelpCircle,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import BottomNavbar from "@/components/BottomNavbar";
 
@@ -53,7 +54,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
 
   const isNews = useMemo(() => {
-    return parsed.infobox?.rows?.some((row: any) => 
+    return parsed.infobox?.rows?.some((row: any) =>
       row.label?.toLowerCase() === "category" && typeof row.value === "string" && row.value?.toLowerCase() === "news"
     ) || false;
   }, [parsed]);
@@ -225,7 +226,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
   const handleSave = async () => {
     try {
       let category = categorySlug || initialMetadata?.category || "campus";
-      const categoryRow = parsed.infobox?.rows?.find((row: any) => 
+      const categoryRow = parsed.infobox?.rows?.find((row: any) =>
         row.label?.toLowerCase() === "category"
       );
       if (categoryRow && categoryRow.value && typeof categoryRow.value === "string") {
@@ -390,18 +391,34 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
               />
             )}
             {/* Title Header (Separated from editor to prevent accidental deletion) */}
-            {isEditing ? (
-              <EditableCell
-                initialValue={parsed.title}
-                onChange={handleTitleChange}
-                placeholder="Untitled Page"
-                className="text-3xl sm:text-4xl font-display font-black tracking-tight text-gray-900 w-full border-none focus:outline-none focus:ring-0 mb-8 bg-transparent placeholder-gray-300"
-              />
-            ) : (
-              <h1 className="text-3xl sm:text-4xl font-display font-black tracking-tight text-gray-900 mb-8">
-                {parsed.title}
-              </h1>
-            )}
+            <div className="flex items-start justify-between gap-4">
+              {isEditing ? (
+                <EditableCell
+                  initialValue={parsed.title}
+                  onChange={handleTitleChange}
+                  placeholder="Untitled Page"
+                  className="text-3xl sm:text-4xl font-display font-black tracking-tight text-gray-900 w-full border-none focus:outline-none focus:ring-0 mb-8 bg-transparent placeholder-gray-300"
+                />
+              ) : (
+                <h1 className="text-3xl sm:text-4xl font-display font-black tracking-tight text-gray-900 mb-8">
+                  {parsed.title}
+                </h1>
+              )}
+              {!isEditing && (
+                <button
+                  onClick={() => {
+                    if (!user) {
+                      router.push("/login");
+                      return;
+                    }
+                    setIsEditing(true);
+                  }}
+                  className="btn btn-primary btn-sm rounded-xl shrink-0"
+                >
+                  <Pencil className="h-4 w-4" /> Edit
+                </button>
+              )}
+            </div>
 
             {/* Milkdown Editor */}
             <MilkdownEditor
@@ -418,98 +435,96 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
             tabs={
               (isEditing
                 ? [
-                    {
-                      id: "help",
-                      label: "Help",
-                      icon: HelpCircle,
-                      onClick: () => {
-                        const proceed = window.confirm(
-                          "You are being redirected to an external site (Markdown Guide) for formatting help. Do you want to continue?"
-                        );
-                        if (proceed) {
-                          window.open("https://www.markdownguide.org/basic-syntax/", "_blank");
-                        }
-                      },
+                  {
+                    id: "help",
+                    label: "Help",
+                    icon: HelpCircle,
+                    onClick: () => {
+                      const proceed = window.confirm(
+                        "You are being redirected to an external site (Markdown Guide) for formatting help. Do you want to continue?"
+                      );
+                      if (proceed) {
+                        window.open("https://www.markdownguide.org/basic-syntax/", "_blank");
+                      }
                     },
-                    {
-                      id: "save",
-                      label: "Save",
-                      icon: Check,
-                      onClick: handleSave,
-                      colorClass: "bg-emerald-50 text-emerald-600 border border-emerald-200/60 hover:bg-emerald-100/80 hover:text-emerald-700",
-                    },
-                    {
-                      id: "cancel",
-                      label: "Cancel",
-                      icon: X,
-                      onClick: () => {
-                        setMarkdown(initialMarkdown);
-                        markdownRef.current = initialMarkdown;
-                        if (dbPageId) {
-                          setIsEditing(false);
+                  },
+                  {
+                    id: "save",
+                    label: "Save",
+                    icon: Check,
+                    onClick: handleSave,
+                  },
+                  {
+                    id: "cancel",
+                    label: "Cancel",
+                    icon: X,
+                    onClick: () => {
+                      setMarkdown(initialMarkdown);
+                      markdownRef.current = initialMarkdown;
+                      if (dbPageId) {
+                        setIsEditing(false);
+                      } else {
+                        if (window.history.length > 1) {
+                          router.back();
                         } else {
-                          if (window.history.length > 1) {
-                            router.back();
-                          } else {
-                            router.push("/");
-                          }
+                          router.push("/");
                         }
-                      },
-                      colorClass: "bg-rose-50 text-rose-600 border border-rose-200/60 hover:bg-rose-100/80 hover:text-rose-700",
+                      }
                     },
-                    {
-                      id: "sidebar",
-                      label: "Sidebar",
-                      icon: PanelRight,
-                      onClick: () => setRightSidebarOpen(!rightSidebarOpen),
-                    },
-                  ]
+                    colorClass: "bg-rose-50 text-rose-600 border border-rose-200/60 hover:bg-rose-100/80 hover:text-rose-700",
+                  },
+                  {
+                    id: "sidebar",
+                    label: "Sidebar",
+                    icon: PanelRight,
+                    onClick: () => setRightSidebarOpen(!rightSidebarOpen),
+                  },
+                ]
                 : [
-                      (user?.role === "admin" || user?.role === "moderator") && {
-                        id: "new",
-                        label: "New Page",
-                        icon: PlusCircle,
-                        onClick: () => {
-                          router.push(`/wiki/${categorySlug || "campus"}/new`);
-                        },
-                      },
-                      {
-                        id: "changes",
-                        label: "Changes",
-                        icon: History,
-                        onClick: () => {
-                          setShowPendingChanges(true);
-                          setShowRevisions(false);
-                          window.dispatchEvent(new CustomEvent("show-wiki-pending"));
-                        },
-                        badgeCount: pendingCount,
-                      },
-                      {
-                        id: "edit",
-                        label: "Edit Page",
-                        icon: Edit3,
-                        onClick: () => {
-                          if (!user) {
-                            router.push("/login");
-                          } else {
-                            setIsEditing(true);
-                          }
-                        },
-                      },
-                      user?.role === "admin" && dbPageId && {
-                        id: "delete",
-                        label: "Delete Page",
-                        icon: Trash2,
-                        onClick: handleDelete,
-                        colorClass: "bg-rose-50 text-rose-600 border border-rose-200/60 hover:bg-rose-100/80 hover:text-rose-700",
-                      },
-                      {
-                        id: "sidebar",
-                        label: "Sidebar",
-                        icon: PanelRight,
-                        onClick: () => setRightSidebarOpen(!rightSidebarOpen),
-                      },
-                    ].filter(Boolean) as any
+                  (user?.role === "admin" || user?.role === "moderator") && {
+                    id: "new",
+                    label: "New Page",
+                    icon: PlusCircle,
+                    onClick: () => {
+                      router.push(`/wiki/${categorySlug || "campus"}/new`);
+                    },
+                  },
+                  {
+                    id: "changes",
+                    label: "Changes",
+                    icon: History,
+                    onClick: () => {
+                      setShowPendingChanges(true);
+                      setShowRevisions(false);
+                      window.dispatchEvent(new CustomEvent("show-wiki-pending"));
+                    },
+                    badgeCount: pendingCount,
+                  },
+                  {
+                    id: "edit",
+                    label: "Edit Page",
+                    icon: Edit3,
+                    onClick: () => {
+                      if (!user) {
+                        router.push("/login");
+                      } else {
+                        setIsEditing(true);
+                      }
+                    },
+                  },
+                  user?.role === "admin" && dbPageId && {
+                    id: "delete",
+                    label: "Delete Page",
+                    icon: Trash2,
+                    onClick: handleDelete,
+                  },
+                  {
+                    id: "sidebar",
+                    label: "Sidebar",
+                    icon: PanelRight,
+                    onClick: () => setRightSidebarOpen(!rightSidebarOpen),
+                  },
+                ].filter(Boolean) as any
               ).filter((tab: any) => tab.id !== "sidebar" || !hideSidebar)
             }
             activeTab={actualSidebarOpen ? "sidebar" : (isEditing ? "edit" : undefined)}

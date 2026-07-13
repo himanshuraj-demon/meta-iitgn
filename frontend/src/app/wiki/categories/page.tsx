@@ -34,7 +34,7 @@ export default function CategoriesPage() {
   const router = useRouter();
   const { user, categories, addCategoryState, updateCategoryState, activeTier } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Add Category form states
   const [showAddForm, setShowAddForm] = useState(false);
   const [error, setError] = useState("");
@@ -112,7 +112,7 @@ export default function CategoriesPage() {
   return (
     <main className="flex-1 p-6 md:p-8 mt-15 bg-transparent overflow-y-auto min-h-screen">
       <div className="max-w-5xl mx-auto space-y-6">
-        
+
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-xs font-semibold text-base-content/50 select-none">
           <Link href="/" className="hover:text-primary transition-colors">
@@ -123,7 +123,7 @@ export default function CategoriesPage() {
         </nav>
 
         {/* Categories Header */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between border-b border-base-200 pb-5 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div className="space-y-3 flex-1">
             <div className="inline-flex items-center justify-center p-3 bg-primary/10 text-primary rounded-2xl shadow-sm">
               <BookOpen className="h-6 w-6" />
@@ -135,7 +135,7 @@ export default function CategoriesPage() {
               Browse page categories across META IITGN Wiki, explore matching articles, or create your own custom categories.
             </p>
           </div>
-          
+
           {user && (
             <div className="shrink-0 mb-1">
               <button
@@ -215,11 +215,10 @@ export default function CategoriesPage() {
                       key={iconKey}
                       type="button"
                       onClick={() => setValue("icon", iconKey)}
-                      className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${
-                        isSelected
+                      className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${isSelected
                           ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20 scale-105"
                           : "bg-base-100 border-gray-200 text-base-content/60 hover:text-gray-850 hover:border-gray-350"
-                      }`}
+                        }`}
                       title={iconKey}
                     >
                       <IconComponent className="h-5 w-5" />
@@ -326,11 +325,10 @@ export default function CategoriesPage() {
                         key={iconKey}
                         type="button"
                         onClick={() => setValueEdit("icon", iconKey)}
-                        className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${
-                          isSelected
+                        className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${isSelected
                             ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20 scale-105"
                             : "bg-base-100 border-gray-200 text-base-content/60 hover:text-gray-850 hover:border-gray-350"
-                        }`}
+                          }`}
                         title={iconKey}
                       >
                         <IconComponent className="h-5 w-5" />
@@ -385,11 +383,10 @@ export default function CategoriesPage() {
               onClick={() => {
                 router.push(`/wiki/${cat.slug}`);
               }}
-              className={`card card-compact card-bordered relative flex flex-col justify-between p-4 md:p-6 shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer ${
-                cat.is_pinned 
-                  ? "bg-primary/10 border-2 border-primary hover:border-primary/80" 
+              className={`card card-compact card-bordered relative flex flex-col justify-between p-4 md:p-6 shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer ${cat.is_pinned
+                  ? "bg-primary/10 border-2 border-primary hover:border-primary/80"
                   : "bg-base-100 border-base-200 hover:border-primary/40"
-              }`}
+                }`}
             >
               {/* Overlay Link to make the whole card clickable */}
               <Link href={`/wiki/${cat.slug}`} className="absolute inset-0 z-0 rounded-2xl" aria-label={`Explore ${cat.name}`} />
@@ -437,9 +434,8 @@ export default function CategoriesPage() {
                           }
                         }}
                         disabled={pinningCategoryId === cat.category_id}
-                        className={`p-1 rounded-lg hover:bg-base-200 transition-all duration-150 cursor-pointer disabled:cursor-not-allowed ${
-                          cat.is_pinned ? "text-primary hover:text-primary bg-blue-50/50" : "text-base-content/50 hover:text-primary"
-                        }`}
+                        className={`p-1 rounded-lg hover:bg-base-200 transition-all duration-150 cursor-pointer disabled:cursor-not-allowed ${cat.is_pinned ? "text-primary hover:text-primary bg-blue-50/50" : "text-base-content/50 hover:text-primary"
+                          }`}
                         title={cat.is_pinned ? "Unpin from Quick Portal" : "Pin to Quick Portal"}
                       >
                         {pinningCategoryId === cat.category_id ? (

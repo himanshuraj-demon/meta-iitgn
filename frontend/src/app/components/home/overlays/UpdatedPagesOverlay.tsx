@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface UpdatedPagesOverlayProps {
@@ -32,7 +32,7 @@ export default function UpdatedPagesOverlay({
           onClick={onClose}
           className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center"
         >
-          <ArrowLeft className="h-6 w-6 text-base-content" />
+          <ChevronLeft className="h-6 w-6 text-base-content" />
         </button>
         <span className="text-sm font-bold text-blue-400 uppercase tracking-wider">Recently Updated Pages</span>
       </header>

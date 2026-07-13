@@ -18,7 +18,7 @@ import {
   Calendar,
   BookOpen,
   Languages,
-  ArrowLeft,
+  ChevronLeft,
   MoreVertical,
   Share2,
   Bookmark,
@@ -177,7 +177,7 @@ export default function Navbar({
               className="btn btn-ghost btn-circle p-2 text-base-content hover:bg-base-200/50 transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center"
               aria-label="Go Back"
             >
-              <ArrowLeft className="h-5 w-5 text-base-content font-bold" />
+              <ChevronLeft className="h-6 w-6 text-base-content" />
             </button>
           ) : (
             <button

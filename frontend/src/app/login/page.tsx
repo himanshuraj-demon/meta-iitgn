@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { devBypass } from "@/api/user";
-import { BookOpen, AlertCircle, CheckCircle, ShieldAlert, Cpu, X, ArrowLeft } from "lucide-react";
+import { BookOpen, AlertCircle, CheckCircle, ShieldAlert, Cpu, X, ChevronLeft } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -266,10 +266,11 @@ export default function LoginPage() {
               router.push("/");
             }
           }}
-          className="mt-6 text-xs font-bold text-base-content/50 hover:text-slate-650 hover:underline cursor-pointer flex items-center justify-center gap-1 active:scale-95 transition-all select-none"
+          className="mt-6 p-1.5 text-base-content/50 hover:text-base-content hover:bg-base-200 rounded-lg cursor-pointer flex items-center justify-center active:scale-95 transition-all select-none"
+          aria-label="Go back"
+          title="Go back"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Go Back</span>
+          <ChevronLeft className="w-6 h-6" />
         </button>
       </div>
     </div>

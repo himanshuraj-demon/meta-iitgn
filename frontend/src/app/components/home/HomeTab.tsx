@@ -114,15 +114,14 @@ export default function HomeTab({
 
         {/* Hero Content */}
         <div
-          className={`relative z-10 max-w-5xl space-y-6 px-4 ${
-            imageLoaded ? "animate-hero-content" : "opacity-0"
-          }`}
+          className={`relative z-10 max-w-5xl space-y-6 px-4 ${imageLoaded ? "animate-hero-content" : "opacity-0"
+            } font-style-sensitive`}
         >
           <h1 className="select-none leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
-            <span className="text-4xl sm:text-6xl lg:text-[75px] font-serif font-light tracking-wide bg-linear-to-r from-white to-slate-200 bg-clip-text text-transparent block">
+            <span className="text-4xl sm:text-6xl lg:text-[75px] font-light tracking-wide bg-linear-to-r from-white to-slate-200 bg-clip-text text-transparent block">
               Welcome to
             </span>
-            <span className="text-5xl sm:text-7xl lg:text-[105px] font-sans font-bold tracking-widest bg-linear-to-r from-blue-400 via-indigo-300 to-cyan-400 bg-clip-text text-transparent block mt-4 filter drop-shadow-[0_2px_10px_rgba(59,130,246,0.35)] animate-gradient-text uppercase">
+            <span className="text-5xl sm:text-7xl lg:text-[105px] font-bold tracking-widest bg-linear-to-r from-blue-400 via-indigo-300 to-cyan-400 bg-clip-text text-transparent block mt-4 filter drop-shadow-[0_2px_10px_rgba(59,130,246,0.35)] animate-gradient-text uppercase">
               META IITGN
             </span>
           </h1>
@@ -154,7 +153,7 @@ export default function HomeTab({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Featured Article */}
           <div className="lg:col-span-7 flex flex-col h-full space-y-4">
-            <div className="flex items-center gap-2 border-b border-base-200 pb-2">
+            <div className="flex items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-serif font-black text-base-content tracking-tight">
                 Featured Article
               </h2>
@@ -190,7 +189,7 @@ export default function HomeTab({
 
           {/* In the News */}
           <div className="lg:col-span-5 flex flex-col h-full space-y-4">
-            <div className="flex items-center justify-between border-b border-base-200 pb-2">
+            <div className="flex items-center justify-between">
               <h2 className="text-xl sm:text-2xl font-serif font-black text-base-content tracking-tight">
                 In the News
               </h2>
@@ -523,7 +522,7 @@ export default function HomeTab({
             </span>
           </div>
         </div>
-        
+
         {/* footer Credits */}
         <div className="pt-4 border-t border-base-200 bg-white flex md:hidden flex-col items-center text-center gap-1.5 select-none mt-6 w-full">
           <div className="text-[12px] text-base-content/50 font-medium flex items-center justify-center gap-1.5 uppercase tracking-wider">

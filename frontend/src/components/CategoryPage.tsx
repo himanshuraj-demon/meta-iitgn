@@ -93,7 +93,7 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
         setLoadingMore(true);
       }
       const res = await apiService.getCategoryArticles(categorySlug, { page: pageNum, limit: 6 });
-      
+
       const mapped: Article[] = res.articles.map((art: any) => ({
         slug: art.slug,
         title: art.title,
@@ -142,18 +142,9 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
   return (
     <main className="flex-1 p-6 md:p-8 mt-15 bg-transparent overflow-y-auto">
       <div className="max-w-5xl mx-auto space-y-6">
-        
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-xs font-semibold text-base-content/50 select-none">
-          <Link href="/" className="hover:text-primary transition-colors">
-            Home
-          </Link>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-primary">{category.name}</span>
-        </nav>
 
         {/* Category Header */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between border-b border-base-200 pb-5 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div className="space-y-3 flex-1">
             <div className="inline-flex items-center justify-center p-3 bg-primary/10 text-primary rounded-2xl shadow-sm">
               {(() => {
@@ -168,7 +159,7 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
               {category.description}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3 shrink-0 mb-1">
             {(user?.role === "admin" || user?.role === "moderator") && (
               <button
@@ -217,7 +208,7 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
                       <h3 className="text-sm md:text-base font-bold text-base-content font-serif group-hover:text-primary transition-colors duration-300">
                         {article.title}
                       </h3>
-                      
+
                       <p className="text-xs text-base-content/60 leading-relaxed line-clamp-3">
                         {article.snippet}
                       </p>
@@ -267,7 +258,7 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
             onSubmit={onEditSubmit}
             className="w-full h-full sm:h-auto sm:max-w-md bg-base-100 border-0 sm:border border-base-200 p-6 rounded-none sm:rounded-2xl shadow-none sm:shadow-xl space-y-4 animate-in zoom-in-95 duration-200 overflow-y-auto"
           >
-            <div className="flex items-center justify-between border-b border-base-200 pb-3">
+            <div className="flex items-center justify-between pb-3">
               <div className="flex items-center gap-2 text-primary font-bold">
                 <Pencil className="h-5 w-5" />
                 <span>Edit Category</span>
@@ -330,11 +321,10 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
                       key={iconKey}
                       type="button"
                       onClick={() => setEditIcon(iconKey)}
-                      className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${
-                        isSelected
-                          ? "bg-primary border-primary text-primary-content shadow-md shadow-primary/20 scale-105"
-                          : "bg-base-100 border-base-300 text-base-content/70 hover:text-base-content hover:bg-base-200"
-                      }`}
+                      className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${isSelected
+                        ? "bg-primary border-primary text-primary-content shadow-md shadow-primary/20 scale-105"
+                        : "bg-base-100 border-base-300 text-base-content/70 hover:text-base-content hover:bg-base-200"
+                        }`}
                       title={iconKey}
                     >
                       <IconComponent className="h-5 w-5" />
@@ -368,4 +358,4 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
       )}
     </main>
   );
-}
+}

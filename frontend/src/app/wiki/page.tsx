@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 
 export default async function ArticlePage() {
   return (
@@ -10,9 +11,11 @@ export default async function ArticlePage() {
         </p>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors"
+          className="inline-flex mt-6 p-1.5 text-base-content hover:bg-base-200 rounded-lg transition-colors"
+          aria-label="Back to Wiki"
+          title="Back to Wiki"
         >
-          Back to Wiki
+          <ChevronLeft className="h-6 w-6" />
         </Link>
       </div>
     </main>

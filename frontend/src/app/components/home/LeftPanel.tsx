@@ -98,7 +98,7 @@ export default function LeftPanel({
         const stats = await apiService.getPageStats();
         if (stats && typeof stats.totalPages === "number") {
           setPageCount(stats.totalPages);
-           localStorage.setItem("wiki-total-pages-count", JSON.stringify(pageCount));
+          localStorage.setItem("wiki-total-pages-count", JSON.stringify(pageCount));
         }
       } catch (err) {
         console.error("Failed to load page stats count:", err);
@@ -139,7 +139,7 @@ export default function LeftPanel({
       >
         <div className="space-y-2">
           {/* Header with Hamburger Menu and Profile Dropdown inside Left Panel */}
-          <div className="flex items-center justify-between pb-3 border-b border-base-200 w-full shrink-0">
+          <div className="flex items-center justify-between pb-3 w-full shrink-0">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="btn btn-ghost btn-square btn-sm transition-colors duration-200 cursor-pointer active:scale-95 text-base-content"

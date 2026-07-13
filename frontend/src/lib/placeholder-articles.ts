@@ -12,6 +12,44 @@ export interface CategoryInfo {
 }
 
 export const CATEGORIES_DATA: Record<string, CategoryInfo> = {
+  profile: {
+    name: "Profiles",
+    description: "Contributor profiles and activity guides for the META IITGN community.",
+    articles: [
+      {
+        slug: "readme",
+        title: "Profile README",
+        snippet: "The editable introduction shown on a contributor profile.",
+        content: `---
+rows:
+  - label: Category
+    value: Profiles
+    type: text
+  - label: Status
+    value: Living guide
+    type: text
+---
+
+# Profile README
+
+Welcome to my META IITGN profile. I enjoy making campus information easier to find, understand, and keep up to date.
+
+## What I contribute to
+
+- Academic and campus-life guides
+- Student clubs, events, and useful resources
+- Reviewing suggestions from the community
+
+## Activity
+
+My recent edits, reviews, and new pages are listed in the **Activity** section below this README on my profile.
+
+## Future additions
+
+This README can later include links, images, highlighted work, collaboration interests, and profile-specific milestones.`,
+      },
+    ],
+  },
   departments: {
     name: "Departments",
     description: "Explore the academic departments and engineering disciplines at IIT Gandhinagar.",

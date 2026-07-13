@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { LogOut, ArrowLeft, Loader2 } from "lucide-react";
+import { LogOut, ChevronLeft, Loader2 } from "lucide-react";
 
 export default function LogoutPage() {
   const router = useRouter();
@@ -61,10 +61,11 @@ export default function LogoutPage() {
           <button
             onClick={() => router.back()}
             disabled={loading}
-            className="w-full h-11 flex items-center justify-center gap-2 bg-zinc-850 hover:bg-zinc-800 text-zinc-300 hover:text-white font-semibold rounded-xl border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer text-sm"
+            className="mx-auto p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+            aria-label="Go back"
+            title="Go back"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Cancel & Go Back
+            <ChevronLeft className="w-6 h-6" />
           </button>
         </div>
       </div>
