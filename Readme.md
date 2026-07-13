@@ -1,6 +1,7 @@
 # Meta IITGN
 
-Meta IITGN is a modular application built with a **Next.js** frontend and a **FastAPI** backend, powered by a **Supabase** database. 
+Meta IITGN is a modular application built with a **Next.js** frontend and a **FastAPI** backend, powered by a **Supabase** database.   
+Add to PR descriptions: BEGIN_COMMIT_OVERRIDE  
 
 ## 📁 Project Structure
 
