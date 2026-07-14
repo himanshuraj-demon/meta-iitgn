@@ -11,7 +11,6 @@ import {
   Check,
   Compass,
 } from "lucide-react";
-import ParallaxBackground from "@/components/ParallaxBackground";
 import { db } from "@/lib/db";
 
 interface BookmarkItem {
@@ -76,7 +75,6 @@ export default function BookmarksTab({
   setBookmarks,
   removeBookmark,
   setActiveTab,
-  mousePos,
 }: BookmarksTabProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -140,43 +138,26 @@ export default function BookmarksTab({
   };
 
   return (
-    <div className="relative w-full min-h-screen lg:min-h-dvh flex flex-col bg-primary overflow-hidden pb-24 pt-16 lg:pt-22">
-      {/* Reusable Parallax Background Component matching Home & Search */}
-      <ParallaxBackground
-        mousePos={mousePos}
-        imageSrc="/homepage_bg.png"
-        overlayClass="bg-linear-to-b via-slate-900/45 to-slate-950/65"
-      />
-
-      <style>{`
-        @keyframes slide-up-fade {
-          0% { opacity: 0; transform: translateY(120px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-hero-content {
-          animation: slide-up-fade 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-      `}</style>
-
-      <div className="relative z-10 max-w-6xl mx-auto w-full flex flex-col h-full overflow-hidden px-8 md:px-12 animate-hero-content pb-28 md:pb-0">
+    <div className="relative w-full min-h-screen lg:min-h-dvh flex flex-col bg-base-200/30 overflow-hidden pb-24 pt-16 lg:pt-22">
+      <div className="relative z-10 max-w-6xl mx-auto w-full flex flex-col h-full overflow-hidden px-8 md:px-12 pb-28 md:pb-0 animate-in fade-in duration-300">
         
         {bookmarks.length > 0 ? (
           <>
-            {/* Top Toolbar (Glassmorphic Search bar) */}
+            {/* Top Toolbar (Theme-based Search bar) */}
             <div className="flex items-center gap-3 mb-4 mt-2 shrink-0 w-full">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/50" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search bookmarks..."
-                  className="w-full bg-white/10 backdrop-blur-md border border-white/15 rounded-xl py-2 pl-10 pr-9 text-xs md:text-sm text-white placeholder-white/50 focus:outline-none focus:border-blue-400/80 focus:bg-white/15 transition-all shadow-sm"
+                  className="w-full bg-base-100 border border-base-300 rounded-xl py-2 pl-10 pr-9 text-xs md:text-sm text-base-content placeholder-base-content/40 focus:outline-none focus:border-primary/50 transition-all shadow-xs"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/60 hover:text-base-content cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -184,14 +165,14 @@ export default function BookmarksTab({
               </div>
             </div>
 
-            {/* Category Filter Horizontal Pills - Glass Style */}
+            {/* Category Filter Horizontal Pills */}
             <div className="flex gap-2 overflow-x-auto pb-3 mb-4 shrink-0 scrollbar-none select-none w-full">
               <button
                 onClick={() => setSelectedCategory("All")}
                 className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
                   selectedCategory === "All"
-                    ? "bg-white text-base-content border-white shadow-md"
-                    : "bg-white/10 text-white/90 border-white/15 hover:bg-white/15"
+                    ? "bg-primary text-primary-content border-primary shadow-xs"
+                    : "bg-base-100 text-base-content border-base-300 hover:bg-base-200/60"
                 }`}
               >
                 All ({bookmarks.length})
@@ -202,8 +183,8 @@ export default function BookmarksTab({
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-4 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
                     selectedCategory === cat
-                      ? "bg-blue-600 text-white border-blue-600 shadow-md"
-                      : "bg-white/10 text-white/90 border-white/15 hover:bg-white/15"
+                      ? "bg-secondary text-secondary-content border-secondary shadow-xs"
+                      : "bg-base-100 text-base-content border-base-300 hover:bg-base-200/60"
                   }`}
                 >
                   {getCategoryDisplayName(cat)}
@@ -224,14 +205,14 @@ export default function BookmarksTab({
                         <div
                           key={item.id}
                           onClick={() => handleCardClick(pagePath)}
-                          className="card card-compact card-bordered bg-white/95 border-base-300/60 hover:border-blue-400/80 p-4 flex flex-row items-center justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)] group cursor-pointer"
+                          className="card card-compact card-bordered bg-base-100 border-base-300/80 hover:border-primary/50 p-4 flex flex-row items-center justify-between transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group cursor-pointer"
                         >
                           <div className="min-w-0 flex-1 pr-3">
                             {/* Card Content (Title & Category display) */}
-                            <h4 className="text-xs md:text-sm font-semibold text-base-content truncate leading-snug group-hover:text-blue-650 transition-colors">
+                            <h4 className="text-xs md:text-sm font-semibold text-base-content truncate leading-snug group-hover:text-primary transition-colors">
                               {item.title}
                             </h4>
-                            <span className="text-[8px] font-bold uppercase tracking-wider block mt-1 text-primary">
+                            <span className="text-[8px] font-bold uppercase tracking-wider block mt-1 text-secondary">
                               {getCategoryDisplayName(item.category)}
                             </span>
                           </div>
@@ -243,19 +224,19 @@ export default function BookmarksTab({
                               className={`btn btn-square btn-xs border transition-all cursor-pointer ${
                                 isCopied
                                   ? "btn-success bg-emerald-50 text-emerald-600 border-emerald-100"
-                                  : "btn-ghost bg-base-200 hover:bg-base-300 border-base-200 text-base-content/50"
+                                  : "btn-ghost bg-base-250 hover:bg-base-300 border-base-300 text-base-content/50"
                               }`}
                               title="Copy link"
                             >
                               {isCopied ? (
-                                <Check className="w-3.5 h-3.5" />
+                                <Check className="w-3.5 h-3.5 text-success" />
                               ) : (
                                 <Copy className="w-3.5 h-3.5" />
                               )}
                             </button>
                             <button
                               onClick={(e) => handleDelete(e, item.id)}
-                              className="btn btn-square btn-xs btn-ghost bg-base-200 hover:bg-rose-50 border-base-200 hover:border-rose-100 text-base-content/50 hover:text-rose-500 rounded-lg cursor-pointer transition-colors"
+                              className="btn btn-square btn-xs btn-ghost bg-base-250 hover:bg-rose-50 border-base-300 hover:border-rose-100 text-base-content/50 hover:text-rose-500 rounded-lg cursor-pointer transition-colors"
                               title="Remove"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -269,7 +250,7 @@ export default function BookmarksTab({
                     <div className="flex justify-center mt-6">
                       <button
                         onClick={() => setLimit(prev => prev + 5)}
-                        className="btn btn-primary btn-sm px-6 font-bold text-xs rounded-xl shadow-md cursor-pointer transition-all duration-150 active:scale-97 uppercase tracking-wider"
+                        className="btn btn-primary btn-sm px-6 font-bold text-xs rounded-xl shadow-md cursor-pointer transition-all duration-150 active:scale-97 uppercase tracking-wider text-primary-content"
                       >
                         Load More
                       </button>
@@ -277,15 +258,15 @@ export default function BookmarksTab({
                   )}
                 </>
               ) : (
-                <div className="text-center py-16 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl max-w-md mx-auto">
-                  <Search className="h-8 w-8 text-white/50 mx-auto mb-2" />
-                  <p className="text-sm text-white/90 font-bold">No bookmarks match search</p>
+                <div className="text-center py-16 bg-base-100 border border-base-200 rounded-2xl max-w-md mx-auto">
+                  <Search className="h-8 w-8 text-base-content/40 mx-auto mb-2" />
+                  <p className="text-sm text-base-content/85 font-bold">No bookmarks match search</p>
                   <button
                     onClick={() => {
                       setSearchQuery("");
                       setSelectedCategory("All");
                     }}
-                    className="mt-3 text-xs font-bold text-blue-300 hover:underline cursor-pointer"
+                    className="mt-3 text-xs font-bold text-primary hover:underline cursor-pointer"
                   >
                     Reset filters
                   </button>
@@ -294,22 +275,22 @@ export default function BookmarksTab({
             </div>
           </>
         ) : (
-          /* Empty reading list state - Glassmorphic */
+          /* Empty reading list state */
           <div className="flex-1 flex flex-col items-center justify-center text-center p-6 select-none my-auto w-full">
-            <div className="w-14 h-14 bg-white/10 border border-white/15 rounded-2xl flex items-center justify-center text-blue-400 shadow-sm mb-4 animate-pulse">
+            <div className="w-14 h-14 bg-base-100 border border-base-200 rounded-2xl flex items-center justify-center text-primary shadow-sm mb-4 animate-pulse">
               <BookmarkIcon className="h-6 w-6" />
             </div>
-            <h3 className="text-base font-bold text-white font-serif">
+            <h3 className="text-base font-bold text-base-content font-serif">
               Empty reading list
             </h3>
-            <p className="text-xs text-white/70 mt-2 max-w-xs leading-relaxed">
+            <p className="text-xs text-base-content/60 mt-2 max-w-xs leading-relaxed">
               Saved pages in the wiki will appear here for quick offline reading.
             </p>
 
             {setActiveTab && (
               <button
                 onClick={() => setActiveTab("home")}
-                className="btn btn-primary btn-sm mt-6 px-6 font-bold rounded-full text-xs uppercase tracking-wider transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer shadow-md hover:shadow-blue-500/20 active:scale-95"
+                className="btn btn-primary btn-sm mt-6 px-6 font-bold rounded-full text-xs uppercase tracking-wider transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer shadow-md hover:shadow-primary/20 active:scale-95 text-primary-content"
               >
                 <Compass className="w-4 h-4" />
                 Explore Wiki

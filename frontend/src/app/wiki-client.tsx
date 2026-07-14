@@ -15,7 +15,6 @@ import {
   X,
   History,
   PanelRight,
-  ArrowLeft,
   PlusCircle,
   HelpCircle,
   Trash2,
@@ -379,15 +378,14 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
       )}
 
       {/* Main Content Wrapper */}
-      <div className="flex flex-1 h-full mt-2 w-full min-w-full lg:min-w-0 overflow-hidden order-1">
-        {/* Main Scrollable Article Body */}
-        <main className="flex-1 min-w-full lg:min-w-0 px-4 md:px-8 pt-20 pb-28 overflow-y-auto bg-white relative scroll-smooth">
+      <div className="flex flex-1 h-full mt-2 w-full min-w-full lg:min-w-0 overflow-hidden order-1">        {/* Main Scrollable Article Body */}
+        <main className="flex-1 min-w-full lg:min-w-0 px-4 md:px-8 pt-20 pb-28 overflow-y-auto bg-base-100 relative scroll-smooth text-base-content">
           <article className="w-full max-w-5xl mx-auto space-y-6">
             {/* Teleported editor toolbar container */}
             {isEditing && (
               <div
                 ref={setToolbarContainer}
-                className="border border-gray-200 rounded-xl bg-gray-50 p-1.5 mb-6 milkdown flex items-center justify-center min-h-10"
+                className="border border-base-300 rounded-xl bg-base-200 p-1.5 mb-6 milkdown flex items-center justify-center min-h-10"
               />
             )}
             {/* Title Header (Separated from editor to prevent accidental deletion) */}
@@ -397,10 +395,10 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
                   initialValue={parsed.title}
                   onChange={handleTitleChange}
                   placeholder="Untitled Page"
-                  className="text-3xl sm:text-4xl font-display font-black tracking-tight text-gray-900 w-full border-none focus:outline-none focus:ring-0 mb-8 bg-transparent placeholder-gray-300"
+                  className="text-3xl sm:text-4xl font-display font-black tracking-tight text-base-content w-full border-none focus:outline-none focus:ring-0 mb-8 bg-transparent placeholder-base-content/30"
                 />
               ) : (
-                <h1 className="text-3xl sm:text-4xl font-display font-black tracking-tight text-gray-900 mb-8">
+                <h1 className="text-3xl sm:text-4xl font-display font-black tracking-tight text-base-content mb-8">
                   {parsed.title}
                 </h1>
               )}
@@ -512,12 +510,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
                       }
                     },
                   },
-                  user?.role === "admin" && dbPageId && {
-                    id: "delete",
-                    label: "Delete Page",
-                    icon: Trash2,
-                    onClick: handleDelete,
-                  },
+
                   {
                     id: "sidebar",
                     label: "Sidebar",

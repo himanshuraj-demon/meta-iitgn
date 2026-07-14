@@ -6,7 +6,7 @@ import {
   Search,
   Bookmark as BookmarkIcon,
   Home,
-  ArrowLeft,
+  User,
   Loader2,
   Pencil,
 } from "lucide-react";
@@ -21,6 +21,7 @@ import LeftPanel from "./components/home/LeftPanel";
 import HomeTab from "./components/home/HomeTab";
 import SearchTab from "./components/home/SearchTab";
 import BookmarksTab from "./components/home/BookmarksTab";
+import ProfileTab from "./components/home/ProfileTab";
 
 // Overlays
 import NewPagesOverlay from "./components/home/overlays/NewPagesOverlay";
@@ -262,10 +263,7 @@ export default function HomePage() {
           }
         }
 
-        if (cacheValid) {
-          setLoading(false);
-          return;
-        }
+
 
         try {
           syncInfo = await apiService.getSyncCheck();
@@ -678,9 +676,9 @@ ${newHistoryContent}`,
   }, []);
 
   const [activeTier, setActiveTier] = useState("gold");
-  const [activeTab, setActiveTab] = useState<"home" | "search" | "bookmarks">(
-    "home"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "home" | "search" | "bookmarks" | "profile"
+  >("home");
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Search tab states
@@ -790,6 +788,12 @@ ${newHistoryContent}`,
       icon: BookmarkIcon,
       onClick: () => setActiveTab("bookmarks"),
     },
+    {
+      id: "profile",
+      label: "Profile",
+      icon: User,
+      onClick: () => setActiveTab("profile"),
+    },
   ];
 
   if (authLoading || auth === null) {
@@ -835,34 +839,20 @@ ${newHistoryContent}`,
           >
             {/* Slim navigation bar for desktop only */}
             <div
-              className={`hidden lg:flex sticky mx-auto w-fit top-3 z-30 items-center gap-1 transition-all duration-300 px-4 py-1.5 rounded-full select-none -mb-11 ${
-                activeTab === "home" && !isScrolled
-                  ? "bg-white/10 backdrop-blur-md border border-white/10 shadow-none"
-                  : "bg-base-200/80 backdrop-blur-xl border border-base-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.06)]"
-              }`}
+              className="hidden lg:flex sticky mx-auto w-fit top-3 z-30 items-center gap-1 transition-all duration-300 px-4 py-1.5 rounded-full select-none -mb-11 bg-base-200/80 backdrop-blur-xl border border-base-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.06)]"
             >
-              {[
-                { id: "home", label: "Home", icon: Home },
-                { id: "search", label: "Search", icon: Search },
-                { id: "bookmarks", label: "Bookmarks", icon: BookmarkIcon },
-              ].map((tab) => {
+              {homeTabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
 
-                const buttonStyle = (activeTab === "home" && !isScrolled)
-                  ? isActive
-                    ? "bg-white/20 text-white border border-white/25 shadow-xs"
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
-                  : isActive
+                const buttonStyle = isActive
                     ? "bg-primary text-primary-content border border-transparent shadow-xs"
                     : "text-base-content/70 hover:bg-base-300 hover:text-base-content";
 
                 return (
                   <button
                     key={tab.id}
-                    onClick={() =>
-                      setActiveTab(tab.id as "home" | "search" | "bookmarks")
-                    }
+                    onClick={tab.onClick}
                     className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 cursor-pointer ${buttonStyle}`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -913,6 +903,8 @@ ${newHistoryContent}`,
                 setActiveTab={setActiveTab}
                 mousePos={mousePos}
               />
+            ) : activeTab === "profile" ? (
+              <ProfileTab mousePos={mousePos} />
             ) : null}
           </div>
         </div>

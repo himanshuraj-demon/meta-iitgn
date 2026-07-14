@@ -36,6 +36,47 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
   const [articleEditsAlert, setArticleEditsAlert] = useState(true);
   const themeTransitionTimer = useRef<number | null>(null);
 
+  const [isMounted, setIsMounted] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ isDragging: boolean; startX: number; startY: number; startPos: { x: number; y: number } }>({
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    startPos: { x: 0, y: 0 },
+  });
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (window.innerWidth < 640) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("input") || target.closest("select") || target.closest("a")) {
+      return;
+    }
+    dragRef.current = {
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      startPos: { ...position },
+    };
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!dragRef.current.isDragging) return;
+    const deltaX = e.clientX - dragRef.current.startX;
+    const deltaY = e.clientY - dragRef.current.startY;
+    setPosition({
+      x: dragRef.current.startPos.x + deltaX,
+      y: dragRef.current.startPos.y + deltaY,
+    });
+  };
+
+  const handleMouseUp = () => {
+    dragRef.current.isDragging = false;
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+  };
+
   const withThemeTransition = (updateFn: () => void) => {
     document.documentElement.classList.add("theme-changing");
     if (themeTransitionTimer.current) {
@@ -49,6 +90,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
   };
 
   useEffect(() => {
+    setIsMounted(true);
     // Load settings from localStorage
     const savedTheme = localStorage.getItem("wiki_theme") || "light";
     const savedFontSize = localStorage.getItem("wiki_font_size") || "normal";
@@ -91,6 +133,8 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
       if (themeTransitionTimer.current) {
         window.clearTimeout(themeTransitionTimer.current);
       }
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [initialTab]);
 
@@ -180,14 +224,20 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
   return (
     <div className="fixed inset-0 z-[20000] flex min-h-screen items-center justify-center bg-transparent overflow-hidden font-sans p-0 sm:p-4">
       {/* Settings Dialog Card - Exactly matches sidebar height alignment & gray borders */}
-      <div className="relative box-border flex h-full w-full max-w-5xl shrink-0 grow-0 overflow-hidden rounded-none border-0 bg-base-100 shadow-xl animate-in zoom-in-95 duration-200 transition-colors duration-300 ease-in-out sm:h-[min(680px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200">
+      <div 
+        style={isMounted && window.innerWidth >= 640 ? { transform: `translate(${position.x}px, ${position.y}px)` } : undefined}
+        className="relative box-border flex h-full w-full max-w-5xl shrink-0 grow-0 overflow-hidden rounded-none border-0 bg-base-100 shadow-xl animate-in zoom-in-95 duration-200 transition-colors duration-300 ease-in-out sm:h-[min(680px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200"
+      >
 
         {/* Left Panel: Navigation Categories list */}
         <div className={`w-full sm:w-[280px] bg-base-100 border-r border-base-200 p-4 flex flex-col justify-between shrink-0 select-none overflow-hidden ${mobileView === "details" ? "hidden sm:flex" : "flex"
           }`}>
           <div className="flex flex-col gap-6 h-full overflow-hidden">
             {/* Header info */}
-            <div className="flex items-center justify-between gap-2 px-3 pb-1 border-b border-base-200 sm:border-0">
+            <div 
+              onMouseDown={handleMouseDown}
+              className="flex items-center justify-between gap-2 px-3 pb-1 border-b border-base-200 sm:border-0 cursor-move select-none"
+            >
               <div className="flex items-center gap-2">
                 {/* Back / Close Button (renders as back chevron Left on mobile and desktop categories header) */}
                 <button
@@ -204,7 +254,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
             </div>
 
             {/* Navigation Tabs */}
-            <ul className="menu bg-base-100 p-0 gap-1.5 flex-1 grid grid-cols-1">
+            <ul className="menu bg-base-100 p-0 gap-1.5 flex-1 grid grid-cols-1 w-full">
               {[
                 { id: "appearance", label: "Appearance", desc: "Theme, font styles, colors", icon: Eye },
                 { id: "layout", label: "Layout & Reading", desc: "List styling & reading bar", icon: Layout },
@@ -219,19 +269,19 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                 const isAct = activeTab === tab.id;
                 const IconComponent = tab.icon;
                 return (
-                  <li key={tab.id}>
+                  <li key={tab.id} className="w-full">
                     <button
                       onClick={() => {
                         setActiveTab(tab.id as TabType);
                         setMobileView("details");
                       }}
-                      className={`flex items-start gap-3 p-2.5 rounded-lg transition-all duration-200 cursor-pointer ${isAct
+                      className={`flex items-start gap-3 p-2.5 rounded-lg transition-all duration-200 cursor-pointer w-full text-left ${isAct
                         ? "bg-primary! text-primary-content!"
                         : "text-base-content hover:bg-base-200 bg-transparent"
                         }`}
                     >
                       <IconComponent className={`h-4.5 w-4.5 mt-0.5 transition-colors duration-200 ${isAct ? "text-primary-content" : "text-base-content/70"}`} />
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <span className="block truncate text-[12.5px] leading-tight font-bold">{tab.label}</span>
                         <span className={`block text-[9.5px] font-normal leading-normal mt-0.5 ${isAct ? "text-primary-content/80" : "text-base-content/50"}`}>
                           {tab.desc}
@@ -250,7 +300,10 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
           }`}>
 
           {/* Header Action Bar */}
-          <div className="px-5 sm:px-6 py-4 border-b border-base-200 flex items-center justify-between shrink-0 bg-base-100">
+          <div 
+            onMouseDown={handleMouseDown}
+            className="px-5 sm:px-6 py-4 border-b border-base-200 flex items-center justify-between shrink-0 bg-base-100 cursor-move select-none"
+          >
             <div className="flex items-center gap-1">
               {/* Back to Categories (Mobile Only) */}
               <button
@@ -262,12 +315,13 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
               </button>
             </div>
 
-            {/* Save Preferences Button */}
+            {/* Close Button */}
             <button
               onClick={onClose}
-              className="btn btn-primary btn-sm px-4 font-bold rounded-lg shadow-xs cursor-pointer transition-all duration-150 active:scale-98 text-xs"
+              className="p-1.5 hover:bg-base-200 text-base-content rounded-lg transition-colors cursor-pointer"
+              aria-label="Close settings"
             >
-              Save Preferences
+              <X className="w-5.5 h-5.5 text-base-content" />
             </button>
           </div>
 
@@ -374,19 +428,13 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                       {WIKI_THEMES.map((t) => {
                         const isSel = theme === t.id;
                         return (
-                          <label
+                          <button
                             key={t.id}
+                            type="button"
+                            onClick={() => handleSaveTheme(t.id)}
                             className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold border transition-all duration-150 cursor-pointer bg-base-100 border-base-300 text-base-content hover:bg-base-200/60 ${isSel ? "border-primary ring-1 ring-primary bg-base-200" : ""
                               }`}
                           >
-                            <input
-                              type="radio"
-                              name="theme-controller"
-                              value={t.id}
-                              checked={isSel}
-                              onChange={() => handleSaveTheme(t.id)}
-                              className="theme-controller sr-only"
-                            />
                             <span>{t.label}</span>
                             <div data-theme={t.id} className="flex gap-0.5 shrink-0 ml-1 bg-transparent">
                               <span className="w-2.5 h-2.5 rounded-full border border-base-300 bg-primary" />
@@ -394,7 +442,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                               <span className="w-2.5 h-2.5 rounded-full border border-base-300 bg-accent" />
                               <span className="w-2.5 h-2.5 rounded-full border border-base-300 bg-neutral" />
                             </div>
-                          </label>
+                          </button>
                         );
                       })}
                     </div>

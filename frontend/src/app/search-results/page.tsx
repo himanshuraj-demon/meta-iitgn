@@ -7,7 +7,6 @@ import { apiService } from "@/api";
 import {
   Search,
   HelpCircle,
-  ArrowLeft,
   X,
   Building2,
   BookOpen,
@@ -55,14 +54,14 @@ interface SearchResult {
 function SearchResultsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+
   const queryParam = searchParams?.get("query") || "";
   const categoryParam = searchParams?.get("category") || "All";
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(queryParam);
   const [category, setCategory] = useState(categoryParam);
-  
+
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
 
