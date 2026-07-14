@@ -14,6 +14,27 @@ const SettingsModal = dynamic(() => import("@/components/SettingsModal"), {
 function SettingsModalTrigger() {
   const { settingsTab, setSettingsTab } = useAuth();
   
+  React.useEffect(() => {
+    const handleOpenSettings = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const tab = customEvent.detail?.tab || "appearance";
+      if (setSettingsTab) {
+        setSettingsTab(tab);
+      }
+    };
+    const handleCloseSettings = () => {
+      if (setSettingsTab) {
+        setSettingsTab(null);
+      }
+    };
+    window.addEventListener("wiki_open_settings", handleOpenSettings);
+    window.addEventListener("wiki_close_settings", handleCloseSettings);
+    return () => {
+      window.removeEventListener("wiki_open_settings", handleOpenSettings);
+      window.removeEventListener("wiki_close_settings", handleCloseSettings);
+    };
+  }, [setSettingsTab]);
+  
   if (!settingsTab) return null;
   
   return <SettingsModal initialTab={settingsTab} onClose={() => setSettingsTab(null)} />;

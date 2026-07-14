@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { X, Maximize2, Minimize2 } from "lucide-react";
 
 interface GenericOverlayModalProps {
   isOpen: boolean;
@@ -15,11 +15,12 @@ export default function GenericOverlayModal({
   isOpen,
   onClose,
   title,
-  headerColorClass = "text-primary bg-base-200",
   children,
 }: GenericOverlayModalProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isMounted, setIsMounted] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const dragRef = useRef<{
     isDragging: boolean;
@@ -37,8 +38,17 @@ export default function GenericOverlayModal({
     setIsMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (window.innerWidth < 640) return;
+    if (window.innerWidth < 640 || isMaximized) return;
     const target = e.target as HTMLElement;
     if (
       target.closest("button") ||
@@ -55,6 +65,7 @@ export default function GenericOverlayModal({
       startY: e.clientY,
       startPos: { ...position },
     };
+    setIsDragging(true);
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
   };
@@ -71,6 +82,7 @@ export default function GenericOverlayModal({
 
   const handleMouseUp = () => {
     dragRef.current.isDragging = false;
+    setIsDragging(false);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
   };
@@ -78,29 +90,64 @@ export default function GenericOverlayModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[20000] flex min-h-screen items-center justify-center bg-transparent pointer-events-none overflow-hidden font-sans p-0 sm:p-4">
+    <div className={`fixed inset-0 z-[20000] flex min-h-screen items-center justify-center bg-transparent pointer-events-none overflow-hidden font-sans ${
+      isMaximized ? "p-0" : "p-0 sm:p-4"
+    }`}>
       {/* Dialog Card - matching SettingsModal aesthetics and draggable header */}
       <div
         style={
-          isMounted && window.innerWidth >= 640
-            ? { transform: `translate(${position.x}px, ${position.y}px)` }
+          isMounted && window.innerWidth >= 640 && !isMaximized
+            ? {
+                transform: `translate(${position.x}px, ${position.y}px)`,
+                transition: isDragging ? "none" : undefined,
+              }
             : undefined
         }
-        className="relative box-border flex flex-col h-full w-full max-w-4xl shrink-0 grow-0 overflow-hidden rounded-none border-0 bg-base-100 shadow-xl pointer-events-auto sm:h-[min(640px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200"
+        className={`relative box-border flex flex-col shrink-0 grow-0 overflow-hidden bg-base-100 shadow-xl pointer-events-auto ${
+          isDragging ? "" : "transition-all duration-200"
+        } ${
+          isMaximized
+            ? "w-full h-full max-w-none max-h-none sm:w-screen sm:h-screen sm:max-h-none sm:rounded-none sm:border-0"
+            : "w-full h-full max-w-4xl sm:h-[min(640px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200"
+        }`}
       >
         {/* Unified Draggable Header */}
         <div
           onMouseDown={handleMouseDown}
-          className={`flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-base-200 cursor-move select-none shrink-0 ${headerColorClass}`}
+          className={`grid grid-cols-3 items-center px-4 py-2.5 border-b border-base-300 bg-base-200 text-base-content select-none shrink-0 ${
+            isMaximized ? "cursor-default" : "cursor-move"
+          }`}
         >
-          <span className="font-bold text-sm tracking-tight">{title}</span>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5 shrink-0" />
-          </button>
+          {/* Left: Close Button */}
+          <div className="flex items-center justify-start">
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5 shrink-0" />
+            </button>
+          </div>
+
+          {/* Center: Title */}
+          <div className="flex items-center justify-center">
+            <span className="font-bold text-sm tracking-tight text-center truncate px-2">{title}</span>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center justify-end gap-1">
+            <button
+              onClick={() => setIsMaximized(!isMaximized)}
+              className="hidden sm:inline-flex p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
+              aria-label={isMaximized ? "Restore" : "Maximize"}
+            >
+              {isMaximized ? (
+                <Minimize2 className="w-4 h-4 shrink-0" />
+              ) : (
+                <Maximize2 className="w-4 h-4 shrink-0" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}

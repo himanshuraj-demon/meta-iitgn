@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { X, Eye, Layout, Bell, ChevronLeft, Search, User, Shield, HelpCircle, HardDrive, Cpu } from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { X, Eye, Layout, Bell, ChevronLeft, Search, User, Shield, HelpCircle, HardDrive, Cpu, Maximize2, Minimize2 } from "lucide-react";
 import { WIKI_THEMES, DARK_THEMES } from "@/lib/constants";
 
 interface SettingsModalProps {
@@ -13,6 +13,7 @@ type TabType = "appearance" | "layout" | "search" | "alerts" | "account" | "lang
 
 export default function SettingsModal({ onClose, initialTab = "appearance" }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   // Mobile view navigation layer state: "list" shows settings categories, "details" shows the setting controls
   const [mobileView, setMobileView] = useState<"list" | "details">("list");
@@ -36,7 +37,13 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
 
   const [isMounted, setIsMounted] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<{ isDragging: boolean; startX: number; startY: number; startPos: { x: number; y: number } }>({
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{
+    isDragging: boolean;
+    startX: number;
+    startY: number;
+    startPos: { x: number; y: number };
+  }>({
     isDragging: false,
     startX: 0,
     startY: 0,
@@ -44,7 +51,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
   });
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (window.innerWidth < 640) return;
+    if (window.innerWidth < 640 || isMaximized) return;
     const target = e.target as HTMLElement;
     if (target.closest("button") || target.closest("input") || target.closest("select") || target.closest("a")) {
       return;
@@ -55,11 +62,12 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
       startY: e.clientY,
       startPos: { ...position },
     };
+    setIsDragging(true);
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!dragRef.current.isDragging) return;
     const deltaX = e.clientX - dragRef.current.startX;
     const deltaY = e.clientY - dragRef.current.startY;
@@ -67,13 +75,14 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
       x: dragRef.current.startPos.x + deltaX,
       y: dragRef.current.startPos.y + deltaY,
     });
-  };
+  }, []);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     dragRef.current.isDragging = false;
+    setIsDragging(false);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
-  };
+  }, [handleMouseMove]);
 
   const withThemeTransition = (updateFn: () => void) => {
     document.documentElement.classList.add("theme-changing");
@@ -138,7 +147,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [initialTab]);
+  }, [initialTab, handleMouseMove, handleMouseUp]);
 
   const handleSaveTheme = (newTheme: string) => {
     withThemeTransition(() => {
@@ -224,40 +233,69 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
   );
 
   return (
-    <div className="fixed inset-0 z-[20000] flex min-h-screen items-center justify-center bg-transparent overflow-hidden font-sans p-0 sm:p-4">
+    <div className={`fixed inset-0 z-[20000] flex min-h-screen items-center justify-center bg-transparent overflow-hidden font-sans ${
+      isMaximized ? "p-0" : "p-0 sm:p-4"
+    }`}>
       {/* Settings Dialog Card - Exactly matches sidebar height alignment & gray borders */}
       <div 
-        style={isMounted && window.innerWidth >= 640 ? { transform: `translate(${position.x}px, ${position.y}px)` } : undefined}
-        className="relative box-border flex flex-col h-full w-full max-w-5xl shrink-0 grow-0 overflow-hidden rounded-none border-0 bg-base-100 shadow-xl animate-in zoom-in-95 duration-200 transition-colors duration-300 ease-in-out sm:h-[min(680px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200"
+        style={isMounted && window.innerWidth >= 640 && !isMaximized ? { 
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          transition: isDragging ? "none" : undefined 
+        } : undefined}
+        className={`relative box-border flex flex-col shrink-0 grow-0 overflow-hidden bg-base-100 shadow-xl pointer-events-auto ${
+          isDragging ? "" : "transition-all duration-200"
+        } ${
+          isMaximized
+            ? "w-full h-full max-w-none max-h-none sm:w-screen sm:h-screen sm:max-h-none sm:rounded-none sm:border-0"
+            : "w-full h-full max-w-5xl sm:h-[min(680px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200"
+        }`}
       >
         {/* Unified Settings Header - using theme color, not too dark */}
         <div
           onMouseDown={handleMouseDown}
-          className="flex items-center justify-between px-5 sm:px-6 py-3 bg-base-200 text-base-content border-b border-base-300 cursor-move select-none shrink-0"
+          className={`grid grid-cols-3 items-center px-4 py-2.5 border-b border-base-300 bg-base-200 text-base-content select-none shrink-0 ${
+            isMaximized ? "cursor-default" : "cursor-move"
+          }`}
         >
-          <div className="flex items-center gap-2">
+          {/* Left: Close / Back Button */}
+          <div className="flex items-center justify-start gap-1">
+            {mobileView === "details" && typeof window !== "undefined" && window.innerWidth < 640 && (
+              <button
+                onClick={() => setMobileView("list")}
+                className="p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content -ml-2"
+                aria-label="Back"
+              >
+                <ChevronLeft className="w-5 h-5 shrink-0" />
+              </button>
+            )}
             <button
-              onClick={() => {
-                if (mobileView === "details" && typeof window !== "undefined" && window.innerWidth < 640) {
-                  setMobileView("list");
-                } else {
-                  onClose();
-                }
-              }}
-              className="p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content -ml-2"
-              aria-label="Back"
+              onClick={onClose}
+              className="p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
+              aria-label="Close settings"
             >
-              <ChevronLeft className="w-5 h-5 shrink-0" />
+              <X className="w-5 h-5 shrink-0" />
             </button>
-            <span className="font-bold text-sm tracking-tight">Settings</span>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
-            aria-label="Close settings"
-          >
-            <X className="w-5 h-5 shrink-0" />
-          </button>
+
+          {/* Center: Title */}
+          <div className="flex items-center justify-center">
+            <span className="font-bold text-sm tracking-tight text-center truncate px-2">Settings</span>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center justify-end gap-1">
+            <button
+              onClick={() => setIsMaximized(!isMaximized)}
+              className="hidden sm:inline-flex p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
+              aria-label={isMaximized ? "Restore" : "Maximize"}
+            >
+              {isMaximized ? (
+                <Minimize2 className="w-4 h-4 shrink-0" />
+              ) : (
+                <Maximize2 className="w-4 h-4 shrink-0" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Content Body Row */}

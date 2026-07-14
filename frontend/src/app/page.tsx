@@ -118,6 +118,22 @@ export default function HomePage() {
     }
   }, [user, auth, authLoading, loadHomeData, setTotalPagesCount]);
 
+  useEffect(() => {
+    const handleCloseOverlays = () => {
+      setActiveOverlay(null);
+    };
+    window.addEventListener("wiki_open_settings", handleCloseOverlays);
+    return () => {
+      window.removeEventListener("wiki_open_settings", handleCloseOverlays);
+    };
+  }, [setActiveOverlay]);
+
+  useEffect(() => {
+    if (activeOverlay) {
+      window.dispatchEvent(new CustomEvent("wiki_close_settings"));
+    }
+  }, [activeOverlay]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQuery.trim();
