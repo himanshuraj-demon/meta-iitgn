@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { X, Eye, Layout, Bell, ChevronLeft, Search, User, Shield, HelpCircle, HardDrive, Cpu, Maximize2, Minimize2 } from "lucide-react";
 import { WIKI_THEMES, DARK_THEMES } from "@/lib/constants";
 
@@ -37,6 +37,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
 
   const [isMounted, setIsMounted] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{
     isDragging: boolean;
     startX: number;
@@ -61,11 +62,12 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
       startY: e.clientY,
       startPos: { ...position },
     };
+    setIsDragging(true);
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!dragRef.current.isDragging) return;
     const deltaX = e.clientX - dragRef.current.startX;
     const deltaY = e.clientY - dragRef.current.startY;
@@ -73,13 +75,14 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
       x: dragRef.current.startPos.x + deltaX,
       y: dragRef.current.startPos.y + deltaY,
     });
-  };
+  }, []);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     dragRef.current.isDragging = false;
+    setIsDragging(false);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
-  };
+  }, [handleMouseMove]);
 
   const withThemeTransition = (updateFn: () => void) => {
     document.documentElement.classList.add("theme-changing");
@@ -144,7 +147,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [initialTab]);
+  }, [initialTab, handleMouseMove, handleMouseUp]);
 
   const handleSaveTheme = (newTheme: string) => {
     withThemeTransition(() => {
@@ -235,8 +238,13 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
     }`}>
       {/* Settings Dialog Card - Exactly matches sidebar height alignment & gray borders */}
       <div 
-        style={isMounted && window.innerWidth >= 640 && !isMaximized ? { transform: `translate(${position.x}px, ${position.y}px)` } : undefined}
-        className={`relative box-border flex flex-col shrink-0 grow-0 overflow-hidden bg-base-100 shadow-xl pointer-events-auto transition-all duration-200 ${
+        style={isMounted && window.innerWidth >= 640 && !isMaximized ? { 
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          transition: isDragging ? "none" : undefined 
+        } : undefined}
+        className={`relative box-border flex flex-col shrink-0 grow-0 overflow-hidden bg-base-100 shadow-xl pointer-events-auto ${
+          isDragging ? "" : "transition-all duration-200"
+        } ${
           isMaximized
             ? "w-full h-full max-w-none max-h-none sm:w-screen sm:h-screen sm:max-h-none sm:rounded-none sm:border-0"
             : "w-full h-full max-w-5xl sm:h-[min(680px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200"

@@ -20,6 +20,7 @@ export default function GenericOverlayModal({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isMounted, setIsMounted] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const dragRef = useRef<{
     isDragging: boolean;
@@ -64,6 +65,7 @@ export default function GenericOverlayModal({
       startY: e.clientY,
       startPos: { ...position },
     };
+    setIsDragging(true);
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
   };
@@ -80,6 +82,7 @@ export default function GenericOverlayModal({
 
   const handleMouseUp = () => {
     dragRef.current.isDragging = false;
+    setIsDragging(false);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
   };
@@ -94,10 +97,15 @@ export default function GenericOverlayModal({
       <div
         style={
           isMounted && window.innerWidth >= 640 && !isMaximized
-            ? { transform: `translate(${position.x}px, ${position.y}px)` }
+            ? {
+                transform: `translate(${position.x}px, ${position.y}px)`,
+                transition: isDragging ? "none" : undefined,
+              }
             : undefined
         }
-        className={`relative box-border flex flex-col shrink-0 grow-0 overflow-hidden bg-base-100 shadow-xl pointer-events-auto transition-all duration-200 ${
+        className={`relative box-border flex flex-col shrink-0 grow-0 overflow-hidden bg-base-100 shadow-xl pointer-events-auto ${
+          isDragging ? "" : "transition-all duration-200"
+        } ${
           isMaximized
             ? "w-full h-full max-w-none max-h-none sm:w-screen sm:h-screen sm:max-h-none sm:rounded-none sm:border-0"
             : "w-full h-full max-w-4xl sm:h-[min(640px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200"
