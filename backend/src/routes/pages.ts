@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getPage, getRecentNewPages, getRecentUpdatedPages, searchPages, getPageStats, createPage, updatePage, deletePage, getPageCount, getSyncCheck } from "../controllers/page.controller.js";
+import { getPage, getRecentNewPages, getRecentUpdatedPages, searchPages, getPageStats, createPage, updatePage, deletePage, getPageCount, getSyncCheck, getPageForEdit, getPageById } from "../controllers/page.controller.js";
 import { checkAuth, protect, checkAuthOptional } from "../middlewares/auth.js";
 
 const router=Router();
@@ -10,6 +10,8 @@ router.get("/count", getPageCount);
 router.get("/recent/new", getRecentNewPages);
 router.get("/recent/updated", getRecentUpdatedPages);
 router.get("/search", searchPages);
+router.get("/id/:page_id", getPageById);
+router.get("/:slug/edit", checkAuth, getPageForEdit);
 router.get("/:slug", getPage);
 router.get("/page/:slug", getPage);
 

@@ -107,7 +107,7 @@ export const getRecentUpdatedPages = async (req: Request, res: Response) => {
 
 /**
  * GET /pages/search
- * Search both live pages and pending drafts (status = in_review, page_id = null)
+ * Search pages, categories, users, news, everything.
  */
 export const searchPages = async (req: Request, res: Response) => {
   try {
@@ -121,6 +121,8 @@ export const searchPages = async (req: Request, res: Response) => {
     if (cached && cached.expiry > Date.now()) {
       return res.json(cached.data);
     }
+
+    const isLoggedIn = !!(req.user && req.user.user_id);
 
     // 1. Fetch all live pages
     const livePages = await prisma.live_pages.findMany({
@@ -149,6 +151,35 @@ export const searchPages = async (req: Request, res: Response) => {
       },
     });
 
+    // 3. Fetch categories
+    const allCategories = await prisma.categories.findMany({
+      select: {
+        name: true,
+        description: true,
+        slug: true,
+      }
+    });
+
+    // 4. Fetch news
+    const allNews = await prisma.news.findMany({
+      where: { deleted_at: null },
+      select: {
+        title: true,
+        content: true,
+        slug: true,
+      }
+    });
+
+    // 5. Fetch users
+    const allUsers = await prisma.users.findMany({
+      where: { deleted_at: null },
+      select: {
+        user_id: true,
+        name: true,
+        email: true,
+      }
+    });
+
     // Levenshtein edit distance
     const editDistance = (s1: string, s2: string): number => {
       const m = s1.length;
@@ -172,7 +203,7 @@ export const searchPages = async (req: Request, res: Response) => {
       return dp[m][n];
     };
 
-    // Fuzzy matching scoring function (Word-level Levenshtein + Prefix matching)
+    // Fuzzy matching scoring function
     const scoreText = (text: string, q: string): number => {
       const txt = text.toLowerCase();
       const queryLower = q.toLowerCase();
@@ -192,19 +223,15 @@ export const searchPages = async (req: Request, res: Response) => {
         for (const tWord of textWords) {
           if (!tWord) continue;
 
-          // 1. Exact match
           if (tWord === qWord) {
             bestWordScore = Math.max(bestWordScore, 20);
             continue;
           }
-
-          // 2. Prefix match
           if (tWord.startsWith(qWord)) {
             bestWordScore = Math.max(bestWordScore, 15 * (qWord.length / tWord.length));
             continue;
           }
 
-          // 3. Typo fuzzy match (Levenshtein)
           const maxDist = qWord.length <= 4 ? 1 : 2;
           if (Math.abs(tWord.length - qWord.length) <= maxDist) {
             const dist = editDistance(tWord, qWord);
@@ -227,19 +254,71 @@ export const searchPages = async (req: Request, res: Response) => {
       return clean.length > 150 ? clean.substring(0, 150) + '...' : clean;
     };
 
+    const profileMap = new Map<number, any>();
+
+    // Seed profile results with user name/email match
+    for (const u of allUsers) {
+      const nameScore = scoreText(u.name, query);
+      const emailScore = isLoggedIn ? scoreText(u.email, query) : 0;
+      const totalScore = nameScore * 3 + emailScore;
+
+      if (totalScore > 15) {
+        profileMap.set(u.user_id, {
+          title: u.name,
+          slug: `profile-${u.user_id}`,
+          path: `/user/profile?userId=${u.user_id}`,
+          category: 'Profile',
+          type: 'profile',
+          description: `View profile details`,
+          is_pending: false,
+          score: totalScore,
+        });
+      }
+    }
+
     for (const p of livePages) {
+      const meta = p.metadata as any;
+      const category = meta?.category || 'Campus';
+      const isProfile = category.toLowerCase() === 'profile' || p.slug.startsWith('profile-');
+
+      if (isProfile) {
+        const userIdStr = p.slug.replace('profile-', '');
+        const userIdVal = parseInt(userIdStr, 10);
+        if (!isNaN(userIdVal)) {
+          const titleScore = scoreText(p.title || '', query);
+          const contentScore = scoreText(p.content || '', query);
+          const totalScore = titleScore * 3 + contentScore;
+          if (totalScore > 15) {
+            const matchedUser = allUsers.find(u => u.user_id === userIdVal);
+            const nameText = matchedUser ? matchedUser.name : (p.title || 'Untitled Profile');
+            const existing = profileMap.get(userIdVal);
+            const finalScore = existing ? Math.max(existing.score, totalScore) : totalScore;
+            profileMap.set(userIdVal, {
+              title: nameText,
+              slug: p.slug,
+              path: `/user/profile?userId=${userIdVal}`,
+              category: 'Profile',
+              type: 'profile',
+              description: cleanContent(p.content) || (existing ? existing.description : 'View profile details'),
+              is_pending: false,
+              score: finalScore,
+            });
+          }
+        }
+        continue;
+      }
+
       const titleScore = scoreText(p.title || '', query);
       const contentScore = scoreText(p.content || '', query);
       const totalScore = titleScore * 3 + contentScore;
       
       if (totalScore > 15) {
-        const meta = p.metadata as any;
-        const category = meta?.category || 'Campus';
         results.push({
           title: p.title || 'Untitled',
           slug: p.slug,
           path: `/wiki/page/${p.slug}`,
           category,
+          type: 'page',
           description: cleanContent(p.content),
           is_pending: false,
           score: totalScore,
@@ -248,12 +327,18 @@ export const searchPages = async (req: Request, res: Response) => {
     }
 
     for (const p of pendingPages) {
+      const meta = p.metadata as any;
+      const category = meta?.category || 'Campus';
+      const isProfile = category.toLowerCase() === 'profile' || (meta?.slug && String(meta.slug).startsWith('profile-')) || (p.title && p.title.toLowerCase().startsWith('profile-'));
+      if (isProfile) {
+        continue;
+      }
+
       const titleScore = scoreText(p.title || '', query);
       const contentScore = scoreText(p.content || '', query);
       const totalScore = titleScore * 3 + contentScore;
       
       if (totalScore > 15) {
-        const meta = p.metadata as any;
         let draftSlug = meta?.slug;
         if (!draftSlug && p.title) {
           const baseSlug = p.title
@@ -262,17 +347,60 @@ export const searchPages = async (req: Request, res: Response) => {
             .toLowerCase();
           draftSlug = baseSlug.replace(/[\s-]+/g, '-');
         }
-        const category = meta?.category || 'Campus';
         results.push({
           title: p.title || 'Untitled',
           slug: draftSlug || 'untitled',
           path: `/wiki/page/${draftSlug || 'untitled'}`,
           category,
+          type: 'page',
           description: cleanContent(p.content),
           is_pending: true,
           score: totalScore,
         });
       }
+    }
+
+    for (const c of allCategories) {
+      const nameScore = scoreText(c.name, query);
+      const descScore = scoreText(c.description, query);
+      const totalScore = nameScore * 3 + descScore;
+
+      if (totalScore > 15) {
+        results.push({
+          title: c.name,
+          slug: c.slug,
+          path: `/wiki/${c.slug}`,
+          category: 'Category',
+          type: 'category',
+          description: c.description,
+          is_pending: false,
+          score: totalScore,
+        });
+      }
+    }
+
+    for (const n of allNews) {
+      const titleScore = scoreText(n.title, query);
+      const contentScore = scoreText(n.content, query);
+      const totalScore = titleScore * 3 + contentScore;
+
+      if (totalScore > 15) {
+        results.push({
+          title: n.title,
+          slug: n.slug,
+          path: `/wiki/news/${n.slug}`,
+          category: 'News',
+          type: 'news',
+          description: cleanContent(n.content),
+          is_pending: false,
+          score: totalScore,
+        });
+      }
+    }
+
+    // Add profileMap entries into results
+    for (const prof of profileMap.values()) {
+      results.push(prof);
     }
 
     results.sort((a, b) => b.score - a.score);
@@ -282,6 +410,68 @@ export const searchPages = async (req: Request, res: Response) => {
     return res.json(limitedResults);
   } catch (error: any) {
     console.error('Error in searchPages:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
+/**
+ * GET /pages/:slug/edit
+ * Retrieve a page for editing along with its active draft content or live content and version ID.
+ */
+export const getPageForEdit = async (req: Request, res: Response) => {
+  try {
+    const slug = req.params.slug as string;
+    const livePage = await prisma.live_pages.findUnique({
+      where: { slug, deleted_at: null },
+    });
+    if (!livePage) {
+      return res.status(404).json({ error: 'Page not found' });
+    }
+
+    const activeDraft = await prisma.pending_pages.findFirst({
+      where: {
+        page_id: livePage.page_id,
+        status: { in: ['draft', 'in_review'] }
+      }
+    });
+
+    if (activeDraft) {
+      return res.json({
+        content: activeDraft.content,
+        versionId: activeDraft.version ?? livePage.version ?? 1,
+        page_id: livePage.page_id,
+        title: activeDraft.title
+      });
+    }
+
+    return res.json({
+      content: livePage.content,
+      versionId: livePage.version ?? 1,
+      page_id: livePage.page_id,
+      title: livePage.title
+    });
+  } catch (error: any) {
+    console.error('Error in getPageForEdit:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
+/**
+ * GET /pages/id/:page_id
+ * Retrieve a live page by its numeric page ID.
+ */
+export const getPageById = async (req: Request, res: Response) => {
+  try {
+    const pageId = parseInt(req.params.page_id as string, 10);
+    const livePage = await prisma.live_pages.findUnique({
+      where: { page_id: pageId, deleted_at: null },
+    });
+    if (!livePage) {
+      return res.status(404).json({ error: 'Page not found' });
+    }
+    return res.json(livePage);
+  } catch (error: any) {
+    console.error('Error in getPageById:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };
@@ -434,6 +624,11 @@ export const createPage = async (req: Request, res: Response) => {
       counter++;
     }
 
+    const userObj = await prisma.users.findUnique({
+      where: { user_id: creatorId }
+    });
+    const creatorName = userObj?.name || 'Unknown';
+
     const newPage = await prisma.live_pages.create({
       data: {
         title,
@@ -442,7 +637,7 @@ export const createPage = async (req: Request, res: Response) => {
         metadata: metadata || {},
         video_url: video_url || null,
         original_author_id: creatorId,
-        contributors: [creatorId],
+        contributors: [creatorName],
         version: 1,
       },
     });
@@ -479,15 +674,20 @@ export const updatePage = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Page not found' });
     }
 
-    let contributors: number[] = [];
+    const userObj = await prisma.users.findUnique({
+      where: { user_id: editorId }
+    });
+    const editorName = userObj?.name || 'Unknown';
+
+    let contributors: string[] = [];
     if (Array.isArray(livePage.contributors)) {
-      contributors = [...livePage.contributors] as number[];
+      contributors = [...livePage.contributors] as string[];
     } else if (livePage.contributors && typeof livePage.contributors === 'object') {
-      contributors = Object.values(livePage.contributors) as number[];
+      contributors = Object.values(livePage.contributors) as string[];
     }
 
-    if (!contributors.includes(editorId)) {
-      contributors.push(editorId);
+    if (!contributors.includes(editorName)) {
+      contributors.push(editorName);
     }
 
     const currentVersion = livePage.version !== null ? livePage.version : 1;

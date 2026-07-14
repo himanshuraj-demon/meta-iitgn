@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { apiService } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
+import GenericOverlayModal from "@/components/GenericOverlayModal";
 
 interface NewsOverlayProps {
   isOpen: boolean;
@@ -96,41 +97,32 @@ export default function NewsOverlay({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-base-100 text-base-content z-[99999] flex flex-col h-dvh w-screen overflow-hidden select-none animate-in fade-in duration-200">
-      <header className="h-16 border-b border-base-200 flex items-center justify-between px-6 shrink-0 bg-base-100 shadow-sm select-none">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              if (showAddNewsForm) {
-                setShowAddNewsForm(false);
-              } else {
-                onClose();
-              }
-            }}
-            className="p-2 hover:bg-base-200 rounded-lg text-base-content/80 transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center"
-          >
-            <ChevronLeft className="h-6 w-6 text-base-content" />
-          </button>
-          <span className="text-sm font-bold text-blue-400 uppercase tracking-wider ml-2">
-            {showAddNewsForm
-              ? "Add Campus News"
-              : "Campus News"}
-          </span>
-        </div>
-
+    <GenericOverlayModal
+      isOpen={isOpen}
+      onClose={() => {
+        if (showAddNewsForm) {
+          setShowAddNewsForm(false);
+        } else {
+          onClose();
+        }
+      }}
+      title={showAddNewsForm ? "Add Campus News" : "Campus News"}
+      headerColorClass="text-blue-500 bg-base-200"
+    >
+      <div className="max-w-3xl mx-auto space-y-4 w-full">
         {!showAddNewsForm && canManageNews && (
-          <button
-            onClick={() => setShowAddNewsForm(true)}
-            className="btn btn-primary btn-sm px-4 font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97"
-          >
-            Add News
-          </button>
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={() => setShowAddNewsForm(true)}
+              className="btn btn-primary btn-sm px-4 font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97"
+            >
+              Add News
+            </button>
+          </div>
         )}
-      </header>
 
-      <div className="flex-1 bg-base-200 overflow-y-auto overscroll-contain p-6 flex flex-col">
         {showAddNewsForm ? (
-          <form onSubmit={handleAddNews} className="max-w-xl mx-auto space-y-4 bg-base-100 p-6 border border-base-300 rounded-2xl shadow-xs text-left w-full">
+          <form onSubmit={handleAddNews} className="space-y-4 bg-base-100 p-6 border border-base-350 rounded-2xl shadow-xs text-left w-full">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-extrabold uppercase text-base-content/90">News Title</label>
               <input
@@ -172,7 +164,7 @@ export default function NewsOverlay({
             </button>
           </form>
         ) : (
-          <div className="max-w-3xl mx-auto space-y-4 w-full">
+          <div className="space-y-4">
             {loading ? (
               <div className="flex justify-center items-center py-20">
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
@@ -223,6 +215,6 @@ export default function NewsOverlay({
           </div>
         )}
       </div>
-    </div>
+    </GenericOverlayModal>
   );
 }

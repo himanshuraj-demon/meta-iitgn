@@ -18,23 +18,134 @@ export const submitDraft = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Title and editor_id are required' });
     }
 
-    // Insert into pending_pages
-    const draft = await prisma.pending_pages.create({
-      data: {
-        page_id: page_id !== undefined ? page_id : null,
-        title,
-        content: content || null,
-        metadata: metadata || {},
-        video_url: video_url || null,
-        status: 'in_review',
-        editor_id,
-        version: base_version !== undefined ? base_version : null,
-      },
-    });
+    const versionVal = base_version !== undefined && base_version !== null ? Number(base_version) : 1;
 
-    invalidateSyncCache('pendingpages');
+    if (page_id) {
+      // Edit Page Workflow
+      const activeDraft = await prisma.pending_pages.findFirst({
+        where: {
+          page_id: Number(page_id),
+          status: { in: ['draft', 'in_review'] }
+        }
+      });
 
-    return res.status(201).json(draft);
+      if (activeDraft) {
+        const currentVersion = activeDraft.version ?? 1;
+        if (versionVal < currentVersion) {
+          return res.status(409).json({
+            success: false,
+            error: {
+              code: 'VERSION_CONFLICT',
+              message: 'Another user has edited this draft. Please resolve the conflict.',
+            },
+            currentVersion,
+            currentContent: activeDraft.content
+          });
+        }
+
+        const updatedDraft = await prisma.pending_pages.update({
+          where: { pending_id: activeDraft.pending_id },
+          data: {
+            title,
+            content,
+            metadata: metadata || activeDraft.metadata || {},
+            video_url: video_url !== undefined ? video_url : activeDraft.video_url,
+            editor_id,
+            version: currentVersion + 1,
+            status: 'in_review'
+          }
+        });
+        invalidateSyncCache('pendingpages');
+        return res.status(200).json(updatedDraft);
+      } else {
+        // First draft for existing page, compare to live page version
+        const livePage = await prisma.live_pages.findUnique({
+          where: { page_id: Number(page_id) }
+        });
+        if (livePage) {
+          const currentVersion = livePage.version ?? 1;
+          if (versionVal < currentVersion) {
+            return res.status(409).json({
+              success: false,
+              error: {
+                code: 'VERSION_CONFLICT',
+                message: 'Another user has edited this page. Please resolve the conflict.',
+              },
+              currentVersion,
+              currentContent: livePage.content
+            });
+          }
+        }
+
+        const newDraft = await prisma.pending_pages.create({
+          data: {
+            page_id: Number(page_id),
+            title,
+            content,
+            metadata: metadata || {},
+            video_url,
+            editor_id,
+            version: versionVal + 1,
+            status: 'in_review'
+          }
+        });
+        invalidateSyncCache('pendingpages');
+        return res.status(201).json(newDraft);
+      }
+    } else {
+      // New Page Workflow: Check if draft with same title exists
+      const existingDraft = await prisma.pending_pages.findFirst({
+        where: {
+          title,
+          page_id: null,
+          status: { in: ['draft', 'in_review'] }
+        }
+      });
+
+      if (existingDraft) {
+        const currentVersion = existingDraft.version ?? 1;
+        if (versionVal < currentVersion) {
+          return res.status(409).json({
+            success: false,
+            error: {
+              code: 'VERSION_CONFLICT',
+              message: 'Another user has edited this page draft. Please resolve the conflict.',
+            },
+            currentVersion,
+            currentContent: existingDraft.content
+          });
+        }
+
+        const updatedDraft = await prisma.pending_pages.update({
+          where: { pending_id: existingDraft.pending_id },
+          data: {
+            content,
+            metadata: metadata || existingDraft.metadata || {},
+            video_url: video_url !== undefined ? video_url : existingDraft.video_url,
+            editor_id,
+            version: currentVersion + 1,
+            status: 'in_review'
+          }
+        });
+        invalidateSyncCache('pendingpages');
+        return res.status(200).json(updatedDraft);
+      }
+
+      const newDraft = await prisma.pending_pages.create({
+        data: {
+          page_id: null,
+          title,
+          content,
+          metadata: metadata || {},
+          video_url,
+          editor_id,
+          version: 1,
+          status: 'in_review'
+        }
+      });
+      invalidateSyncCache('pendingpages');
+      return res.status(201).json(newDraft);
+    }
   } catch (error: any) {
     console.error('Error in submitDraft:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
@@ -121,6 +232,11 @@ export const reviewDraft = async (req: Request, res: Response) => {
         throw new Error('Pending draft not found');
       }
 
+      const editorUser = await tx.users.findUnique({
+        where: { user_id: draft.editor_id }
+      });
+      const editorName = editorUser?.name || 'Unknown';
+
       if (draft.page_id === null) {
         // --- New Page Workflow ---
         let baseSlug = (draft.title || 'untitled')
@@ -158,7 +274,7 @@ export const reviewDraft = async (req: Request, res: Response) => {
             metadata: draft.metadata || {},
             video_url: draft.video_url,
             original_author_id: draft.editor_id,
-            contributors: [draft.editor_id],
+            contributors: [editorName],
             version: 1,
             created_at: now,
             updated_at: now,
@@ -217,15 +333,15 @@ export const reviewDraft = async (req: Request, res: Response) => {
         });
 
         // Parse and update contributors list
-        let contributors: number[] = [];
+        let contributors: string[] = [];
         if (Array.isArray(livePage.contributors)) {
-          contributors = [...livePage.contributors] as number[];
+          contributors = [...livePage.contributors] as string[];
         } else if (livePage.contributors && typeof livePage.contributors === 'object') {
-          contributors = Object.values(livePage.contributors) as number[];
+          contributors = Object.values(livePage.contributors) as string[];
         }
 
-        if (!contributors.includes(draft.editor_id)) {
-          contributors.push(draft.editor_id);
+        if (!contributors.includes(editorName)) {
+          contributors.push(editorName);
         }
 
         const currentVersion = livePage.version !== null ? livePage.version : 1;

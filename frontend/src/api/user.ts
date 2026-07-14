@@ -16,3 +16,13 @@ export const devBypass = async (data: UserCreateInput) => {
   const response = await api.post('/user', data);
   return response.data;
 };
+
+export const getUserStats = async (userId: number) => {
+  const response = await api.get(`/user/${userId}/stats`, { withCredentials: true });
+  return response.data;
+};
+
+export const getUserById = async (userId: number) => {
+  const response = await api.get(`/user/${userId}`);
+  return response.data;
+};

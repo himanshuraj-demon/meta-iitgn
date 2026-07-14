@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { apiService } from "../../../api";
 
 interface PendingChangesViewProps {
@@ -24,10 +24,31 @@ interface PendingDraft {
   } | null;
 }
 
+const DraftSkeleton = () => (
+  <div className="p-4 sm:p-5 border border-gray-200 bg-white rounded-2xl shadow-sm animate-pulse select-none">
+    <div className="flex items-start gap-4">
+      <div className="w-10 h-10 rounded-xl bg-base-200 shrink-0"></div>
+      <div className="flex-1 min-w-0 space-y-3">
+        <div className="h-5 bg-base-300 rounded-md w-1/3"></div>
+        <div className="space-y-2">
+          <div className="h-3 bg-base-200 rounded-md w-full"></div>
+          <div className="h-3 bg-base-200 rounded-md w-5/6"></div>
+        </div>
+        <div className="h-4 bg-base-200 rounded-md w-1/4 mt-4"></div>
+      </div>
+    </div>
+  </div>
+);
+
 export default function PendingChangesView({ setShowPendingChanges, pageId }: PendingChangesViewProps) {
   const [drafts, setDrafts] = useState<PendingDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Side-by-side review states
+  const [activeReviewDraft, setActiveReviewDraft] = useState<PendingDraft | null>(null);
+  const [liveContent, setLiveContent] = useState<string>("");
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   const fetchDrafts = useCallback(async () => {
     setLoading(true);
@@ -48,6 +69,23 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
     fetchDrafts();
   }, [fetchDrafts]);
 
+  const startReview = async (draft: PendingDraft) => {
+    setActiveReviewDraft(draft);
+    setLiveContent("");
+    if (draft.page_id) {
+      setReviewLoading(true);
+      try {
+        const livePage = await apiService.getPageById(draft.page_id);
+        setLiveContent(livePage.content || "");
+      } catch (err) {
+        console.error("Failed to load live page for comparison:", err);
+        setLiveContent("Error loading live version.");
+      } finally {
+        setReviewLoading(false);
+      }
+    }
+  };
+
   const handleReview = async (pendingId: number, action: "approve" | "reject") => {
     try {
       await apiService.reviewDraft(pendingId, {
@@ -66,6 +104,7 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
             : d
         )
       );
+      setActiveReviewDraft(null);
       window.dispatchEvent(new CustomEvent("wiki-pending-updated"));
     } catch (err: unknown) {
       console.error(err);
@@ -100,9 +139,10 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
           </div>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              <p className="text-sm text-base-content/60">Loading pending drafts...</p>
+            <div className="space-y-4 pt-4">
+              <DraftSkeleton />
+              <DraftSkeleton />
+              <DraftSkeleton />
             </div>
           ) : error ? (
             <div className="p-6 border border-rose-200 bg-rose-50 text-rose-800 rounded-2xl">
@@ -177,16 +217,10 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
                           {pending.status === "in_review" && (
                             <div className="flex items-center gap-3">
                               <button
-                                onClick={() => handleReview(pending.pending_id, "approve")}
-                                className="text-xs font-extrabold text-primary hover:text-blue-700 transition-colors cursor-pointer duration-150"
+                                onClick={() => startReview(pending)}
+                                className="btn btn-xs btn-primary rounded-lg font-bold"
                               >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleReview(pending.pending_id, "reject")}
-                                className="text-xs font-extrabold text-rose-600 hover:text-rose-700 transition-colors cursor-pointer duration-150"
-                              >
-                                Reject
+                                Review Changes
                               </button>
                             </div>
                           )}
@@ -200,6 +234,77 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
           )}
         </div>
       </div>
+
+      {/* Side-by-side Review Overlay Modal */}
+      {activeReviewDraft && (
+        <div className="fixed inset-0 z-[20010] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-base-100 rounded-3xl border border-base-200 shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <header className="px-6 py-4 border-b border-base-200 flex items-center justify-between shrink-0 bg-base-100">
+              <div>
+                <h3 className="text-lg font-black text-base-content leading-snug">Review Proposed Revision: {activeReviewDraft.title}</h3>
+                <p className="text-xs text-base-content/50 mt-1 font-semibold uppercase tracking-wider">Compare live content with proposal. Author: {activeReviewDraft.users?.name || `User #${activeReviewDraft.editor_id}`}</p>
+              </div>
+              <button
+                onClick={() => setActiveReviewDraft(null)}
+                className="btn btn-sm btn-ghost btn-circle text-base-content/50 hover:text-base-content"
+              >
+                ✕
+              </button>
+            </header>
+
+            <div className="flex-1 p-6 overflow-hidden flex flex-col md:flex-row gap-6 min-h-0">
+              {/* Left Column: Live Content */}
+              <div className="flex-1 flex flex-col h-full min-h-0 bg-base-200/20 border border-base-200 rounded-2xl p-4 overflow-hidden">
+                <h4 className="text-xs font-black text-base-content/60 uppercase tracking-wider mb-3 shrink-0">Live Page Version</h4>
+                {reviewLoading ? (
+                  <div className="flex-1 flex flex-col gap-2.5 p-3 animate-pulse">
+                    <div className="h-3.5 bg-base-300 rounded w-full"></div>
+                    <div className="h-3.5 bg-base-300 rounded w-5/6"></div>
+                    <div className="h-3.5 bg-base-300 rounded w-2/3"></div>
+                  </div>
+                ) : (
+                  <textarea
+                    readOnly
+                    value={activeReviewDraft.page_id ? (liveContent || "This article has no live published content yet.") : "New page proposal. No live version exists."}
+                    className="flex-1 w-full bg-base-200/50 border border-base-300 rounded-xl p-3 text-xs font-mono resize-none focus:outline-none text-base-content/65 overflow-y-auto"
+                  />
+                )}
+              </div>
+
+              {/* Right Column: Draft Content */}
+              <div className="flex-1 flex flex-col h-full min-h-0 bg-base-100 border border-base-200 rounded-2xl p-4 overflow-hidden">
+                <h4 className="text-xs font-black text-primary uppercase tracking-wider mb-3 shrink-0">Proposed Draft Version</h4>
+                <textarea
+                  readOnly
+                  value={activeReviewDraft.content}
+                  className="flex-1 w-full bg-base-100 border border-base-300 rounded-xl p-3 text-xs font-mono resize-none focus:outline-none text-base-content/85 overflow-y-auto"
+                />
+              </div>
+            </div>
+
+            <footer className="px-6 py-4 border-t border-base-200 flex justify-end gap-3 shrink-0 bg-base-100">
+              <button
+                onClick={() => setActiveReviewDraft(null)}
+                className="btn btn-ghost btn-sm rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleReview(activeReviewDraft.pending_id, "reject")}
+                className="btn btn-error btn-sm rounded-xl text-white"
+              >
+                Reject Draft
+              </button>
+              <button
+                onClick={() => handleReview(activeReviewDraft.pending_id, "approve")}
+                className="btn btn-success btn-sm rounded-xl text-white"
+              >
+                Approve & Publish
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

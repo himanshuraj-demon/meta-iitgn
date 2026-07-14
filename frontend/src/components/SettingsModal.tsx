@@ -121,7 +121,11 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
 
     if (initialTab) {
       setActiveTab(initialTab);
-      setMobileView("details");
+      if (typeof window !== "undefined" && window.innerWidth >= 645) {
+        setMobileView("details");
+      } else {
+        setMobileView("list");
+      }
     }
 
     // Disable background scrolling when modal is open
@@ -224,107 +228,92 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
       {/* Settings Dialog Card - Exactly matches sidebar height alignment & gray borders */}
       <div 
         style={isMounted && window.innerWidth >= 640 ? { transform: `translate(${position.x}px, ${position.y}px)` } : undefined}
-        className="relative box-border flex h-full w-full max-w-5xl shrink-0 grow-0 overflow-hidden rounded-none border-0 bg-base-100 shadow-xl animate-in zoom-in-95 duration-200 transition-colors duration-300 ease-in-out sm:h-[min(680px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200"
+        className="relative box-border flex flex-col h-full w-full max-w-5xl shrink-0 grow-0 overflow-hidden rounded-none border-0 bg-base-100 shadow-xl animate-in zoom-in-95 duration-200 transition-colors duration-300 ease-in-out sm:h-[min(680px,calc(100vh-2rem))] sm:min-h-0 sm:max-h-[calc(100vh-2rem)] sm:rounded-lg sm:border sm:border-base-200"
       >
-
-        {/* Left Panel: Navigation Categories list */}
-        <div className={`w-full sm:w-[280px] bg-base-100 border-r border-base-200 p-4 flex flex-col justify-between shrink-0 select-none overflow-hidden ${mobileView === "details" ? "hidden sm:flex" : "flex"
-          }`}>
-          <div className="flex flex-col gap-6 h-full overflow-hidden">
-            {/* Header info */}
-            <div 
-              onMouseDown={handleMouseDown}
-              className="flex items-center justify-between gap-2 px-3 pb-1 border-b border-base-200 sm:border-0 cursor-move select-none"
+        {/* Unified Settings Header - using theme color, not too dark */}
+        <div
+          onMouseDown={handleMouseDown}
+          className="flex items-center justify-between px-5 sm:px-6 py-3 bg-base-200 text-base-content border-b border-base-300 cursor-move select-none shrink-0"
+        >
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (mobileView === "details" && typeof window !== "undefined" && window.innerWidth < 640) {
+                  setMobileView("list");
+                } else {
+                  onClose();
+                }
+              }}
+              className="p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content -ml-2"
+              aria-label="Back"
             >
-              <div className="flex items-center gap-2">
-                {/* Back / Close Button (renders as back chevron Left on mobile and desktop categories header) */}
-                <button
-                  onClick={onClose}
-                  className="p-1 text-base-content hover:bg-base-200 rounded-lg transition-colors cursor-pointer -ml-2"
-                  aria-label="Exit settings"
-                >
-                  <ChevronLeft className="w-6 h-6 shrink-0 text-base-content" />
-                </button>
-                <h2 className="text-[10px] font-bold tracking-wider text-base-content/70 uppercase">
-                  Settings
-                </h2>
-              </div>
-            </div>
-
-            {/* Navigation Tabs */}
-            <ul className="menu bg-base-100 p-0 gap-1.5 flex-1 grid grid-cols-1 w-full">
-              {[
-                { id: "appearance", label: "Appearance", desc: "Theme, font styles, colors", icon: Eye },
-                { id: "layout", label: "Layout & Reading", desc: "List styling & reading bar", icon: Layout },
-                { id: "search", label: "Search Preferences", desc: "Behavior & history limit", icon: Search },
-                { id: "alerts", label: "Notifications", desc: "Digest & bookmark alerts", icon: Bell },
-                { id: "account", label: "Account & Security", desc: "Session settings & roles", icon: User },
-                { id: "language", label: "Language", desc: "Translation & locale", icon: Shield },
-                { id: "storage", label: "Cache & Offline", desc: "Manage offline storage", icon: HardDrive },
-                { id: "performance", label: "Performance", desc: "Accelerators & animations", icon: Cpu },
-                { id: "help", label: "Help & About", desc: "View documentation & source", icon: HelpCircle },
-              ].map((tab) => {
-                const isAct = activeTab === tab.id;
-                const IconComponent = tab.icon;
-                return (
-                  <li key={tab.id} className="w-full">
-                    <button
-                      onClick={() => {
-                        setActiveTab(tab.id as TabType);
-                        setMobileView("details");
-                      }}
-                      className={`flex items-start gap-3 p-2.5 rounded-lg transition-all duration-200 cursor-pointer w-full text-left ${isAct
-                        ? "bg-primary! text-primary-content!"
-                        : "text-base-content hover:bg-base-200 bg-transparent"
-                        }`}
-                    >
-                      <IconComponent className={`h-4.5 w-4.5 mt-0.5 transition-colors duration-200 ${isAct ? "text-primary-content" : "text-base-content/70"}`} />
-                      <div className="min-w-0 flex-1">
-                        <span className="block truncate text-[12.5px] leading-tight font-bold">{tab.label}</span>
-                        <span className={`block text-[9.5px] font-normal leading-normal mt-0.5 ${isAct ? "text-primary-content/80" : "text-base-content/50"}`}>
-                          {tab.desc}
-                        </span>
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+              <ChevronLeft className="w-5 h-5 shrink-0" />
+            </button>
+            <span className="font-bold text-sm tracking-tight">Settings</span>
           </div>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
+            aria-label="Close settings"
+          >
+            <X className="w-5 h-5 shrink-0" />
+          </button>
         </div>
 
-        {/* Right Panel: Detail Configuration View */}
-        <div className={`flex-1 flex flex-col justify-between overflow-hidden bg-base-100 ${mobileView === "list" ? "hidden sm:flex" : "flex"
-          }`}>
-
-          {/* Header Action Bar */}
-          <div 
-            onMouseDown={handleMouseDown}
-            className="px-5 sm:px-6 py-4 border-b border-base-200 flex items-center justify-between shrink-0 bg-base-100 cursor-move select-none"
-          >
-            <div className="flex items-center gap-1">
-              {/* Back to Categories (Mobile Only) */}
-              <button
-                onClick={() => setMobileView("list")}
-                className="p-1.5 text-base-content hover:bg-base-200 rounded-lg transition-colors cursor-pointer sm:hidden -ml-2"
-                aria-label="Back to settings list"
-              >
-                <ChevronLeft className="w-6 h-6 shrink-0 text-base-content" />
-              </button>
+        {/* Content Body Row */}
+        <div className="flex flex-1 min-h-0 overflow-hidden w-full">
+          {/* Left Panel: Navigation Categories list */}
+          <div className={`w-full sm:w-[280px] bg-base-100 border-r border-base-200 flex flex-col justify-between shrink-0 select-none overflow-hidden ${mobileView === "details" ? "hidden sm:flex" : "flex"
+            }`}>
+            <div className="flex flex-col gap-6 h-full overflow-hidden pt-4">
+              {/* Navigation Tabs */}
+              <ul className="menu bg-base-100 px-4 py-0 gap-1.5 flex-1 grid grid-cols-1 w-full overflow-y-auto">
+                {[
+                  { id: "appearance", label: "Appearance", desc: "Theme, font styles, colors", icon: Eye },
+                  { id: "layout", label: "Layout & Reading", desc: "List styling & reading bar", icon: Layout },
+                  { id: "search", label: "Search Preferences", desc: "Behavior & history limit", icon: Search },
+                  { id: "alerts", label: "Notifications", desc: "Digest & bookmark alerts", icon: Bell },
+                  { id: "account", label: "Account & Security", desc: "Session settings & roles", icon: User },
+                  { id: "language", label: "Language", desc: "Translation & locale", icon: Shield },
+                  { id: "storage", label: "Cache & Offline", desc: "Manage offline storage", icon: HardDrive },
+                  { id: "performance", label: "Performance", desc: "Accelerators & animations", icon: Cpu },
+                  { id: "help", label: "Help & About", desc: "View documentation & source", icon: HelpCircle },
+                ].map((tab) => {
+                  const isAct = activeTab === tab.id;
+                  const IconComponent = tab.icon;
+                  return (
+                    <li key={tab.id} className="w-full">
+                      <button
+                        onClick={() => {
+                          setActiveTab(tab.id as TabType);
+                          setMobileView("details");
+                        }}
+                        className={`flex items-start gap-3 p-2.5 rounded-lg transition-all duration-200 cursor-pointer w-full text-left ${isAct
+                          ? "bg-primary! text-primary-content!"
+                          : "text-base-content hover:bg-base-200 bg-transparent"
+                          }`}
+                      >
+                        <IconComponent className={`h-4.5 w-4.5 mt-0.5 transition-colors duration-200 ${isAct ? "text-primary-content" : "text-base-content/70"}`} />
+                        <div className="min-w-0 flex-1">
+                          <span className="block truncate text-[12.5px] leading-tight font-bold">{tab.label}</span>
+                          <span className={`block text-[11px] font-medium leading-normal mt-0.5 ${isAct ? "text-primary-content/90" : "text-base-content/70"}`}>
+                            {tab.desc}
+                          </span>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="p-1.5 hover:bg-base-200 text-base-content rounded-lg transition-colors cursor-pointer"
-              aria-label="Close settings"
-            >
-              <X className="w-5.5 h-5.5 text-base-content" />
-            </button>
           </div>
 
-          {/* Active Category Settings Content */}
-          <div className="flex-1 p-6 overflow-y-auto min-h-0 space-y-6 bg-base-100">
+          {/* Right Panel: Detail Configuration View */}
+          <div className={`flex-1 flex flex-col justify-between overflow-hidden bg-base-100 ${mobileView === "list" ? "hidden sm:flex" : "flex"
+            }`}>
+
+            {/* Active Category Settings Content */}
+            <div className="flex-1 p-6 overflow-y-auto min-h-0 space-y-6 bg-base-100">
 
             {/* Tab: Appearance */}
             {activeTab === "appearance" && (
@@ -736,6 +725,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
 
         </div>
 
+      </div>
       </div>
     </div>
   );

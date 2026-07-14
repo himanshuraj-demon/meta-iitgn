@@ -83,6 +83,21 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const user = await prisma.users.findUnique({
+      where: { user_id: Number(req.params.user_id), deleted_at: null }
+    });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    return res.json({ success: true, user });
+  } catch (error: any) {
+    console.error('Error in getUserById:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
 export const handleMe = async (req: Request, res: Response) => {
   try {
     if (!req.user || !req.user.user_id) {
@@ -195,6 +210,100 @@ export const handleGoogleAuth = async (req: Request, res: Response) => {
       success: false,
       message: "error occurred",
       error: "Internal Server Error"
+    });
+  }
+};
+
+export const getUserStats = async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.params.user_id || req.user.user_id);
+    const userObj = await prisma.users.findUnique({
+      where: { user_id: userId }
+    });
+
+    if (!userObj) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: 'User not found' }
+      });
+    }
+
+    const userName = userObj.name;
+
+    // Articles improved (pages where they are a contributor)
+    const articlesImproved = await prisma.live_pages.count({
+      where: {
+        deleted_at: null,
+        contributors: {
+          path: [],
+          array_contains: userName
+        }
+      }
+    });
+
+    // Edits this month (revisions in last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const editsThisMonth = await prisma.revision_pages.count({
+      where: {
+        created_by_user_id: userId,
+        created_at: {
+          gte: thirtyDaysAgo
+        }
+      }
+    });
+
+    // Streak calculation from revisions
+    const revisions = await prisma.revision_pages.findMany({
+      where: { created_by_user_id: userId },
+      select: { created_at: true },
+      orderBy: { created_at: 'desc' }
+    });
+
+    let streak = 0;
+    if (revisions.length > 0) {
+      const uniqueDates = Array.from(new Set(revisions.map(r => r.created_at.toISOString().split('T')[0])))
+        .map(d => new Date(d));
+      uniqueDates.sort((a, b) => b.getTime() - a.getTime());
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const latestDate = uniqueDates[0];
+      const diffTime = today.getTime() - latestDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 1) {
+        streak = 1;
+        let currentCheck = latestDate;
+        for (let i = 1; i < uniqueDates.length; i++) {
+          const nextDate = uniqueDates[i];
+          const diff = currentCheck.getTime() - nextDate.getTime();
+          const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+          if (days === 1) {
+            streak++;
+            currentCheck = nextDate;
+          } else if (days > 1) {
+            break;
+          }
+        }
+      }
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        points: userObj.points,
+        articlesImproved,
+        editsThisMonth,
+        streak
+      }
+    });
+  } catch (error: any) {
+    console.error('Error in getUserStats:', error);
+    return res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_ERROR', message: error.message || 'Internal server error' }
     });
   }
 };

@@ -45,7 +45,7 @@ export default function BottomNavbar({
               {/* Pill Backdrop for Active Icon */}
               <div
                 className={`flex items-center justify-center px-4 py-1 rounded-full transition-all duration-300 ${isActive
-                    ? "bg-primary/10 text-primary-content shadow-sm scale-105"
+                    ? "bg-primary text-primary-content shadow-sm scale-105"
                     : "hover:bg-base-200 text-base-content/70"
                   }`}
               >

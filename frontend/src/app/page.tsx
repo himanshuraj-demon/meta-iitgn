@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useHomeStore } from "@/store/useHomeStore";
-import dynamic from "next/dynamic";
 import BottomNavbar from "@/components/BottomNavbar";
 
 // Subcomponents
@@ -21,14 +20,13 @@ import SearchTab from "./components/home/SearchTab";
 import BookmarksTab from "./components/home/BookmarksTab";
 import ProfileTab from "./components/home/ProfileTab";
 
-// Dynamic Overlays
-const NewPagesOverlay = dynamic(() => import("./components/home/overlays/NewPagesOverlay"));
-const UpdatedPagesOverlay = dynamic(() => import("./components/home/overlays/UpdatedPagesOverlay"));
-const PendingPagesOverlay = dynamic(() => import("./components/home/overlays/PendingPagesOverlay"));
-const NewsOverlay = dynamic(() => import("./components/home/overlays/NewsOverlay"));
-const TriviaOverlay = dynamic(() => import("./components/home/overlays/TriviaOverlay"));
-const HistoryOverlay = dynamic(() => import("./components/home/overlays/HistoryOverlay"));
-const EditorsOverlay = dynamic(() => import("./components/home/overlays/EditorsOverlay"));
+import NewPagesOverlay from "./components/home/overlays/NewPagesOverlay";
+import UpdatedPagesOverlay from "./components/home/overlays/UpdatedPagesOverlay";
+import PendingPagesOverlay from "./components/home/overlays/PendingPagesOverlay";
+import NewsOverlay from "./components/home/overlays/NewsOverlay";
+import TriviaOverlay from "./components/home/overlays/TriviaOverlay";
+import HistoryOverlay from "./components/home/overlays/HistoryOverlay";
+import EditorsOverlay from "./components/home/overlays/EditorsOverlay";
 
 export default function HomePage() {
   const {
@@ -459,12 +457,13 @@ export default function HomePage() {
         )}
       </div>
       {/* Dynamic Overlays */}
-      {activeOverlay && (() => {
-        const config = OVERLAYS[activeOverlay as keyof typeof OVERLAYS];
-        if (!config) return null;
-        const { Component, props } = config;
-        return <Component {...(props as any)} />;
-      })()}
+      <NewPagesOverlay {...(OVERLAYS.new.props as any)} />
+      <UpdatedPagesOverlay {...(OVERLAYS.updated.props as any)} />
+      <PendingPagesOverlay {...(OVERLAYS.pending.props as any)} />
+      <NewsOverlay {...(OVERLAYS.news.props as any)} />
+      <TriviaOverlay {...(OVERLAYS.trivia.props as any)} />
+      <HistoryOverlay {...(OVERLAYS.history.props as any)} />
+      <EditorsOverlay {...(OVERLAYS.editors.props as any)} />
     </div>
   );
 }

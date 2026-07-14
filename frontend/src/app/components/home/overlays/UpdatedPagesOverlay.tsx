@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import GenericOverlayModal from "@/components/GenericOverlayModal";
 
 interface UpdatedPagesOverlayProps {
   isOpen: boolean;
@@ -26,54 +26,48 @@ export default function UpdatedPagesOverlay({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-base-100 z-[99999] flex flex-col h-dvh w-screen overflow-hidden select-none animate-in fade-in duration-200 text-base-content">
-      <header className="h-16 border-b border-base-200 flex items-center gap-4 px-6 shrink-0 bg-base-100 shadow-sm select-none">
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-base-200 rounded-lg text-base-content transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center"
-        >
-          <ChevronLeft className="h-6 w-6 text-base-content" />
-        </button>
-        <span className="text-sm font-bold text-secondary uppercase tracking-wider">Recently Updated Pages</span>
-      </header>
-      <div className="flex-1 overflow-y-auto overscroll-contain bg-base-200/50 p-6">
-        <div className="max-w-3xl mx-auto space-y-4">
-          {updatedPages.length === 0 ? (
-            <div className="text-center py-20 border border-dashed border-base-300 bg-base-100 rounded-2xl">
-              <p className="text-base-content/60 font-medium">No pages updated yet.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {updatedPages.map((page) => (
-                <div
-                  key={page.page_id}
-                  onClick={() => {
-                    onClose();
-                    router.push(`/wiki/campus/${page.slug}`);
-                  }}
-                  className="p-5 border border-base-300 bg-base-100 rounded-2xl shadow-xs hover:shadow-md hover:border-primary transition-all duration-150 cursor-pointer text-left"
-                >
-                  <h4 className="text-base font-bold text-primary">{page.title}</h4>
-                  <p className="text-[10px] text-base-content/50 font-semibold mt-1">
-                    Updated: {getRelativeTime(page.updated_at)} ({new Date(page.updated_at).toLocaleString()})
-                  </p>
-                </div>
-              ))}
+    <GenericOverlayModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Recently Updated Pages"
+      headerColorClass="text-secondary bg-base-200"
+    >
+      <div className="max-w-3xl mx-auto space-y-4 w-full">
+        {updatedPages.length === 0 ? (
+          <div className="text-center py-20 border border-dashed border-base-300 bg-base-100 rounded-2xl">
+            <p className="text-base-content/60 font-medium">No pages updated yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {updatedPages.map((page) => (
+              <div
+                key={page.page_id}
+                onClick={() => {
+                  onClose();
+                  router.push(`/wiki/campus/${page.slug}`);
+                }}
+                className="p-5 border border-base-300 bg-base-100 rounded-2xl shadow-xs hover:shadow-md hover:border-primary transition-all duration-150 cursor-pointer text-left"
+              >
+                <h4 className="text-base font-bold text-primary">{page.title}</h4>
+                <p className="text-[10px] text-base-content/50 font-semibold mt-1">
+                  Updated: {getRelativeTime(page.updated_at)} ({new Date(page.updated_at).toLocaleString()})
+                </p>
+              </div>
+            ))}
 
-              {hasMore && (
-                <div className="flex justify-center pt-4">
-                  <button
-                    onClick={onLoadMore}
-                    className="inline-flex items-center gap-2 px-6 py-2 border border-base-300 hover:border-primary text-base-content/80 bg-base-100 hover:bg-base-200 rounded-xl text-xs font-bold shadow-xs transition-all duration-200 cursor-pointer active:scale-95"
-                  >
-                    Load More Pages
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            {hasMore && (
+              <div className="flex justify-center pt-4">
+                <button
+                  onClick={onLoadMore}
+                  className="inline-flex items-center gap-2 px-6 py-2 border border-base-300 hover:border-primary text-base-content/80 bg-base-100 hover:bg-base-200 rounded-xl text-xs font-bold shadow-xs transition-all duration-200 cursor-pointer active:scale-95 animate-in fade-in"
+                >
+                  Load More Pages
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </div>
+    </GenericOverlayModal>
   );
 }

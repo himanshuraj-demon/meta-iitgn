@@ -64,3 +64,13 @@ export const getSyncCheck = async () => {
   const response = await api.get('/pages/sync-check', { withCredentials: true });
   return response.data;
 };
+
+export const getPageById = async (pageId: number) => {
+  const response = await api.get(`/pages/id/${pageId}`);
+  return response.data;
+};
+
+export const getPageForEdit = async (slug: string) => {
+  const response = await api.get(`/pages/${slug}/edit`, { withCredentials: true });
+  return response.data;
+};

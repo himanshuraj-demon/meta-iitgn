@@ -93,7 +93,7 @@ export function parseMarkdown(markdown: string) {
       if (currentRow && currentRow.label !== undefined && currentRow.value !== undefined) {
         currentRows.push(currentRow as InfoboxRow);
       }
-      if (currentRows.length > 0) {
+      if (frontmatterText.includes("rows:") || currentRows.length > 0) {
         rows = currentRows;
       }
     }

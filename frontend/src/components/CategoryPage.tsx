@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Article } from "@/lib/placeholder-articles";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, BookOpen, PlusCircle, Loader2, Pencil, X, Sparkles, Building2, Users2, Trophy, Tent, MapPin, FlaskConical, Calendar, Shield, TrendingUp, GraduationCap } from "lucide-react";
+import { ArrowRight, BookOpen, PlusCircle, Pencil, X, Sparkles, Building2, Users2, Trophy, Tent, MapPin, FlaskConical, Calendar, Shield, TrendingUp, GraduationCap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiService } from "@/api";
 
@@ -26,6 +26,21 @@ const ICON_MAP: Record<string, any> = {
 interface CategoryPageProps {
   categorySlug: string;
 }
+
+const ArticleSkeleton = () => (
+  <div className="card card-compact card-bordered flex-1 min-w-75 md:max-w-[48%] lg:max-w-[32%] flex flex-col justify-between p-4 md:p-6 bg-base-100 border-base-200 shadow-[0_2px_10px_rgba(0,0,0,0.01)] animate-pulse select-none">
+    <div className="space-y-3">
+      <div className="h-4 bg-base-300 rounded-md w-3/4"></div>
+      <div className="space-y-2">
+        <div className="h-3 bg-base-200 rounded-md w-full"></div>
+        <div className="h-3 bg-base-200 rounded-md w-5/6"></div>
+      </div>
+    </div>
+    <div className="pt-6">
+      <div className="h-3 bg-base-300 rounded-md w-20"></div>
+    </div>
+  </div>
+);
 
 export default function CategoryPage({ categorySlug }: CategoryPageProps) {
   const router = useRouter();
@@ -186,8 +201,10 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
           </h2>
 
           {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+            <div className="flex flex-col md:flex-row gap-6 flex-wrap w-full">
+              <ArticleSkeleton />
+              <ArticleSkeleton />
+              <ArticleSkeleton />
             </div>
           ) : articles.length === 0 ? (
             <div className="p-8 text-center border border-dashed border-base-300 rounded-2xl text-base-content/50 text-sm">
@@ -222,6 +239,13 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
                     </div>
                   </div>
                 ))}
+                {loadingMore && (
+                  <>
+                    <ArticleSkeleton />
+                    <ArticleSkeleton />
+                    <ArticleSkeleton />
+                  </>
+                )}
               </div>
 
               {hasMore && (
@@ -232,10 +256,7 @@ export default function CategoryPage({ categorySlug }: CategoryPageProps) {
                     className="btn btn-outline btn-md font-bold rounded-xl shadow-sm transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50"
                   >
                     {loadingMore ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                        <span>Loading...</span>
-                      </>
+                      <span>Loading more...</span>
                     ) : (
                       <span>Load More Articles</span>
                     )}

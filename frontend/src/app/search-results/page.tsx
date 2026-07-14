@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiService } from "@/api";
@@ -13,6 +13,9 @@ import {
   FlaskConical,
   Shield,
   Sparkles,
+  User,
+  Newspaper,
+  FolderOpen,
   LucideIcon
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
@@ -26,6 +29,9 @@ const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   Fests: Trophy,
   Research: FlaskConical,
   Policies: Shield,
+  Profile: User,
+  News: Newspaper,
+  Category: FolderOpen,
   All: Sparkles,
 };
 
@@ -33,20 +39,40 @@ const CATEGORY_COLOR_MAP: Record<
   string,
   { bg: string; text: string; border: string }
 > = {
-  Campus: { bg: "bg-emerald-50/70", text: "text-emerald-700", border: "border-emerald-100" },
-  Academics: { bg: "bg-blue-50/70", text: "text-primary", border: "border-primary/20" },
-  Clubs: { bg: "bg-purple-50/70", text: "text-purple-700", border: "border-purple-100" },
-  Fests: { bg: "bg-amber-50/70", text: "text-amber-700", border: "border-amber-100" },
-  Research: { bg: "bg-rose-50/70", text: "text-rose-700", border: "border-rose-100" },
-  Policies: { bg: "bg-indigo-50/70", text: "text-indigo-700", border: "border-indigo-100" },
-  All: { bg: "bg-primary text-white", text: "text-base-content", border: "border-slate-900" },
+  Campus: { bg: "bg-success/15", text: "text-success", border: "border-success/20" },
+  Academics: { bg: "bg-primary/15", text: "text-primary", border: "border-primary/20" },
+  Clubs: { bg: "bg-secondary/15", text: "text-secondary", border: "border-secondary/20" },
+  Fests: { bg: "bg-warning/15", text: "text-warning", border: "border-warning/20" },
+  Research: { bg: "bg-error/15", text: "text-error", border: "border-error/20" },
+  Policies: { bg: "bg-info/15", text: "text-info", border: "border-info/20" },
+  News: { bg: "bg-accent/15", text: "text-accent", border: "border-accent/20" },
+  Profile: { bg: "bg-info/15", text: "text-info", border: "border-info/20" },
+  Category: { bg: "bg-secondary/15", text: "text-secondary", border: "border-secondary/20" },
+  All: { bg: "bg-primary text-primary-content", text: "text-primary-content", border: "border-primary" },
 };
+
+const SearchResultSkeleton = () => (
+  <div className="p-5 bg-base-100 border border-base-200 rounded-2xl flex flex-col justify-between animate-pulse select-none">
+    <div>
+      <div className="mb-3.5">
+        <div className="h-4 bg-base-200 rounded-md w-16"></div>
+      </div>
+      <div className="h-5 bg-base-300 rounded-md w-3/4 mb-3"></div>
+      <div className="space-y-2">
+        <div className="h-3 bg-base-200 rounded-md w-full"></div>
+        <div className="h-3 bg-base-200 rounded-md w-5/6"></div>
+      </div>
+    </div>
+  </div>
+);
 
 interface SearchResult {
   title: string;
   path: string;
   category: string;
   description: string;
+  type?: string;
+  is_pending?: boolean;
 }
 
 function SearchResultsContent() {
@@ -95,6 +121,25 @@ function SearchResultsContent() {
     );
   };
 
+
+  const dynamicCategories = useMemo(() => {
+    const cats = new Set<string>();
+    cats.add("All");
+    results.forEach((item) => {
+      if (item.category) {
+        const cap = item.category.charAt(0).toUpperCase() + item.category.slice(1);
+        cats.add(cap);
+      }
+    });
+    return Array.from(cats);
+  }, [results]);
+
+  useEffect(() => {
+    const capCat = category.charAt(0).toUpperCase() + category.slice(1);
+    if (!dynamicCategories.includes(capCat) && dynamicCategories.length > 0) {
+      setCategory("All");
+    }
+  }, [dynamicCategories, category]);
 
   const selectCategory = (newCat: string) => {
     setCategory(newCat);
@@ -153,15 +198,7 @@ function SearchResultsContent() {
 
             <div className="py-2">
               <BeautifulTabBar
-                categories={[
-                  "All",
-                  "Campus",
-                  "Academics",
-                  "Clubs",
-                  "Fests",
-                  "Research",
-                  "Policies",
-                ]}
+                categories={dynamicCategories}
                 activeCategory={category}
                 onCategoryChange={selectCategory}
                 categoryIconMap={CATEGORY_ICON_MAP}
@@ -177,8 +214,11 @@ function SearchResultsContent() {
               </div>
 
               {loading ? (
-                <div className="flex justify-center py-16">
-                  <span className="loading loading-spinner loading-md text-primary"></span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <SearchResultSkeleton />
+                  <SearchResultSkeleton />
+                  <SearchResultSkeleton />
+                  <SearchResultSkeleton />
                 </div>
               ) : filteredItems.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

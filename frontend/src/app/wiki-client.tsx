@@ -41,16 +41,52 @@ interface WikiClientProps {
   initialMetadata?: any;
 }
 
-export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, categorySlug, initialMetadata }: WikiClientProps) {
+export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, categorySlug, initialMetadata, version }: WikiClientProps) {
   const { user } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(defaultEditing || false);
   const [markdown, setMarkdown] = useState(initialMarkdown);
   const parsed = useMemo(() => parseMarkdown(markdown), [markdown]);
+  const isProfile = useMemo(() => {
+    let currentSlug = initialMetadata?.slug;
+    if (!currentSlug && typeof window !== "undefined") {
+      currentSlug = window.location.pathname.split("/").pop();
+    }
+    return !!(currentSlug?.startsWith("profile-") || categorySlug === "profile");
+  }, [initialMetadata, categorySlug]);
   const [activeSection, setActiveSection] = useState<string>("");
   const [editorLoaded, setEditorLoaded] = useState(false);
   const [toolbarContainer, setToolbarContainer] = useState<HTMLDivElement | null>(null);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+
+  const [versionId, setVersionId] = useState<number>(version || 1);
+  const [conflictData, setConflictData] = useState<{
+    myDraft: string;
+    latestContent: string;
+    baseVersion: number;
+    currentVersion: number;
+  } | null>(null);
+  const [resolvedContent, setResolvedContent] = useState<string>("");
+
+  // Autosave to IndexedDB
+  useEffect(() => {
+    if (!isEditing) return;
+    const saveToIndexedDB = async () => {
+      try {
+        const pageKey = dbPageId ? String(dbPageId) : `new-${parsed.title || "untitled"}`;
+        const { db } = await import("@/lib/db");
+        await db.pendingpages.put({
+          id: pageKey,
+          content: markdown,
+          baseVersion: versionId,
+          updatedAt: Date.now()
+        });
+      } catch (err) {
+        console.error("Failed to autosave draft to IndexedDB:", err);
+      }
+    };
+    saveToIndexedDB();
+  }, [markdown, isEditing, dbPageId, versionId, parsed.title]);
 
   const isNews = useMemo(() => {
     return parsed.infobox?.rows?.some((row: any) =>
@@ -222,7 +258,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (resolvedContentOverride?: string, resolvedVersionOverride?: number) => {
     try {
       let category = categorySlug || initialMetadata?.category || "campus";
       const categoryRow = parsed.infobox?.rows?.find((row: any) =>
@@ -234,9 +270,14 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
         category = normalizeCategoryToSlug(category);
       }
 
-      const isNew = !dbPageId;
-      if (isNew && user?.role !== "admin" && user?.role !== "moderator") {
-        alert("Only admins and moderators can create new articles.");
+      // Check if trying to make normal page a profile page
+      let currentSlug = initialMetadata?.slug;
+      if (!currentSlug && typeof window !== "undefined") {
+        currentSlug = window.location.pathname.split("/").pop();
+      }
+      const isProfilePage = currentSlug?.startsWith('profile-') || category === 'profile';
+      if (category === 'profile' && !isProfilePage) {
+        alert("Normal articles cannot be categorized as 'profile'.");
         return;
       }
 
@@ -246,45 +287,37 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
         description
       };
 
-      if (isNew) {
-        const response = await apiService.createPage({
-          title: parsed.title || "Untitled Page",
-          content: markdownRef.current,
-          metadata
-        });
+      const payload = {
+        page_id: dbPageId || null,
+        title: parsed.title || "Untitled Page",
+        content: resolvedContentOverride !== undefined ? resolvedContentOverride : markdownRef.current,
+        metadata,
+        editor_id: user?.user_id || 0,
+        base_version: resolvedVersionOverride !== undefined ? resolvedVersionOverride : versionId,
+      };
 
-        if (response && response.slug) {
-          alert("Article created successfully!");
-          router.push(`/wiki/${category}/${response.slug}`);
-        }
-      } else {
-        let currentSlug = initialMetadata?.slug;
-        if (!currentSlug && typeof window !== "undefined") {
-          currentSlug = window.location.pathname.split("/").pop();
-        }
-        if (!currentSlug) {
-          alert("Could not identify article slug.");
-          return;
-        }
+      await apiService.submitDraft(payload);
 
-        const response = await apiService.updatePage(currentSlug, {
-          title: parsed.title || "Untitled Page",
-          content: markdownRef.current,
-          metadata
-        });
-
-        if (response) {
-          alert("Article updated successfully!");
-          setMarkdown(markdownRef.current);
-          router.refresh();
-        }
-      }
+      alert("Proposed changes submitted for review successfully!");
+      setIsEditing(false);
+      setConflictData(null);
+      router.refresh();
     } catch (error: any) {
-      console.error("Error saving article:", error);
-      const detail = error.response?.data?.detail || error.response?.data?.error || error.response?.data?.message || error.message || "Unknown error";
-      alert(`Failed to save article: ${detail}`);
+      if (error.response?.status === 409) {
+        const data = error.response.data;
+        setConflictData({
+          myDraft: markdownRef.current,
+          latestContent: data.currentContent || "",
+          baseVersion: versionId,
+          currentVersion: data.currentVersion || versionId,
+        });
+        setResolvedContent(data.currentContent || "");
+      } else {
+        console.error("Error saving draft:", error);
+        const detail = error.response?.data?.detail || error.response?.data?.error?.message || error.response?.data?.error || error.message || "Unknown error";
+        alert(`Failed to submit draft: ${detail}`);
+      }
     }
-    setIsEditing(false);
   };
 
   useEffect(() => {
@@ -389,34 +422,50 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
               />
             )}
             {/* Title Header (Separated from editor to prevent accidental deletion) */}
-            <div className="flex items-start justify-between gap-4">
-              {isEditing ? (
-                <EditableCell
-                  initialValue={parsed.title}
-                  onChange={handleTitleChange}
-                  placeholder="Untitled Page"
-                  className="text-3xl sm:text-4xl font-display font-black tracking-tight text-base-content w-full border-none focus:outline-none focus:ring-0 mb-8 bg-transparent placeholder-base-content/30"
-                />
-              ) : (
-                <h1 className="text-3xl sm:text-4xl font-display font-black tracking-tight text-base-content mb-8">
-                  {parsed.title}
-                </h1>
-              )}
-              {!isEditing && (
-                <button
-                  onClick={() => {
-                    if (!user) {
-                      router.push("/login");
-                      return;
-                    }
-                    setIsEditing(true);
-                  }}
-                  className="btn btn-primary btn-sm rounded-xl shrink-0"
-                >
-                  <Pencil className="h-4 w-4" /> Edit
-                </button>
-              )}
-            </div>
+            {(!isProfile || !isEditing) && (
+              <div className="flex items-start justify-between gap-4">
+                {isEditing ? (
+                  <EditableCell
+                    initialValue={parsed.title}
+                    onChange={handleTitleChange}
+                    placeholder="Untitled Page"
+                    className="text-3xl sm:text-4xl font-display font-black tracking-tight text-base-content w-full border-none focus:outline-none focus:ring-0 mb-8 bg-transparent placeholder-base-content/30"
+                  />
+                ) : (
+                  <h1 className="text-3xl sm:text-4xl font-display font-black tracking-tight text-base-content mb-8">
+                    {parsed.title}
+                  </h1>
+                )}
+                {!isEditing && (
+                  <button
+                    onClick={async () => {
+                      if (!user) {
+                        router.push("/login");
+                        return;
+                      }
+                      try {
+                        let currentSlug = initialMetadata?.slug;
+                        if (!currentSlug && typeof window !== "undefined") {
+                          currentSlug = window.location.pathname.split("/").pop();
+                        }
+                        if (currentSlug) {
+                          const editData = await apiService.getPageForEdit(currentSlug);
+                          setMarkdown(editData.content);
+                          markdownRef.current = editData.content;
+                          setVersionId(editData.versionId);
+                        }
+                      } catch (err) {
+                        console.error("Failed to load page for editing:", err);
+                      }
+                      setIsEditing(true);
+                    }}
+                    className="btn btn-primary btn-sm rounded-xl shrink-0"
+                  >
+                    <Pencil className="h-4 w-4" /> Edit
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Milkdown Editor */}
             <MilkdownEditor
@@ -450,7 +499,7 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
                     id: "save",
                     label: "Save",
                     icon: Check,
-                    onClick: handleSave,
+                    onClick: () => handleSave(),
                   },
                   {
                     id: "cancel",
@@ -509,12 +558,26 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
                     id: "edit",
                     label: "Edit Page",
                     icon: Edit3,
-                    onClick: () => {
+                    onClick: async () => {
                       if (!user) {
                         router.push("/login");
-                      } else {
-                        setIsEditing(true);
+                        return;
                       }
+                      try {
+                        let currentSlug = initialMetadata?.slug;
+                        if (!currentSlug && typeof window !== "undefined") {
+                          currentSlug = window.location.pathname.split("/").pop();
+                        }
+                        if (currentSlug) {
+                          const editData = await apiService.getPageForEdit(currentSlug);
+                          setMarkdown(editData.content);
+                          markdownRef.current = editData.content;
+                          setVersionId(editData.versionId);
+                        }
+                      } catch (err) {
+                        console.error("Failed to load page for editing:", err);
+                      }
+                      setIsEditing(true);
                     },
                   },
 
@@ -550,6 +613,106 @@ export default function WikiClient({ initialMarkdown, defaultEditing, dbPageId, 
         startResizeRight={startResizeRight}
         handleRightDoubleClick={handleRightDoubleClick}
       />
+
+      {/* Conflict Resolution Modal Overlay */}
+      {conflictData && (
+        <div className="fixed inset-0 z-[20005] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-base-100 rounded-3xl border border-base-200 shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <header className="px-6 py-4 border-b border-base-200 flex items-center justify-between shrink-0 bg-base-100">
+              <div>
+                <h3 className="text-lg font-black text-base-content leading-snug">Edit Conflict Detected (v{conflictData.baseVersion} vs v{conflictData.currentVersion})</h3>
+                <p className="text-xs text-base-content/50 mt-1 font-semibold uppercase tracking-wider">Another user saved changes first. Resolve conflicts below.</p>
+              </div>
+              <button
+                onClick={() => setConflictData(null)}
+                className="btn btn-sm btn-ghost btn-circle text-base-content/50 hover:text-base-content"
+              >
+                ✕
+              </button>
+            </header>
+
+            <div className="flex-1 p-6 overflow-hidden flex flex-col md:flex-row gap-6 min-h-0">
+              {/* Left Column: My Draft (Read Only) */}
+              <div className="flex-1 flex flex-col h-full min-h-0 bg-base-200/30 border border-base-200 rounded-2xl p-4 overflow-hidden">
+                <div className="flex justify-between items-center mb-3 shrink-0">
+                  <h4 className="text-xs font-black text-warning uppercase tracking-wider">My Draft (Read Only)</h4>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(conflictData.myDraft);
+                      alert("Copied your draft to clipboard!");
+                    }}
+                    className="btn btn-xs btn-outline btn-warning rounded-lg"
+                  >
+                    Copy My Draft
+                  </button>
+                </div>
+                <textarea
+                  readOnly
+                  value={conflictData.myDraft}
+                  className="flex-1 w-full bg-base-200/50 border border-base-300 rounded-xl p-3 text-xs font-mono resize-none focus:outline-none text-base-content/75 overflow-y-auto"
+                />
+              </div>
+
+              {/* Right Column: Latest Version (Editable for merge) */}
+              <div className="flex-1 flex flex-col h-full min-h-0 bg-base-100 border border-base-200 rounded-2xl p-4 overflow-hidden">
+                <h4 className="text-xs font-black text-primary uppercase tracking-wider mb-3 shrink-0">Latest Version (Editable / Merge Destination)</h4>
+                <textarea
+                  value={resolvedContent}
+                  onChange={(e) => setResolvedContent(e.target.value)}
+                  className="flex-1 w-full bg-base-100 border border-base-300 rounded-xl p-3 text-xs font-mono resize-none focus:outline-none focus:border-primary text-base-content overflow-y-auto"
+                  placeholder="Paste your merged content here..."
+                />
+              </div>
+            </div>
+
+            <footer className="px-6 py-4 border-t border-base-200 flex flex-wrap gap-3 justify-between items-center shrink-0 bg-base-100">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setMarkdown(conflictData.myDraft);
+                    markdownRef.current = conflictData.myDraft;
+                    setVersionId(conflictData.currentVersion);
+                    setConflictData(null);
+                    alert("Applied your draft to the editor. Save again to submit with version v" + conflictData.currentVersion);
+                  }}
+                  className="btn btn-warning btn-sm rounded-xl"
+                >
+                  Keep Mine
+                </button>
+                <button
+                  onClick={() => {
+                    setMarkdown(conflictData.latestContent);
+                    markdownRef.current = conflictData.latestContent;
+                    setVersionId(conflictData.currentVersion);
+                    setConflictData(null);
+                    alert("Applied the latest server version to the editor.");
+                  }}
+                  className="btn btn-outline btn-sm rounded-xl"
+                >
+                  Use Latest
+                </button>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConflictData(null)}
+                  className="btn btn-ghost btn-sm rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleSave(resolvedContent, conflictData.currentVersion);
+                  }}
+                  className="btn btn-primary btn-sm rounded-xl"
+                >
+                  Save Resolved
+                </button>
+              </div>
+            </footer>
+          </div>
+        </div>
+      )}
     </>
   );
 }

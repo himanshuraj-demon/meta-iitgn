@@ -5,6 +5,8 @@ import { ChevronLeft } from "lucide-react";
 import { apiService } from "@/api";
 import NewsDetailClient from "./NewsDetailClient";
 
+export const dynamic = "force-dynamic";
+
 interface NewsPageProps {
   params: Promise<{
     slug: string;
