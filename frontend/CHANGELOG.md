@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0](https://github.com/Metis-IITGandhinagar/meta-iitgn/compare/frontend-v0.3.0...frontend-v0.4.0) (2026-07-14)
+
+
+### Features
+
+* Improved overlays, profile caching, skeleton loading ([66e4b8e](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/66e4b8eba44265018270c05cc41c9628a63572af))
+* Improved overlays, profile caching, skeleton loading ([66e4b8e](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/66e4b8eba44265018270c05cc41c9628a63572af))
+* Improved overlays, profile caching, skeleton loading ([ae31982](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/ae319824e641e6e1b28c64bddaaa60c1d3992a71))
+* profile on navbar and various fixes ([493171a](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/493171af879de00c0b2818ea4d70f93aa33af2ca))
+
 ## [0.3.0](https://github.com/Metis-IITGandhinagar/meta-iitgn/compare/frontend-v0.2.0...frontend-v0.3.0) (2026-07-13)
 
 
