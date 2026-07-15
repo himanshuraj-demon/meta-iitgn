@@ -8,10 +8,15 @@ export class WikiDexie extends Dexie {
   updatedpages!: Table<any, string>;
   meta!: Table<any, string>;
   cachedpages!: Table<any, string>;
+  featured!: Table<any, string>;
+  popular!: Table<any, string>;
+  events!: Table<any, string>;
+  messmenu!: Table<any, string>;
+  transport!: Table<any, string>;
 
   constructor() {
     super('WikiDB');
-    this.version(2).stores({
+    this.version(3).stores({
       bookmarks: 'id',
       news: 'id',
       contributors: 'id',
@@ -19,6 +24,11 @@ export class WikiDexie extends Dexie {
       updatedpages: 'id',
       meta: 'key',
       cachedpages: 'slug',
+      featured: 'id',
+      popular: 'id',
+      events: 'id',
+      messmenu: 'id',
+      transport: 'id',
     });
   }
 }

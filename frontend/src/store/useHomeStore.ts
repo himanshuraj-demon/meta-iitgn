@@ -13,6 +13,11 @@ export interface HomeState {
   triviaPages: any[];
   historyPages: any[];
   bookmarks: any[];
+  featuredPages: any[];
+  popularPages: any[];
+  upcomingEvents: any[];
+  messMenu: any | null;
+  campusTransport: any | null;
   loading: boolean;
 
   // Active overlay (new, updated, pending, news, trivia, history, editors, null)
@@ -55,6 +60,11 @@ export interface HomeState {
   setTriviaPages: (triviaPages: any[]) => void;
   setHistoryPages: (historyPages: any[]) => void;
   setBookmarks: (bookmarks: any[]) => void;
+  setFeaturedPages: (pages: any[]) => void;
+  setPopularPages: (pages: any[]) => void;
+  setUpcomingEvents: (events: any[]) => void;
+  setMessMenu: (menu: any | null) => void;
+  setCampusTransport: (transport: any | null) => void;
   setLoading: (loading: boolean) => void;
   setActiveOverlay: (overlay: "new" | "updated" | "pending" | "news" | "trivia" | "history" | "editors" | null) => void;
 
@@ -96,6 +106,8 @@ export interface HomeState {
 
 let activeHomeDataPromise: Promise<void> | null = null;
 let activeHomeDataPromiseIsForce = false;
+let activeHomeDataUserId: string | null = null;
+let publicDataLoaded = false;
 
 export const useHomeStore = create<HomeState>((set, get) => ({
   // Data collections initial state
@@ -107,6 +119,11 @@ export const useHomeStore = create<HomeState>((set, get) => ({
   triviaPages: [],
   historyPages: [],
   bookmarks: [],
+  featuredPages: [],
+  popularPages: [],
+  upcomingEvents: [],
+  messMenu: null,
+  campusTransport: null,
   loading: true,
 
   // Overlays initial state
@@ -149,6 +166,11 @@ export const useHomeStore = create<HomeState>((set, get) => ({
   setTriviaPages: (triviaPages) => set({ triviaPages }),
   setHistoryPages: (historyPages) => set({ historyPages }),
   setBookmarks: (bookmarks) => set({ bookmarks }),
+  setFeaturedPages: (featuredPages) => set({ featuredPages }),
+  setPopularPages: (popularPages) => set({ popularPages }),
+  setUpcomingEvents: (upcomingEvents) => set({ upcomingEvents }),
+  setMessMenu: (messMenu) => set({ messMenu }),
+  setCampusTransport: (campusTransport) => set({ campusTransport }),
   setLoading: (loading) => set({ loading }),
   setActiveOverlay: (activeOverlay) => set({ activeOverlay }),
 
@@ -180,23 +202,121 @@ export const useHomeStore = create<HomeState>((set, get) => ({
   // Actions
   loadHomeData: async ({ user, setTotalPagesCount, forceRefresh = false }) => {
     const force = forceRefresh;
+    const currentUserId = user ? String(user.user_id) : "guest";
 
     if (activeHomeDataPromise) {
-      if (force && !activeHomeDataPromiseIsForce) {
-        await activeHomeDataPromise;
-      } else {
-        return activeHomeDataPromise;
+      if (activeHomeDataUserId === currentUserId) {
+        if (force && !activeHomeDataPromiseIsForce) {
+          await activeHomeDataPromise;
+        } else {
+          return activeHomeDataPromise;
+        }
       }
     }
 
+    // Helper to safely read from a Dexie table
+    const safeToArray = async (table: any) => {
+      try {
+        return await table.toArray();
+      } catch (e) {
+        console.error(`Failed to read from table "${table?.name}":`, e);
+        return [];
+      }
+    };
+
+    // Determine if we only need to sync bookmarks (transition from guest -> user)
+    const isTransitionFromGuestToUser = activeHomeDataUserId === "guest" && currentUserId !== "guest";
+    const bookmarksOnly = publicDataLoaded && isTransitionFromGuestToUser && !force;
+
+    if (bookmarksOnly) {
+      activeHomeDataPromiseIsForce = false;
+      activeHomeDataUserId = currentUserId;
+      activeHomeDataPromise = (async () => {
+        try {
+          // 1. Read ONLY bookmarks and pendingpages from Dexie immediately
+          const [cachedBookmarks, cachedPending] = await Promise.all([
+            safeToArray(db.bookmarks),
+            safeToArray(db.pendingpages),
+          ]);
+          set({
+            bookmarks: cachedBookmarks,
+            pendingPages: cachedPending.slice(0, 4),
+            pendingPagesHasMore: cachedPending.length > 4,
+            loading: false,
+          });
+
+          // 2. Background sync ONLY bookmarks and pendingpages
+          let syncInfo: any = null;
+          try {
+            syncInfo = await apiService.getSyncCheck();
+          } catch (err) {
+            console.error("Bookmarks sync check failed:", err);
+          }
+
+          if (syncInfo) {
+            const privatePromises: Promise<any>[] = [];
+            if (syncInfo.bookmarks) {
+              privatePromises.push(
+                loadCachedCollection({
+                  key: "bookmarks",
+                  table: db.bookmarks,
+                  serverInfo: syncInfo.bookmarks,
+                  fetcher: () => apiService.getBookmarksList(),
+                  onDataLoaded: (data) => {
+                    set({ bookmarks: data });
+                  },
+                  forceRefresh: false,
+                  preloadedData: cachedBookmarks,
+                })
+              );
+            }
+            if (syncInfo.pendingpages) {
+              privatePromises.push(
+                loadCachedCollection({
+                  key: "pendingpages",
+                  table: db.pendingpages,
+                  serverInfo: syncInfo.pendingpages,
+                  fetcher: () => apiService.getPendingDrafts(undefined, 10, 1),
+                  mapper: (drafts: any[]) =>
+                    drafts
+                      .filter((d: any) => d.status === "in_review")
+                      .map((item: any) => ({ ...item, id: String(item.pending_id) })),
+                  onDataLoaded: (data) => {
+                    set({
+                      pendingPages: data.slice(0, 4),
+                      pendingPagesHasMore: data.length > 4,
+                    });
+                  },
+                  forceRefresh: false,
+                  preloadedData: cachedPending,
+                })
+              );
+            }
+            await Promise.allSettled(privatePromises);
+          }
+        } catch (err) {
+          console.error("Error loading user bookmarks/pending:", err);
+        } finally {
+          if (activeHomeDataUserId === currentUserId) {
+            activeHomeDataPromise = null;
+          }
+        }
+      })();
+
+      return activeHomeDataPromise;
+    }
+
     activeHomeDataPromiseIsForce = force;
+    activeHomeDataUserId = currentUserId;
     activeHomeDataPromise = (async () => {
       try {
+        publicDataLoaded = false; // reset flag on full sync load
         set({
           newPageNumber: 1,
           updatedPageNumber: 1,
           pendingPageNumber: 1,
         });
+
 
         // 1. Load from Dexie immediately for Stale-While-Revalidate instant render
         const [
@@ -205,19 +325,36 @@ export const useHomeStore = create<HomeState>((set, get) => ({
           cachedPending,
           cachedUpdated,
           cachedBookmarks,
+          cachedFeatured,
+          cachedPopular,
+          cachedEvents,
+          cachedMessMenu,
+          cachedTransport,
         ] = await Promise.all([
-          db.news.toArray(),
-          db.contributors.toArray(),
-          db.pendingpages.toArray(),
-          db.updatedpages.toArray(),
-          db.bookmarks.toArray(),
+          safeToArray(db.news),
+          safeToArray(db.contributors),
+          safeToArray(db.pendingpages),
+          safeToArray(db.updatedpages),
+          safeToArray(db.bookmarks),
+          safeToArray(db.featured),
+          safeToArray(db.popular),
+          safeToArray(db.events),
+          safeToArray(db.messmenu),
+          safeToArray(db.transport),
         ]);
+        
+        
 
         set({
           newsPages: cachedNews.slice(0, 5),
           editors: cachedEditors,
           pendingPages: cachedPending.slice(0, 4),
           pendingPagesHasMore: cachedPending.length > 4,
+          featuredPages: cachedFeatured,
+          popularPages: cachedPopular,
+          upcomingEvents: cachedEvents,
+          messMenu: cachedMessMenu[0] || null,
+          campusTransport: cachedTransport[0] || null,
         });
 
         const cachedNewPages = cachedUpdated.filter((p: any) => p._type === "new");
@@ -268,9 +405,8 @@ export const useHomeStore = create<HomeState>((set, get) => ({
           });
         set({ historyPages: cachedHistory });
 
-        let finalBookmarks = cachedBookmarks;
+        const finalBookmarks = cachedBookmarks;
         // Guests and non-authenticated users get no bookmarks
-        // (real bookmarks come from API when user is logged in)
         set({ bookmarks: finalBookmarks });
 
         const metaInfo = await db.meta.get("updatedpages");
@@ -278,11 +414,26 @@ export const useHomeStore = create<HomeState>((set, get) => ({
           setTotalPagesCount(metaInfo.count);
         }
 
+        // Set loading to false early if we have any cached data to show
+        const hasAnyCachedData =
+          cachedNews.length > 0 ||
+          cachedFeatured.length > 0 ||
+          cachedEvents.length > 0 ||
+          cachedPopular.length > 0 ||
+          cachedNewPages.length > 0 ||
+          cachedUpdatedPages.length > 0;
+
+        if (hasAnyCachedData) {
+          set({ loading: false });
+        }
+        publicDataLoaded = true;
+
         // 2. Fetch or reuse sync check
-        const FIVE_HOURS = 5 * 60 * 60 * 1000;
+        const TWELVE_HOURS = 12 * 60 * 60 * 1000;
         let syncInfo: any = null;
         let cacheValid = false;
         const cachedSyncStr = localStorage.getItem("syncCheck");
+        const hasCachedData = cachedNews.length > 0 && cachedFeatured.length > 0;
 
         if (cachedSyncStr && !force) {
           try {
@@ -291,7 +442,8 @@ export const useHomeStore = create<HomeState>((set, get) => ({
             const currentUserId = user?.user_id || null;
             if (
               cachedUserId === currentUserId &&
-              Date.now() - parsed.timestamp < FIVE_HOURS
+              Date.now() - parsed.timestamp < TWELVE_HOURS &&
+              hasCachedData
             ) {
               syncInfo = parsed.data;
               cacheValid = true;
@@ -345,6 +497,7 @@ export const useHomeStore = create<HomeState>((set, get) => ({
               set({ newsPages: data.slice(0, 5) });
             },
             forceRefresh: force,
+            preloadedData: cachedNews,
           }),
 
           loadCachedCollection({
@@ -358,24 +511,7 @@ export const useHomeStore = create<HomeState>((set, get) => ({
               set({ editors: data });
             },
             forceRefresh: force,
-          }),
-
-          loadCachedCollection({
-            key: "pendingpages",
-            table: db.pendingpages,
-            serverInfo: syncInfo.pendingpages,
-            fetcher: () => apiService.getPendingDrafts(undefined, 10, 1),
-            mapper: (drafts: any[]) =>
-              drafts
-                .filter((d: any) => d.status === "in_review")
-                .map((item: any) => ({ ...item, id: String(item.pending_id) })),
-            onDataLoaded: (data) => {
-              set({
-                pendingPages: data.slice(0, 4),
-                pendingPagesHasMore: data.length > 4,
-              });
-            },
-            forceRefresh: force,
+            preloadedData: cachedEditors,
           }),
 
           loadCachedCollection({
@@ -450,10 +586,101 @@ export const useHomeStore = create<HomeState>((set, get) => ({
               set({ historyPages: filteredHistory });
             },
             forceRefresh: force,
+            preloadedData: cachedUpdated,
+          }),
+
+          loadCachedCollection({
+            key: "featured",
+            table: db.featured,
+            serverInfo: syncInfo.featured,
+            fetcher: () => apiService.getFeaturedPages(),
+            mapper: (res: any) =>
+              (res.data || []).map((item: any) => ({ ...item, id: String(item.featured_id) })),
+            onDataLoaded: (data) => {
+              set({ featuredPages: data });
+            },
+            forceRefresh: force,
+            preloadedData: cachedFeatured,
+          }),
+
+          loadCachedCollection({
+            key: "popular",
+            table: db.popular,
+            serverInfo: syncInfo.popular,
+            fetcher: () => apiService.getPopularPages(6),
+            mapper: (res: any) =>
+              (res.data || []).map((item: any) => ({ ...item, id: String(item.page_id) })),
+            onDataLoaded: (data) => {
+              set({ popularPages: data });
+            },
+            forceRefresh: force,
+            preloadedData: cachedPopular,
+          }),
+
+          loadCachedCollection({
+            key: "events",
+            table: db.events,
+            serverInfo: syncInfo.events,
+            fetcher: () => apiService.getEvents(6),
+            mapper: (res: any) =>
+              (res.data || []).map((item: any) => ({ ...item, id: String(item.event_id) })),
+            onDataLoaded: (data) => {
+              set({ upcomingEvents: data });
+            },
+            forceRefresh: force,
+            preloadedData: cachedEvents,
+          }),
+
+          loadCachedCollection({
+            key: "messmenu",
+            table: db.messmenu,
+            serverInfo: syncInfo.messmenu,
+            fetcher: () => apiService.getMessMenu(),
+            mapper: (res: any) =>
+              res.data ? [{ ...res.data, id: "mess-menu" }] : [],
+            onDataLoaded: (data) => {
+              set({ messMenu: data[0] || null });
+            },
+            forceRefresh: force,
+            preloadedData: cachedMessMenu,
+          }),
+
+          loadCachedCollection({
+            key: "transport",
+            table: db.transport,
+            serverInfo: syncInfo.transport,
+            fetcher: () => apiService.getCampusTransport(),
+            mapper: (res: any) =>
+              res.data ? [{ ...res.data, id: "campus-transport" }] : [],
+            onDataLoaded: (data) => {
+              set({ campusTransport: data[0] || null });
+            },
+            forceRefresh: force,
+            preloadedData: cachedTransport,
           }),
         ];
 
         if (user) {
+          syncPromises.push(
+            loadCachedCollection({
+              key: "pendingpages",
+              table: db.pendingpages,
+              serverInfo: syncInfo.pendingpages,
+              fetcher: () => apiService.getPendingDrafts(undefined, 10, 1),
+              mapper: (drafts: any[]) =>
+                drafts
+                  .filter((d: any) => d.status === "in_review")
+                  .map((item: any) => ({ ...item, id: String(item.pending_id) })),
+              onDataLoaded: (data) => {
+                set({
+                  pendingPages: data.slice(0, 4),
+                  pendingPagesHasMore: data.length > 4,
+                });
+              },
+              forceRefresh: force,
+              preloadedData: cachedPending,
+            })
+          );
           syncPromises.push(
             loadCachedCollection({
               key: "bookmarks",
@@ -464,11 +691,12 @@ export const useHomeStore = create<HomeState>((set, get) => ({
                 set({ bookmarks: data });
               },
               forceRefresh: force,
+              preloadedData: cachedBookmarks,
             })
           );
         }
 
-        await Promise.all(syncPromises);
+        await Promise.allSettled(syncPromises);
 
         if (syncInfo.updatedpages?.count !== undefined) {
           setTotalPagesCount(syncInfo.updatedpages.count);
@@ -477,6 +705,10 @@ export const useHomeStore = create<HomeState>((set, get) => ({
         console.error("Error loading home page activity lists:", err);
       } finally {
         set({ loading: false });
+        if (activeHomeDataUserId === currentUserId) {
+          activeHomeDataPromise = null;
+          activeHomeDataUserId = null;
+        }
       }
     })();
 

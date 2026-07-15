@@ -58,6 +58,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             db.contributors.clear(),
             db.pendingpages.clear(),
             db.updatedpages.clear(),
+            db.featured.clear(),
+            db.popular.clear(),
+            db.events.clear(),
+            db.messmenu.clear(),
+            db.transport.clear(),
             db.meta.clear(),
           ]);
         } catch (e) {
@@ -87,12 +92,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setTotalPagesCount(null);
       localStorage.removeItem("syncCheck");
       try {
-        await db.bookmarks.clear();
-        await db.news.clear();
-        await db.contributors.clear();
-        await db.pendingpages.clear();
-        await db.updatedpages.clear();
-        await db.meta.clear();
+        await Promise.all([
+          db.bookmarks.clear(),
+          db.news.clear(),
+          db.contributors.clear(),
+          db.pendingpages.clear(),
+          db.updatedpages.clear(),
+          db.featured.clear(),
+          db.popular.clear(),
+          db.events.clear(),
+          db.messmenu.clear(),
+          db.transport.clear(),
+          db.meta.clear(),
+        ]);
       } catch (e) {
         console.error("Failed to clear Dexie DB on logout:", e);
       }

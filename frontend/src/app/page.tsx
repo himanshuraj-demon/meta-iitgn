@@ -47,6 +47,11 @@ export default function HomePage() {
     triviaPages,
     historyPages,
     bookmarks,
+    featuredPages,
+    popularPages,
+    upcomingEvents,
+    messMenu,
+    campusTransport,
     loading,
 
     // Overlays
@@ -107,8 +112,21 @@ export default function HomePage() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
   const [mobileNavHidden, setMobileNavHidden] = useState(false);
+  const [initialDelay, setInitialDelay] = useState(true);
 
-  const lastUserRef = useRef<string | null>(null);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setInitialDelay(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Load cached home data immediately on mount (offline-first SWR)
+  useEffect(() => {
+    loadHomeData({ user: null, setTotalPagesCount });
+  }, [loadHomeData, setTotalPagesCount]);
+
+  const lastUserRef = useRef<string | null>("guest");
   useEffect(() => {
     if (authLoading || auth === null) return;
 
@@ -117,7 +135,7 @@ export default function HomePage() {
       lastUserRef.current = currentUserId;
       loadHomeData({ user, setTotalPagesCount });
     }
-  }, [user, auth, authLoading, loadHomeData, setTotalPagesCount]);
+  }, [user, user?.user_id, auth, authLoading, loadHomeData, setTotalPagesCount]);
 
   useEffect(() => {
     const handleCloseOverlays = () => {
@@ -296,8 +314,8 @@ export default function HomePage() {
         pendingPages,
         getRelativeTime,
         handleReview: (pendingId: number, action: "approve" | "reject") =>
-          handleReview({ pendingId, action, userId: user?.user_id || 0 }).then(() =>
-            loadHomeData({ user, setTotalPagesCount, forceRefresh: true })
+          handleReview({ pendingId, action, userId: user?.user_id || 0 }).then(
+            () => loadHomeData({ user, setTotalPagesCount, forceRefresh: true })
           ),
         hasMore: pendingPagesHasMore,
         onLoadMore: loadMorePendingPages,
@@ -328,7 +346,10 @@ export default function HomePage() {
         isSubmittingTrivia,
         handleAddTrivia: (e: React.FormEvent) => {
           e.preventDefault();
-          handleAddTrivia({ title: newTriviaTitle, content: newTriviaContent }).then(() =>
+          handleAddTrivia({
+            title: newTriviaTitle,
+            content: newTriviaContent,
+          }).then(() =>
             loadHomeData({ user, setTotalPagesCount, forceRefresh: true })
           );
         },
@@ -375,7 +396,7 @@ export default function HomePage() {
     },
   };
 
-  if (authLoading || auth === null) {
+  if (initialDelay || authLoading || auth === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-100">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -417,16 +438,14 @@ export default function HomePage() {
             }}
           >
             {/* Slim navigation bar for desktop only */}
-            <div
-              className="hidden lg:flex sticky mx-auto w-fit top-3 z-30 items-center gap-1 transition-all duration-300 px-4 py-1.5 rounded-full select-none -mb-11 bg-base-200/80 backdrop-blur-xl border border-base-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.06)]"
-            >
+            <div className="hidden lg:flex sticky mx-auto w-fit top-3 z-30 items-center gap-1 transition-all duration-300 px-4 py-1.5 rounded-full select-none -mb-11 bg-base-200/80 backdrop-blur-xl border border-base-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.06)]">
               {homeTabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
 
                 const buttonStyle = isActive
-                    ? "bg-primary text-primary-content border border-transparent shadow-xs"
-                    : "text-base-content/70 hover:bg-base-300 hover:text-base-content";
+                  ? "bg-primary text-primary-content border border-transparent shadow-xs"
+                  : "text-base-content/70 hover:bg-base-300 hover:text-base-content";
 
                 return (
                   <button
@@ -448,8 +467,12 @@ export default function HomePage() {
                 scrollToFeed={scrollToFeed}
                 spawnHearts={spawnHearts}
                 setShowAllNew={(val) => setActiveOverlay(val ? "new" : null)}
-                setShowAllUpdated={(val) => setActiveOverlay(val ? "updated" : null)}
-                setShowAllPending={(val) => setActiveOverlay(val ? "pending" : null)}
+                setShowAllUpdated={(val) =>
+                  setActiveOverlay(val ? "updated" : null)
+                }
+                setShowAllPending={(val) =>
+                  setActiveOverlay(val ? "pending" : null)
+                }
                 newPages={newPages}
                 updatedPages={updatedPages}
                 pendingPages={pendingPages}
@@ -458,14 +481,25 @@ export default function HomePage() {
                 newsPages={newsPages}
                 setShowAllNews={(val) => setActiveOverlay(val ? "news" : null)}
                 triviaPages={triviaPages}
-                setShowAllTrivia={(val) => setActiveOverlay(val ? "trivia" : null)}
+                setShowAllTrivia={(val) =>
+                  setActiveOverlay(val ? "trivia" : null)
+                }
                 setActiveTriviaItem={setActiveTriviaItem}
                 historyPages={historyPages}
-                setShowAllHistory={(val) => setActiveOverlay(val ? "history" : null)}
+                setShowAllHistory={(val) =>
+                  setActiveOverlay(val ? "history" : null)
+                }
                 setActiveHistoryItem={setActiveHistoryItem}
                 editors={editors}
-                setShowAllEditors={(val) => setActiveOverlay(val ? "editors" : null)}
+                setShowAllEditors={(val) =>
+                  setActiveOverlay(val ? "editors" : null)
+                }
                 totalPagesCount={totalPagesCount}
+                featuredPages={featuredPages}
+                popularPages={popularPages}
+                upcomingEvents={upcomingEvents}
+                messMenu={messMenu}
+                campusTransport={campusTransport}
               />
             ) : activeTab === "search" ? (
               <SearchTab

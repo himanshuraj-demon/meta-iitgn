@@ -9,6 +9,7 @@ export interface LoadCachedCollectionOptions<T, R = any> {
   mapper?: (data: R) => T[];
   onDataLoaded: (data: T[]) => void;
   forceRefresh?: boolean;
+  preloadedData?: T[];
 }
 
 /**
@@ -71,13 +72,28 @@ export async function loadCachedCollection<T, R = any>({
   mapper,
   onDataLoaded,
   forceRefresh = false,
+  preloadedData,
 }: LoadCachedCollectionOptions<T, R>): Promise<T[]> {
   // 1. Load from Dexie immediately and notify callback
-  const cachedData = await table.toArray();
+  let cachedData: T[] = preloadedData || [];
+  if (!preloadedData) {
+    try {
+      cachedData = await table.toArray();
+    } catch (e) {
+      console.error(`Failed to read from table "${key}":`, e);
+    }
+  }
   onDataLoaded(cachedData);
 
   // 2. Check cache validity
-  const valid = !forceRefresh && (await isCacheValid(key, serverInfo));
+  let valid = false;
+  try {
+    const serverCount = serverInfo ? Number(serverInfo.count) : 0;
+    const isTableEmptyButShouldHaveData = cachedData.length === 0 && serverCount > 0;
+    valid = !forceRefresh && !isTableEmptyButShouldHaveData && (await isCacheValid(key, serverInfo));
+  } catch (e) {
+    console.error(`Failed to validate cache for key "${key}":`, e);
+  }
 
   if (!valid) {
     try {
@@ -86,14 +102,19 @@ export async function loadCachedCollection<T, R = any>({
       // 4. Map data if mapper is provided
       const mappedData = mapper ? mapper(rawData) : (rawData as any as T[]);
 
-      // 5. Update Dexie table
-      await table.clear();
-      if (mappedData.length > 0) {
-        await table.bulkAdd(mappedData);
+      // 5. Update Dexie table inside an atomic transaction
+      try {
+        await db.transaction("rw", table, async () => {
+          await table.clear();
+          if (mappedData.length > 0) {
+            await table.bulkAdd(mappedData);
+          }
+        });
+        // 6. Update meta in Dexie
+        await updateMeta(key, serverInfo);
+      } catch (e) {
+        console.error(`Failed to write to table "${key}":`, e);
       }
-
-      // 6. Update meta in Dexie
-      await updateMeta(key, serverInfo);
 
       // 7. Notify callback with fresh data
       onDataLoaded(mappedData);

@@ -13,7 +13,6 @@ import {
   BookOpen,
   Languages,
   Users2,
-  Eye,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -31,7 +30,6 @@ import ParallaxBackground from "@/components/ParallaxBackground";
 import { useAuth } from "@/hooks/useAuth";
 import HomeCard from "./HomeCard";
 import HomeMasonryGrid, { MasonryCardConfig } from "./HomeMasonryGrid";
-import { apiService } from "@/api";
 
 interface HomeTabProps {
   mousePos: { x: number; y: number };
@@ -57,6 +55,11 @@ interface HomeTabProps {
   editors: any[];
   setShowAllEditors: (show: boolean) => void;
   totalPagesCount: number | null;
+  featuredPages: any[];
+  popularPages: any[];
+  upcomingEvents: any[];
+  messMenu: any | null;
+  campusTransport: any | null;
 }
 
 // ── Parse today's mess menu section from weekly markdown ─────────────────────
@@ -137,20 +140,17 @@ export default function HomeTab({
   editors,
   setShowAllEditors,
   totalPagesCount,
+  featuredPages,
+  popularPages,
+  upcomingEvents,
+  messMenu,
+  campusTransport,
 }: HomeTabProps) {
   const { categories } = useAuth();
   const router = useRouter();
   const [categoriesCount, setCategoriesCount] = useState(11);
   const [featuredSlideIndex, setFeaturedSlideIndex] = useState(0);
   const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Dynamic data from API
-  const [featuredSlides, setFeaturedSlides] = useState<any[]>([]);
-  const [popularPages, setPopularPages] = useState<any[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
-  const [messMenuItems, setMessMenuItems] = useState<string[]>([]);
-  const [transportItems, setTransportItems] = useState<string[]>([]);
-  const [dynamicDataLoading, setDynamicDataLoading] = useState(true);
 
   // Fallback featured slides in case API returns empty
   const FALLBACK_SLIDES = [
@@ -180,62 +180,17 @@ export default function HomeTab({
     },
   ];
 
+  // Derived / computed states from cached store/Dexie props
+  const featuredSlides = (featuredPages && featuredPages.length > 0) ? featuredPages : FALLBACK_SLIDES;
+  const messMenuItems = messMenu?.content ? parseTodayMessMenu(messMenu.content) : [];
+  const transportItems = campusTransport?.content ? parseTransportSummary(campusTransport.content) : [];
+  const dynamicDataLoading = loading;
+
   useEffect(() => {
     if (categories && categories.length > 0) {
       setCategoriesCount(categories.length);
     }
   }, [categories]);
-
-  // Load dynamic data
-  useEffect(() => {
-    let cancelled = false;
-    async function loadData() {
-      setDynamicDataLoading(true);
-      try {
-        const [featuredRes, popularRes, eventsRes, messRes, transportRes] = await Promise.allSettled([
-          apiService.getFeaturedPages(),
-          apiService.getPopularPages(6),
-          apiService.getEvents(6),
-          apiService.getMessMenu(),
-          apiService.getCampusTransport(),
-        ]);
-
-        if (cancelled) return;
-
-        if (featuredRes.status === 'fulfilled' && featuredRes.value?.data?.length > 0) {
-          setFeaturedSlides(featuredRes.value.data);
-        } else {
-          setFeaturedSlides(FALLBACK_SLIDES);
-        }
-
-        if (popularRes.status === 'fulfilled' && popularRes.value?.data?.length > 0) {
-          setPopularPages(popularRes.value.data);
-        }
-
-        if (eventsRes.status === 'fulfilled' && eventsRes.value?.data?.length > 0) {
-          setUpcomingEvents(eventsRes.value.data);
-        }
-
-        if (messRes.status === 'fulfilled' && messRes.value?.data?.content) {
-          const items = parseTodayMessMenu(messRes.value.data.content);
-          setMessMenuItems(items);
-        }
-
-        if (transportRes.status === 'fulfilled' && transportRes.value?.data?.content) {
-          const rows = parseTransportSummary(transportRes.value.data.content);
-          setTransportItems(rows);
-        }
-      } catch (err) {
-        console.error('Error loading dynamic home data:', err);
-        if (!cancelled) setFeaturedSlides(FALLBACK_SLIDES);
-      } finally {
-        if (!cancelled) setDynamicDataLoading(false);
-      }
-    }
-    loadData();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Auto-advance featured slides every 5s
   useEffect(() => {
@@ -637,7 +592,7 @@ export default function HomeTab({
             </Link>
           }
         >
-          {dynamicDataLoading ? (
+          {dynamicDataLoading && upcomingEvents.length === 0 ? (
             <div className="flex items-center gap-2 py-3">
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
               <span className="text-xs text-base-content/50">Loading…</span>
@@ -673,7 +628,7 @@ export default function HomeTab({
           badge={<span className="badge badge-secondary badge-sm">Trending</span>}
         >
           <div className="space-y-3">
-            {dynamicDataLoading ? (
+            {dynamicDataLoading && popularPages.length === 0 ? (
               <div className="flex items-center gap-2 py-3">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 <span className="text-xs text-base-content/50">Loading…</span>
@@ -732,7 +687,7 @@ export default function HomeTab({
             </Link>
           }
         >
-          {dynamicDataLoading ? (
+          {dynamicDataLoading && messMenuItems.length === 0 ? (
             <div className="flex items-center gap-2 py-2">
               <Loader2 className="h-4 w-4 animate-spin text-success" />
               <span className="text-xs text-base-content/50">Loading…</span>
@@ -769,7 +724,7 @@ export default function HomeTab({
             </Link>
           }
         >
-          {dynamicDataLoading ? (
+          {dynamicDataLoading && transportItems.length === 0 ? (
             <div className="flex items-center gap-2 py-2">
               <Loader2 className="h-4 w-4 animate-spin text-secondary" />
               <span className="text-xs text-base-content/50">Loading…</span>
