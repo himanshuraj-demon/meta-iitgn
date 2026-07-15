@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/Metis-IITGandhinagar/meta-iitgn/compare/backend-v1.2.0...backend-v1.3.0) (2026-07-15)
+
+
+### Features
+
+* dnd cards, better profile, connected bookmarks, working components ([2b1eb0a](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/2b1eb0a1d8b226fef8f8e13fccc95bae9391341f))
+
 ## [1.2.0](https://github.com/Metis-IITGandhinagar/meta-iitgn/compare/backend-v1.1.0...backend-v1.2.0) (2026-07-14)
 
 
