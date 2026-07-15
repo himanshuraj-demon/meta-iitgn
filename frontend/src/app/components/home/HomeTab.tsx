@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Award,
   ArrowRight,
@@ -15,6 +16,13 @@ import {
   Eye,
   Heart,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Compass,
+  MapPinned,
+  UtensilsCrossed,
+  Bus,
+  Camera,
 } from "lucide-react";
 
 import ParallaxBackground from "@/components/ParallaxBackground";
@@ -72,13 +80,73 @@ export default function HomeTab({
   totalPagesCount,
 }: HomeTabProps) {
   const { categories } = useAuth();
+  const router = useRouter();
   const [categoriesCount, setCategoriesCount] = useState(11);
+  const [featuredSlideIndex, setFeaturedSlideIndex] = useState(0);
 
   useEffect(() => {
     if (categories && categories.length > 0) {
       setCategoriesCount(categories.length);
     }
   }, [categories]);
+
+  const featuredSlides = [
+    {
+      title: "Campus Design & Architecture",
+      image: "/iitgn_campus.png",
+      tag: "Featured Story",
+      location: "Palaj Campus",
+      description: "Explore the climate-responsive architecture, green corridors, and thoughtfully designed spaces that define IITGN.",
+      href: "/wiki/campus/campuses-and-surroundings",
+    },
+    {
+      title: "Student Life & Campus Culture",
+      image: "/homepage_bg.png",
+      tag: "Campus Life",
+      location: "Student Experience",
+      description: "From clubs and fests to everyday routines, discover the community stories that make the campus feel alive.",
+      href: "/wiki/campus/hostels-guide",
+    },
+    {
+      title: "Facilities & Everyday Guide",
+      image: "/homepage_bg.png",
+      tag: "Quick Guide",
+      location: "Facilities",
+      description: "A concise guide to transport, mess, labs, and the places students use most often on campus.",
+      href: "/wiki/campus/facilities",
+    },
+  ];
+
+  const upcomingEvents = [
+    { title: "Weekly Tech Talk", time: "Thu · 6:30 PM", detail: "Open to all students and clubs." },
+    { title: "Cultural Night", time: "Sat · 8:00 PM", detail: "Live performances and campus food stalls." },
+    { title: "Library Night", time: "Sun · 9:00 PM", detail: "Extended hours for exam prep and study groups." },
+  ];
+
+  const popularPages = [
+    { title: "Campus Map & Routes", href: "/wiki/campus/campuses-and-surroundings", tag: "Popular" },
+    { title: "Hostel Life Guide", href: "/wiki/campus/hostels-guide", tag: "Trending" },
+    { title: "Facilities Index", href: "/wiki/campus/facilities", tag: "Fresh" },
+  ];
+
+  const messMenu = ["Breakfast: Idli, sambar, fruit", "Lunch: Paneer curry, rice, salad", "Dinner: Dal, roti, seasonal vegetables"];
+  const transportSchedule = ["Shuttle A: 7:30 AM · 8:30 AM · 5:00 PM", "Shuttle B: 9:00 AM · 1:30 PM · 7:30 PM", "City bus: 10-minute intervals after 6 PM"];
+
+  const handleFeaturedSlide = (direction: number) => {
+    setFeaturedSlideIndex((prev) => (prev + direction + featuredSlides.length) % featuredSlides.length);
+  };
+
+  const handleRandomPage = () => {
+    const candidates = [...(newPages || []), ...(updatedPages || [])].filter(Boolean);
+    if (candidates.length === 0) {
+      router.push("/wiki/campus/campuses-and-surroundings");
+      return;
+    }
+    const randomItem = candidates[Math.floor(Math.random() * candidates.length)];
+    router.push(`/wiki/campus/${randomItem.slug}`);
+  };
+
+  const activeFeaturedSlide = featuredSlides[featuredSlideIndex];
 
   return (
     <>
@@ -159,27 +227,57 @@ export default function HomeTab({
                 Special Feature
               </span>
             </div>
-            <div className="card card-bordered bg-base-100 border-base-200 overflow-hidden shadow-depth shadow-depth-hover flex flex-col flex-1 h-full">
+            <div className="card card-bordered bg-base-100 border-base-200 overflow-hidden shadow-depth shadow-depth-hover flex flex-col flex-1 h-full relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 pointer-events-none" />
+              <div className="flex items-center justify-between px-4 pt-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-primary">
+                  <Sparkles className="h-3.5 w-3.5" /> {activeFeaturedSlide.tag}
+                </div>
+                <div className="join gap-1">
+                  <button type="button" onClick={() => handleFeaturedSlide(-1)} className="btn btn-xs btn-circle btn-ghost">
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <button type="button" onClick={() => handleFeaturedSlide(1)} className="btn btn-xs btn-circle btn-ghost">
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
               <img
-                src="/iitgn_campus.png"
-                alt="IIT Gandhinagar Campus"
-                className="w-full h-56 md:h-64 object-cover"
+                src={activeFeaturedSlide.image}
+                alt={activeFeaturedSlide.title}
+                className="w-full h-56 md:h-64 object-cover mt-3"
               />
               <div className="p-6 space-y-3 text-left flex flex-col flex-1 justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-base-content font-serif">
-                    IIT Gandhinagar Campus Design & Architecture
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-base-content/60">
+                    <MapPinned className="h-3.5 w-3.5" /> {activeFeaturedSlide.location}
+                  </div>
+                  <h3 className="text-lg font-black text-base-content font-serif rotate-1">
+                    {activeFeaturedSlide.title}
                   </h3>
                   <p className="text-xs sm:text-sm text-base-content/80 leading-relaxed font-semibold mt-1">
-                    An overview of the unique climate-resilient architecture, passive cooling design, and ecological corridors that make up the greenest campus in India. Known for its 5-star GRIHA LD rating, the campus blends cutting-edge civil engineering with natural contours.
+                    {activeFeaturedSlide.description}
                   </p>
                 </div>
-                <Link
-                  href="/wiki/campus/campuses-and-surroundings"
-                  className="inline-flex items-center gap-1 text-[11px] font-extrabold text-primary hover:text-blue-800 uppercase tracking-wider pt-2 self-start"
-                >
-                  Read campus wiki <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+                <div className="flex items-center justify-between gap-3 pt-2">
+                  <Link
+                    href={activeFeaturedSlide.href}
+                    className="inline-flex items-center gap-1 text-[11px] font-extrabold text-primary hover:text-blue-800 uppercase tracking-wider self-start"
+                  >
+                    Read more <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                  <div className="flex gap-2">
+                    {featuredSlides.map((slide, index) => (
+                      <button
+                        key={slide.title}
+                        type="button"
+                        onClick={() => setFeaturedSlideIndex(index)}
+                        className={`h-2.5 rounded-full transition-all ${featuredSlideIndex === index ? "w-7 bg-primary" : "w-2.5 bg-base-300"}`}
+                        aria-label={`Show ${slide.title}`}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -210,10 +308,11 @@ export default function HomeTab({
                   const colorClass = colors[index % colors.length];
 
                   return (
-                    <Link
+                    <button
                       key={`news-${item.slug || index}`}
-                      href={`/wiki/news/${item.slug}`}
-                      className="flex items-start gap-3 border-b border-base-200 pb-3 last:border-b-0 last:pb-0 cursor-pointer group text-left"
+                      type="button"
+                      onClick={() => setShowAllNews(true)}
+                      className="flex items-start gap-3 border-b border-base-200 pb-3 last:border-b-0 last:pb-0 cursor-pointer group text-left w-full"
                     >
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${colorClass}`}>
                         <IconComponent className="h-4.5 w-4.5" />
@@ -226,7 +325,7 @@ export default function HomeTab({
                           {getRelativeTime(item.created_at)}
                         </span>
                       </div>
-                    </Link>
+                    </button>
                   );
                 })}
               </div>
@@ -477,43 +576,113 @@ export default function HomeTab({
           </div>
         </div>
 
+        {/* More campus cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pt-2 items-stretch">
+          <div className="card card-bordered bg-base-100 border-base-200 p-5 shadow-depth shadow-depth-hover transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)] text-left">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-base-content font-serif">Upcoming Events</h3>
+              <span className="badge badge-primary badge-sm">This week</span>
+            </div>
+            <div className="mt-4 space-y-3">
+              {upcomingEvents.map((event) => (
+                <div key={event.title} className="rounded-xl border border-base-200 bg-base-50 p-3">
+                  <p className="text-xs font-black text-base-content">{event.title}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-base-content/50 mt-1">{event.time}</p>
+                  <p className="text-xs text-base-content/70 mt-1">{event.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card card-bordered bg-base-100 border-base-200 p-5 shadow-depth shadow-depth-hover transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)] text-left">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-base-content font-serif">Popular Pages</h3>
+              <span className="badge badge-secondary badge-sm">Trending</span>
+            </div>
+            <div className="mt-4 space-y-3">
+              {popularPages.map((page) => (
+                <Link key={page.title} href={page.href} className="flex items-center justify-between rounded-xl border border-base-200 bg-base-50 p-3 text-sm font-semibold text-base-content/80 hover:border-primary hover:text-primary">
+                  <span>{page.title}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-base-content/50">{page.tag}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="card card-bordered bg-base-100 border-base-200 p-5 shadow-depth shadow-depth-hover transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)] text-left">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-base-content font-serif">Random Page</h3>
+              <Compass className="h-4 w-4 text-primary" />
+            </div>
+            <p className="text-xs text-base-content/70 mt-4 leading-relaxed">Jump into a fresh article from the wiki and discover something new around campus.</p>
+            <button type="button" onClick={handleRandomPage} className="btn btn-primary btn-sm mt-5 rounded-xl">
+              Open a random page
+            </button>
+          </div>
+
+          <div className="card card-bordered bg-base-100 border-base-200 p-5 shadow-depth shadow-depth-hover transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)] text-left">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-base-content font-serif">Today&apos;s Mess Menu</h3>
+              <UtensilsCrossed className="h-4 w-4 text-success" />
+            </div>
+            <div className="mt-4 space-y-2">
+              {messMenu.map((item) => (
+                <div key={item} className="rounded-lg border border-base-200 bg-base-50 px-3 py-2 text-xs font-semibold text-base-content/80">{item}</div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card card-bordered bg-base-100 border-base-200 p-5 shadow-depth shadow-depth-hover transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)] text-left">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-base-content font-serif">Campus Transport</h3>
+              <Bus className="h-4 w-4 text-secondary" />
+            </div>
+            <div className="mt-4 space-y-2">
+              {transportSchedule.map((item) => (
+                <div key={item} className="rounded-lg border border-base-200 bg-base-50 px-3 py-2 text-xs font-semibold text-base-content/80">{item}</div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card card-bordered bg-base-100 border-base-200 p-5 shadow-depth shadow-depth-hover transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,0.12)] text-left">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-base-content font-serif">Photo of the Week</h3>
+              <Camera className="h-4 w-4 text-warning" />
+            </div>
+            <div className="diff aspect-[16/9] rounded-2xl overflow-hidden mt-4">
+              <div className="diff-item-1">
+                <img src="/homepage_bg.png" alt="Campus landscape" className="object-cover w-full h-full" />
+              </div>
+              <div className="diff-item-2">
+                <img src="/iitgn_campus.png" alt="Campus architecture" className="object-cover w-full h-full" />
+              </div>
+              <div className="diff-resizer" />
+            </div>
+            <p className="text-xs text-base-content/70 mt-3 leading-relaxed">A fresh look at the campus skyline and the calm spaces that make the institute feel special.</p>
+          </div>
+        </div>
+
         {/* Statistics Footer Strip */}
-        <div className="card card-bordered grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border-base-200 bg-base-200/50 text-center pt-5 pb-5">
-          <div className="flex flex-col items-center gap-1 select-none">
-            <BookOpen className="h-5 w-5 text-primary" />
-            <span className="text-[14px] font-extrabold text-base-content mt-1">
-              {totalPagesCount !== null ? totalPagesCount.toLocaleString() : "..."}
-            </span>
-            <span className="text-[9px] font-bold text-base-content/50 uppercase tracking-wider">
-              Total Articles
-            </span>
+        <div className="stats stats-vertical lg:stats-horizontal shadow-sm border border-base-200 bg-base-200/50 w-full mt-6">
+          <div className="stat place-items-center">
+            <div className="stat-figure text-primary"><BookOpen className="h-5 w-5" /></div>
+            <div className="stat-title text-[9px] font-bold uppercase tracking-wider">Total Articles</div>
+            <div className="stat-value text-lg">{totalPagesCount !== null ? totalPagesCount.toLocaleString() : "..."}</div>
           </div>
-          <div className="flex flex-col items-center gap-1 border-l border-base-300 max-md:border-none select-none">
-            <Languages className="h-5 w-5 text-emerald-600" />
-            <span className="text-[14px] font-extrabold text-base-content mt-1">
-              {categoriesCount}
-            </span>
-            <span className="text-[9px] font-bold text-base-content/50 uppercase tracking-wider">
-              Guides Categories
-            </span>
+          <div className="stat place-items-center">
+            <div className="stat-figure text-emerald-600"><Languages className="h-5 w-5" /></div>
+            <div className="stat-title text-[9px] font-bold uppercase tracking-wider">Guide Categories</div>
+            <div className="stat-value text-lg">{categoriesCount}</div>
           </div>
-          <div className="flex flex-col items-center gap-1 border-l border-base-300 max-md:border-none select-none">
-            <Users2 className="h-5 w-5 text-purple-600" />
-            <span className="text-[14px] font-extrabold text-base-content mt-1">
-              {editors.length || "..."}
-            </span>
-            <span className="text-[9px] font-bold text-base-content/50 uppercase tracking-wider">
-              Active Editors
-            </span>
+          <div className="stat place-items-center">
+            <div className="stat-figure text-purple-600"><Users2 className="h-5 w-5" /></div>
+            <div className="stat-title text-[9px] font-bold uppercase tracking-wider">Active Editors</div>
+            <div className="stat-value text-lg">{editors.length || "..."}</div>
           </div>
-          <div className="flex flex-col items-center gap-1 border-l border-base-300 max-md:border-none select-none">
-            <Eye className="h-5 w-5 text-amber-600" />
-            <span className="text-[14px] font-extrabold text-base-content mt-1">
-              {totalPagesCount !== null ? (totalPagesCount * 45).toLocaleString() + "+" : "..."}
-            </span>
-            <span className="text-[9px] font-bold text-base-content/50 uppercase tracking-wider">
-              Monthly Views
-            </span>
+          <div className="stat place-items-center">
+            <div className="stat-figure text-amber-600"><Eye className="h-5 w-5" /></div>
+            <div className="stat-title text-[9px] font-bold uppercase tracking-wider">Monthly Views</div>
+            <div className="stat-value text-lg">{totalPagesCount !== null ? (totalPagesCount * 45).toLocaleString() + "+" : "..."}</div>
           </div>
         </div>
 

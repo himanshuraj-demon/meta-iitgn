@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { apiService } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
-import Link from "next/link";
 import GenericOverlayModal from "@/components/GenericOverlayModal";
 
 interface NewsOverlayProps {
@@ -19,7 +18,7 @@ export default function NewsOverlay({
   getRelativeTime,
 }: NewsOverlayProps) {
   const { user } = useAuth();
-  
+
   // News list and pagination states
   const [newsList, setNewsList] = useState<any[]>([]);
   const [page, setPage] = useState(1);
@@ -29,6 +28,7 @@ export default function NewsOverlay({
 
   // Add form states
   const [showAddNewsForm, setShowAddNewsForm] = useState(false);
+  const [selectedNews, setSelectedNews] = useState<any | null>(null);
   const [newNewsTitle, setNewNewsTitle] = useState("");
   const [newNewsContent, setNewNewsContent] = useState("");
   const [newNewsVideoUrl, setNewNewsVideoUrl] = useState("");
@@ -57,6 +57,7 @@ export default function NewsOverlay({
     if (isOpen) {
       fetchNews(1, false);
       setShowAddNewsForm(false);
+      setSelectedNews(null);
       setNewNewsVideoUrl("");
     }
   }, [isOpen]);
@@ -102,11 +103,13 @@ export default function NewsOverlay({
       onClose={() => {
         if (showAddNewsForm) {
           setShowAddNewsForm(false);
+        } else if (selectedNews) {
+          setSelectedNews(null);
         } else {
           onClose();
         }
       }}
-      title={showAddNewsForm ? "Add Campus News" : "Campus News"}
+      title={showAddNewsForm ? "Add Campus News" : selectedNews ? selectedNews.title : "Campus News"}
       headerColorClass="text-blue-500 bg-base-200"
     >
       <div className="max-w-3xl mx-auto space-y-4 w-full">
@@ -163,6 +166,37 @@ export default function NewsOverlay({
               {isSubmittingNews ? "Publishing..." : "Publish News"}
             </button>
           </form>
+        ) : selectedNews ? (
+          <div className="space-y-5">
+            <button
+              type="button"
+              onClick={() => setSelectedNews(null)}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to news
+            </button>
+            <article className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-base-content">{selectedNews.title}</h3>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/50">
+                  Posted {getRelativeTime(selectedNews.created_at)}
+                </p>
+              </div>
+              <p className="text-sm leading-7 text-base-content/80 whitespace-pre-line">
+                {selectedNews.content ? selectedNews.content.replace(/---[\s\S]*?---/, "").replace(/#[\s\S]*?\n/, "").trim() : selectedNews.description}
+              </p>
+              {selectedNews.video_url && (
+                <a
+                  href={selectedNews.video_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-outline btn-sm"
+                >
+                  Watch related video
+                </a>
+              )}
+            </article>
+          </div>
         ) : (
           <div className="space-y-4">
             {loading ? (
@@ -176,11 +210,11 @@ export default function NewsOverlay({
             ) : (
               <div className="space-y-4">
                 {newsList.map((item, idx) => (
-                  <Link
+                  <button
                     key={item.slug || idx}
-                    href={`/wiki/news/${item.slug}`}
-                    onClick={() => onClose()}
-                    className="card card-bordered p-5 border-base-300 bg-base-100 shadow-xs hover:shadow-md hover:border-primary transition-all duration-150 cursor-pointer text-left animate-in fade-in block"
+                    type="button"
+                    onClick={() => setSelectedNews(item)}
+                    className="card card-bordered p-5 border-base-300 bg-base-100 shadow-xs hover:shadow-md hover:border-primary transition-all duration-150 cursor-pointer text-left animate-in fade-in w-full"
                   >
                     <h4 className="text-base font-bold text-primary">{item.title}</h4>
                     <p className="text-xs text-base-content/60 mt-1 line-clamp-2">
@@ -189,7 +223,7 @@ export default function NewsOverlay({
                     <span className="text-[9px] text-base-content/50 font-semibold block mt-2">
                       Posted: {getRelativeTime(item.created_at)}
                     </span>
-                  </Link>
+                  </button>
                 ))}
 
                 {hasMore && (
