@@ -80,7 +80,7 @@ export default function WikiInfoBox({
           )}
           {/* Infobox Image */}
           <div
-            className={`w-full relative bg-gray-50 border-b border-base-200 flex items-center justify-center overflow-hidden transition-all duration-300 shrink-0 ${
+            className={`w-full relative  ${isEditing?"mt-15":"mt-0"} bg-gray-50 border-b border-base-200 flex items-center justify-center overflow-hidden transition-all duration-300 shrink-0 ${
               isEditing ? "h-32 p-4 bg-gray-50" : "aspect-square"
             }`}
           >

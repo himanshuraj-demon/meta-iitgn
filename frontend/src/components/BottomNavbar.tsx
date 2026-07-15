@@ -8,6 +8,7 @@ interface TabItem {
   icon: React.ComponentType<{ className?: string }>;
   onClick?: () => void;
   badgeCount?: number;
+  colorClass?: string;
 }
 
 interface BottomNavbarProps {
@@ -39,10 +40,6 @@ export default function BottomNavbar({
       className={`z-9999 w-[min(92vw,42rem)] transition-all duration-300 ${hidden ? "pointer-events-none translate-y-24 opacity-0" : "translate-y-0 opacity-100"} ${className}`}
     >
       <div className="relative flex items-center gap-3">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -inset-x-8 -top-4 -bottom-22 bg-gradient-to-t from-base-100 via-base-100/90 via-10% to-base-100/35 via-35% to-transparent shadow-[0_18px_60px_rgba(0,0,0,0.10)]"
-        />
         <div className="relative flex min-w-0 flex-1 items-center overflow-hidden bg-base-100 border border-base-300 shadow-[0_10px_30px_rgba(0,0,0,0.08)] rounded-full px-2 py-1 gap-1 select-none">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -53,14 +50,16 @@ export default function BottomNavbar({
                 key={tab.id}
                 onClick={tab.onClick}
                 aria-label={tab.label}
-                className={`relative z-10 flex flex-1 items-center justify-center rounded-full px-3 py-2.5 transition-all duration-200 group active:scale-95 ${
+                className={`relative z-10 flex flex-1 items-center justify-center rounded-full px-3 py-2.5 transition-all duration-200 group active:scale-95 ${tab.colorClass ?? ""} ${
                   isActive
-                    ? "bg-primary text-primary-content shadow-sm"
-                    : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
+                    ? `shadow-sm`
+                    : `text-base-content/70 hover:bg-base-200  hover:text-base-content`
                 }`}
               >
                 <span className="relative flex items-center justify-center">
-                  <Icon className={`h-5 w-5 transition-transform duration-200 ${isActive ? "scale-105" : "group-hover:scale-105"}`} />
+                  <Icon
+                    className={`h-5 w-5 transition-transform duration-200 ${isActive ? "scale-105" : "group-hover:scale-105"}`}
+                  />
                   {tab.badgeCount !== undefined && tab.badgeCount > 0 && (
                     <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white leading-none shadow-sm">
                       {tab.badgeCount}

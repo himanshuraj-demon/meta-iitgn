@@ -184,7 +184,7 @@ export default function Sidebar({
 
           {/* Account/Profile Section */}
           {user ? (
-            <div className="space-y-1.5 border-t border-base-200 pt-4">
+            <div className="space-y-1 border-t border-base-200 pt-2">
               <h3 className="px-3 text-[10px] font-bold tracking-wider text-base-content/40 uppercase">
                 Account
               </h3>
@@ -289,7 +289,7 @@ export default function Sidebar({
 
                     {/* Next Tier Unlock */}
                     {activeTierData.nextTier && (
-                      <p className="text-[9px] font-semibold text-base-content/50 leading-normal line-clamp-1">
+                      <p className="text-[8px] font-semibold  leading-normal line-clamp-1">
                         Next: {activeTierData.nextTier} •{" "}
                         {activeTierData.nextUnlock}
                       </p>

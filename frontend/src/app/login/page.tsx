@@ -54,6 +54,7 @@ export default function LoginPage() {
 
         if (result.data.success) {
           setStatus({ type: "success", message: "Google Login Successful!" });
+          await new Promise((resolve) => setTimeout(resolve, 2000));
           await checkAuth();
           router.replace("/");
         } else {
@@ -97,6 +98,7 @@ export default function LoginPage() {
 
       if (response.success) {
         setStatus({ type: "success", message: "Bypass Login Successful!" });
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         await checkAuth();
         router.replace("/");
       } else {
