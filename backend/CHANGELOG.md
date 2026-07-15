@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.4.0](https://github.com/Metis-IITGandhinagar/meta-iitgn/compare/backend-v1.3.0...backend-v1.4.0) (2026-07-15)
+
+
+### Features
+
+* working mess, travel, featured cards. Customizations. Masonary layout. ([6414431](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/6414431f4188645530f5ca4762cb3d8e01737300))
+
+
+### Bug Fixes
+
+* req and dexie breking fixes ([3f3ecb3](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/3f3ecb3ddf9c43ff94ab41ccfeda8fc8c9dca2a3))
+
+
+### Code Refactoring
+
+* added pagination in serch route and load more in frontend ([f031eb7](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/f031eb753561e47390ec1f7bc4022c8286f58fa2))
+
 ## [1.3.0](https://github.com/Metis-IITGandhinagar/meta-iitgn/compare/backend-v1.2.0...backend-v1.3.0) (2026-07-15)
 
 
