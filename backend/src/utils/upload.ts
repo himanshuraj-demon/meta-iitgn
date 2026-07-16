@@ -1,9 +1,14 @@
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load env variables
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load env variables from backend root directory .env file
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // Configure Cloudinary only if the variables are set
 const isCloudinaryConfigured = 
@@ -61,5 +66,35 @@ export const uploadToCloudinary = async (localFilePath: string): Promise<{ url: 
       url: `/uploads/${filename}`,
       publicId: `local_${filename}`,
     };
+  }
+};
+
+/**
+ * Deletes a file from Cloudinary using its publicId, or from local disk if it's a fallback.
+ * @param {string} publicId Cloudinary public ID
+ */
+export const deleteFromCloudinary = async (publicId: string): Promise<boolean> => {
+  if (!isCloudinaryConfigured || !publicId || publicId.startsWith('local_')) {
+    if (publicId && publicId.startsWith('local_')) {
+      const filename = publicId.replace('local_', '');
+      const localPath = 'uploads/' + filename;
+      if (fs.existsSync(localPath)) {
+        try {
+          fs.unlinkSync(localPath);
+          return true;
+        } catch (e) {
+          console.error(`Failed to delete local fallback file ${localPath}:`, e);
+        }
+      }
+    }
+    return false;
+  }
+
+  try {
+    const result = await cloudinary.uploader.destroy(publicId);
+    return result.result === 'ok';
+  } catch (error) {
+    console.error('Error deleting from Cloudinary:', error);
+    return false;
   }
 };

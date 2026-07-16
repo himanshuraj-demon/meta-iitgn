@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { invalidateCategoriesCache } from './category.controller.js';
+import { processAndMarkMediaUsed } from '../utils/cleanup.js';
 
 let statsCache: { totalPages: number } | null = null;
 
@@ -17,7 +18,6 @@ export const invalidateSearchCache = () => {
 
 let syncCheckCache: {
   news: { last_updated: number; count: number } | null;
-  contributors: { last_updated: number; count: number } | null;
   pendingpages: { last_updated: number; count: number } | null;
   updatedpages: { last_updated: number; count: number } | null;
   featured: { last_updated: number; count: number } | null;
@@ -27,7 +27,6 @@ let syncCheckCache: {
   popular: { last_updated: number; count: number } | null;
 } = {
   news: null,
-  contributors: null,
   pendingpages: null,
   updatedpages: null,
   featured: null,
@@ -37,12 +36,11 @@ let syncCheckCache: {
   popular: null
 };
 
-export const invalidateSyncCache = (key?: 'news' | 'contributors' | 'pendingpages' | 'updatedpages' | 'featured' | 'events' | 'messmenu' | 'transport' | 'popular') => {
+export const invalidateSyncCache = (key?: 'news' | 'pendingpages' | 'updatedpages' | 'featured' | 'events' | 'messmenu' | 'transport' | 'popular') => {
   if (key) {
     syncCheckCache[key] = null;
   } else {
     syncCheckCache.news = null;
-    syncCheckCache.contributors = null;
     syncCheckCache.pendingpages = null;
     syncCheckCache.updatedpages = null;
     syncCheckCache.featured = null;
@@ -643,14 +641,14 @@ export const getPageCount = async (req: Request, res: Response) => {
  */
 export const createPage = async (req: Request, res: Response) => {
   try {
-    const { title, content, metadata, video_url } = req.body;
+    const { title, content, metadata, video_url, slug: customSlug } = req.body;
     if (!title) {
       return res.status(400).json({ error: 'Title is required' });
     }
 
     const creatorId = Number(req.user.user_id);
 
-    let baseSlug = (title || 'untitled')
+    let baseSlug = customSlug || (title || 'untitled')
       .replace(/[^a-zA-Z0-9\s-]/g, '')
       .trim()
       .toLowerCase()
@@ -686,6 +684,23 @@ export const createPage = async (req: Request, res: Response) => {
       },
     });
 
+    // Auto-feature if category is "Featured" or "featured"
+    const meta = metadata as any;
+    const metaCategory = String(meta?.category || '').toLowerCase();
+    if (metaCategory === 'featured' || meta?.featured === true) {
+      await prisma.featured_pages.create({
+        data: {
+          page_id: newPage.page_id,
+          tag: meta?.tag || 'Featured Story',
+          location: meta?.location || '',
+          description: meta?.description || title,
+          order: 0
+        }
+      });
+    }
+
+    await processAndMarkMediaUsed(content, (metadata as any)?.image);
+
     invalidateCategoriesCache();
     invalidateStatsCache();
     invalidateSearchCache();
@@ -712,6 +727,14 @@ export const updatePage = async (req: Request, res: Response) => {
     const { title, content, metadata, video_url } = req.body;
 
     const editorId = Number(req.user.user_id);
+
+    // Secure profile README pages: only owner or admin can edit
+    if (slug.startsWith('profile-')) {
+      const profileUserId = Number(slug.replace('profile-', ''));
+      if (profileUserId !== editorId && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'You are only allowed to edit your own profile README' });
+      }
+    }
 
     const livePage = await prisma.live_pages.findUnique({
       where: { slug },
@@ -752,6 +775,49 @@ export const updatePage = async (req: Request, res: Response) => {
         updated_at: new Date(),
       },
     });
+
+    // Auto-feature / Update feature if category is "Featured" or "featured"
+    const upMeta = updatedPage.metadata as any;
+    const metaCategory = String(upMeta?.category || '').toLowerCase();
+    if (metaCategory === 'featured' || upMeta?.featured === true) {
+      const existingFeatured = await prisma.featured_pages.findFirst({
+        where: { page_id: livePage.page_id }
+      });
+      if (existingFeatured) {
+        await prisma.featured_pages.update({
+          where: { featured_id: existingFeatured.featured_id },
+          data: {
+            tag: upMeta?.tag || 'Featured Story',
+            location: upMeta?.location || '',
+            description: upMeta?.description || updatedPage.title,
+          }
+        });
+      } else {
+        await prisma.featured_pages.create({
+          data: {
+            page_id: livePage.page_id,
+            tag: upMeta?.tag || 'Featured Story',
+            location: upMeta?.location || '',
+            description: upMeta?.description || updatedPage.title,
+            order: 0
+          }
+        });
+      }
+    } else {
+      const existingFeatured = await prisma.featured_pages.findFirst({
+        where: { page_id: livePage.page_id }
+      });
+      if (existingFeatured) {
+        await prisma.featured_pages.delete({
+          where: { featured_id: existingFeatured.featured_id }
+        });
+      }
+    }
+
+    await processAndMarkMediaUsed(
+      content !== undefined ? content : livePage.content,
+      metadata !== undefined ? (metadata as any)?.image : (livePage.metadata as any)?.image
+    );
 
     invalidateCategoriesCache();
     invalidateStatsCache();
@@ -825,17 +891,6 @@ export const getSyncCheck = async (req: Request, res: Response) => {
       syncCheckCache.news = { last_updated: news_last_updated, count: newsItems.length };
     }
 
-    // 2. contributors
-    if (!syncCheckCache.contributors) {
-      const userStats = await prisma.users.aggregate({
-        _max: { created_at: true },
-        _count: { user_id: true },
-        where: { deleted_at: null }
-      });
-      const contributors_last_updated = userStats._max.created_at ? userStats._max.created_at.getTime() : 0;
-      const contributors_count = userStats._count.user_id;
-      syncCheckCache.contributors = { last_updated: contributors_last_updated, count: contributors_count };
-    }
 
     // 3. pendingpages
     if (!syncCheckCache.pendingpages) {
@@ -940,7 +995,6 @@ export const getSyncCheck = async (req: Request, res: Response) => {
 
     return res.json({
       news: syncCheckCache.news,
-      contributors: syncCheckCache.contributors,
       pendingpages: syncCheckCache.pendingpages,
       updatedpages: syncCheckCache.updatedpages,
       featured: syncCheckCache.featured,
@@ -996,156 +1050,6 @@ export const incrementViewCount = async (req: Request, res: Response) => {
     return res.json({ success: true });
   } catch (error: any) {
     console.error('Error in incrementViewCount:', error);
-    return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
-  }
-};
-
-/**
- * GET /pages/featured
- * Returns featured pages with article details
- */
-export const getFeaturedPages = async (req: Request, res: Response) => {
-  try {
-    const featured = await prisma.featured_pages.findMany({
-      orderBy: { order: 'asc' },
-      include: {
-        live_page: {
-          select: {
-            page_id: true,
-            title: true,
-            slug: true,
-            metadata: true,
-          },
-        },
-      },
-    });
-
-    const result = featured.map((f) => ({
-      featured_id: f.featured_id,
-      page_id: f.page_id,
-      order: f.order,
-      tag: f.tag,
-      location: f.location,
-      description: f.description,
-      title: f.live_page.title,
-      slug: f.live_page.slug,
-      href: `/wiki/page/${f.live_page.slug}`,
-      image: (f.live_page.metadata as any)?.image || '/homepage_bg.png',
-    }));
-
-    return res.json({ success: true, data: result });
-  } catch (error: any) {
-    console.error('Error in getFeaturedPages:', error);
-    return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
-  }
-};
-
-/**
- * POST /pages/featured (admin only)
- * Set a page as featured
- */
-export const setFeaturedPage = async (req: Request, res: Response) => {
-  try {
-    const { page_id, order = 0, tag = 'Featured', location = '', description = '' } = req.body;
-    if (!page_id) return res.status(400).json({ success: false, error: { code: 'MISSING_PAGE_ID', message: 'page_id is required' } });
-
-    const pid = Number(page_id);
-    const existing = await prisma.featured_pages.findFirst({ where: { page_id: pid } });
-    let result;
-    if (existing) {
-      result = await prisma.featured_pages.update({
-        where: { featured_id: existing.featured_id },
-        data: { order, tag, location, description },
-      });
-    } else {
-      result = await prisma.featured_pages.create({
-        data: { page_id: pid, order, tag, location, description },
-      });
-    }
-    invalidateSyncCache('featured');
-    return res.json({ success: true, data: result });
-  } catch (error: any) {
-    console.error('Error in setFeaturedPage:', error);
-    return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
-  }
-};
-
-/**
- * DELETE /pages/featured/:featured_id (admin only)
- * Remove a featured page
- */
-export const removeFeaturedPage = async (req: Request, res: Response) => {
-  try {
-    const { featured_id } = req.params;
-    await prisma.featured_pages.delete({ where: { featured_id: Number(featured_id) } });
-    invalidateSyncCache('featured');
-    return res.json({ success: true });
-  } catch (error: any) {
-    console.error('Error in removeFeaturedPage:', error);
-    return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
-  }
-};
-
-/**
- * GET /pages/events
- * Returns upcoming events (future events first, then recurring)
- */
-export const getEvents = async (req: Request, res: Response) => {
-  try {
-    const limit = Math.min(Number(req.query.limit) || 20, 100);
-    const now = new Date();
-
-    const events = await prisma.events.findMany({
-      where: {
-        deleted_at: null,
-        OR: [
-          { event_date: { gte: now } },
-          { is_recurring: true },
-        ],
-      },
-      orderBy: { event_date: 'asc' },
-      take: limit,
-    });
-
-    return res.json({ success: true, data: events });
-  } catch (error: any) {
-    console.error('Error in getEvents:', error);
-    return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
-  }
-};
-
-/**
- * GET /pages/special/mess-menu
- * Returns the mess menu page content
- */
-export const getMessMenu = async (req: Request, res: Response) => {
-  try {
-    const page = await prisma.live_pages.findFirst({
-      where: { slug: 'mess-menu', deleted_at: null },
-      select: { page_id: true, title: true, slug: true, content: true, updated_at: true },
-    });
-    if (!page) return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Mess menu page not found' } });
-    return res.json({ success: true, data: page });
-  } catch (error: any) {
-    console.error('Error in getMessMenu:', error);
-    return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
-  }
-};
-
-/**
- * GET /pages/special/campus-transport
- * Returns the campus transport page content
- */
-export const getCampusTransport = async (req: Request, res: Response) => {
-  try {
-    const page = await prisma.live_pages.findFirst({
-      where: { slug: 'campus-transport', deleted_at: null },
-      select: { page_id: true, title: true, slug: true, content: true, updated_at: true },
-    });
-    if (!page) return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Campus transport page not found' } });
-    return res.json({ success: true, data: page });
-  } catch (error: any) {
-    console.error('Error in getCampusTransport:', error);
     return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
   }
 };

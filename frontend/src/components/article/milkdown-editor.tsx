@@ -5,6 +5,7 @@ import { Crepe } from "@milkdown/crepe";
 import { Milkdown, MilkdownProvider, useEditor } from "@milkdown/react";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
 import { cn } from "@/lib/utils";
+import { apiService } from "@/api";
 
 import "@milkdown/crepe/theme/common/style.css";
 import "@milkdown/crepe/theme/common/toolbar.css";
@@ -41,6 +42,21 @@ function MilkdownEditorInner({
       defaultValue: initialMarkdown,
       features: {
         [Crepe.Feature.TopBar]: !readOnly,
+      },
+      featureConfigs: {
+        [Crepe.Feature.ImageBlock]: {
+          onUpload: async (file: File) => {
+            try {
+              const formData = new FormData();
+              formData.append("file", file);
+              const res = await apiService.uploadMedia(formData);
+              return res.url;
+            } catch (err) {
+              console.error("Failed to upload image inside Milkdown:", err);
+              throw err;
+            }
+          }
+        }
       }
     });
 

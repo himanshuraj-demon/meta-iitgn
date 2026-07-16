@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { processAndMarkMediaUsed } from "../utils/cleanup.js";
 
 /**
    GET /blogs
@@ -148,6 +149,8 @@ export const createBlog = async (req: any, res: Response) => {
       },
     });
 
+    await processAndMarkMediaUsed(content);
+
     return res.status(201).json({
       success: true,
       blog: newBlog,
@@ -233,6 +236,8 @@ export const updateBlog = async (req: any, res: Response) => {
         },
       },
     });
+
+    await processAndMarkMediaUsed(content !== undefined ? content : blog.content);
 
     return res.json({
       success: true,

@@ -55,7 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await Promise.all([
             db.bookmarks.clear(),
             db.news.clear(),
-            db.contributors.clear(),
             db.pendingpages.clear(),
             db.updatedpages.clear(),
             db.featured.clear(),
@@ -95,7 +94,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await Promise.all([
           db.bookmarks.clear(),
           db.news.clear(),
-          db.contributors.clear(),
           db.pendingpages.clear(),
           db.updatedpages.clear(),
           db.featured.clear(),

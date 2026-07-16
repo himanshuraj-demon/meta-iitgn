@@ -147,6 +147,8 @@ model media_assets {
   updated_at DateTime  @default(now()) @updatedAt
   deleted_at DateTime?
   hash       String?
+  public_id  String?
+  used       Boolean   @default(false)
 
   // Relations
   user       users     @relation(fields: [user_id], references: [user_id], onDelete: NoAction)

@@ -1,20 +1,24 @@
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load env variables before any other imports to ensure Cloudinary config resolves correctly
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
-import dotenv from "dotenv";
 import routes from "./index.js";
 import cookieParser from 'cookie-parser';
-import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Resolve directory paths
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Middlewares
 app.use(
@@ -38,6 +42,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 
+app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
 app.use("/api", routes);
 app.use("/", routes);
 
@@ -59,8 +64,11 @@ app.use(
   },
 );
 
+import { startMediaCleanupCron } from "./utils/cleanup.js";
+
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
+  startMediaCleanupCron();
 });
 
 
