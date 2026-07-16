@@ -4,13 +4,10 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { useSearchParams } from "next/navigation";
-import { useGoogleLogin } from "@react-oauth/google";
-import { api } from "@/lib/api";
-import { devBypass } from "@/api/user";
+
 import {
   BookOpen,
   CalendarDays,
-  CheckCircle2,
   FileEdit,
   FilePlus2,
   Flame,
@@ -21,10 +18,6 @@ import {
   PenLine,
   Sparkles,
   TrendingUp,
-  AlertCircle,
-  CheckCircle,
-  ShieldAlert,
-  Cpu,
   Bookmark,
   Trash2,
   ArrowRight,
@@ -37,20 +30,8 @@ import { useHomeStore } from "@/store/useHomeStore";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/context/ProfileContext";
 
-const DEV_ACCOUNTS = [
-  { name: "Gold User A (Gold)", email: "gold1@meta-iitgn.edu", role: "admin" },
-  { name: "Gold User B (Gold)", email: "gold2@meta-iitgn.edu", role: "admin" },
-  { name: "Gold User C (Gold)", email: "gold3@meta-iitgn.edu", role: "admin" },
-  { name: "Silver User A (Silver)", email: "silver1@meta-iitgn.edu", role: "moderator" },
-  { name: "Silver User B (Silver)", email: "silver2@meta-iitgn.edu", role: "moderator" },
-  { name: "Silver User C (Silver)", email: "silver3@meta-iitgn.edu", role: "moderator" },
-  { name: "Bronze User A (Bronze)", email: "bronze1@meta-iitgn.edu", role: "normal" },
-  { name: "Bronze User B (Bronze)", email: "bronze2@meta-iitgn.edu", role: "normal" },
-  { name: "Bronze User C (Bronze)", email: "bronze3@meta-iitgn.edu", role: "normal" },
-];
-
 export default function ProfileContent() {
-  const { user: currentUser, loading: authLoading, checkAuth, logout } = useAuth();
+  const { user: currentUser, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { bookmarks, removeBookmark } = useHomeStore();
@@ -66,77 +47,11 @@ export default function ProfileContent() {
   const [dataLoading, setDataLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "bookmarks">("overview");
 
-  // Login states
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({
-    type: null,
-    message: "",
-  });
-  const [devEmail, setDevEmail] = useState(DEV_ACCOUNTS[0].email);
-  const [devName, setDevName] = useState("Gold User A");
-  const [devRole, setDevRole] = useState(DEV_ACCOUNTS[0].role);
-  const [showDevBypass, setShowDevBypass] = useState(false);
-
-  const googleAuth = async (tokenResponse: any) => {
-    setLoginLoading(true);
-    setStatus({ type: null, message: "" });
-    try {
-      if (tokenResponse.code) {
-        const result = await api.get(
-          `/user/auth/google?code=${encodeURIComponent(tokenResponse.code)}`,
-          { withCredentials: true }
-        );
-        if (result.data.success) {
-          setStatus({ type: "success", message: "Google Login Successful!" });
-          await checkAuth();
-        } else {
-          setStatus({ type: "error", message: result.data.message || "Google auth failed on server." });
-        }
-      }
-    } catch (error: any) {
-      setStatus({
-        type: "error",
-        message: error.response?.data?.error || error.message || "An error occurred during Google sign-in.",
-      });
-    } finally {
-      setLoginLoading(false);
+  useEffect(() => {
+    if (!authLoading && !currentUser) {
+      router.replace("/login");
     }
-  };
-
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: googleAuth,
-    onError: () => {
-      setStatus({ type: "error", message: "Google authentication failed." });
-    },
-    flow: "auth-code",
-    scope: "openid email profile",
-  });
-
-  const handleDevBypass = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginLoading(true);
-    setStatus({ type: null, message: "" });
-    try {
-      const response = await devBypass({
-        email: devEmail,
-        name: devName,
-        role: devRole,
-      });
-      if (response.success) {
-        setStatus({ type: "success", message: "Sandbox Login Successful!" });
-        await checkAuth();
-      } else {
-        setStatus({ type: "error", message: response.error || "Bypass failed." });
-      }
-    } catch (error: any) {
-      setStatus({
-        type: "error",
-        message: error.response?.data?.error || error.message || "Bypass login failed.",
-      });
-    } finally {
-      setLoginLoading(false);
-    }
-  };
+  }, [currentUser, authLoading, router]);
 
   useEffect(() => {
     if (!targetUserId) return;
@@ -248,101 +163,12 @@ export default function ProfileContent() {
     fetchProfileData();
   }, [targetUserId, currentUser, userIdParam, profileCache, setProfileData]);
 
-  if (authLoading) {
+  if (authLoading || !currentUser) {
     return (
       <div className="mx-auto max-w-4xl space-y-6 animate-pulse">
         <div className="h-44 w-full bg-base-300 rounded-3xl" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[1, 2, 3, 4].map((i) => <div key={i} className="h-24 bg-base-300 rounded-2xl" />)}
-        </div>
-      </div>
-    );
-  }
-
-  // Login screen for unauthenticated users
-  if (!currentUser) {
-    return (
-      <div className="mx-auto max-w-md w-full my-12 bg-base-100 border border-base-200 shadow-xl rounded-3xl p-8 flex flex-col items-center">
-        <div className="flex items-center gap-2.5 mb-2 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-md">
-            <BookOpen className="w-4.5 h-4.5 text-primary-content" />
-          </div>
-          <span className="text-xl font-serif font-black tracking-tight text-base-content">
-            META <span className="text-primary">IITGN</span>
-          </span>
-        </div>
-        <p className="text-base-content/50 text-xs text-center mb-8 font-medium tracking-wide uppercase">
-          Sign in to view your profile and bookmarks
-        </p>
-
-        {status.type && (
-          <div className={`w-full mb-5 p-3.5 rounded-2xl flex items-start gap-3 border text-xs ${
-            status.type === "success" ? "bg-success/10 border-success/20 text-success" : "bg-error/10 border-error/20 text-error"
-          }`}>
-            {status.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
-            <div>
-              <p className="font-bold">{status.type === "success" ? "Success" : "Error"}</p>
-              <p className="mt-0.5 opacity-90 font-medium leading-relaxed">{status.message}</p>
-            </div>
-          </div>
-        )}
-
-        <button
-          onClick={() => handleGoogleLogin()}
-          disabled={loginLoading}
-          className="w-full h-11 flex items-center justify-center gap-3 px-6 bg-primary hover:bg-primary/90 disabled:opacity-60 text-primary-content font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer select-none text-sm"
-        >
-          <svg className="w-4.5 h-4.5 fill-current shrink-0" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.58c-.28 1.48-1.12 2.74-2.38 3.58v2.98h3.84c2.24-2.06 3.53-5.1 3.53-8.41z" />
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.84-2.98c-1.08.72-2.45 1.16-4.09 1.16-3.15 0-5.81-2.13-6.76-5.01H1.44v3.08C3.42 21.09 7.43 24 12 24z" />
-            <path fill="#FBBC05" d="M5.24 14.26c-.24-.72-.38-1.5-.38-2.31s.14-1.59.38-2.31V6.56H1.44C.52 8.4.02 10.46.02 12.63c0 2.17.5 4.23 1.42 6.07l3.8-2.97z" />
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.43-3.43C17.95 1.19 15.24 0 12 0 7.43 0 3.42 2.91 1.44 6.56l3.8 2.97c.95-2.88 3.61-5.01 6.76-5.01z" />
-          </svg>
-          {loginLoading ? "Signing in..." : "Continue with Google"}
-        </button>
-
-        <div className="w-full flex items-center my-6">
-          <div className="flex-1 h-px bg-base-200" />
-          <span className="px-3 text-[10px] text-base-content/50 font-bold uppercase tracking-wider">or bypass</span>
-          <div className="flex-1 h-px bg-base-200" />
-        </div>
-
-        <div className="w-full">
-          <button
-            onClick={() => setShowDevBypass(!showDevBypass)}
-            className="w-full flex items-center justify-center gap-1.5 py-2 text-base-content/50 hover:text-base-content text-xs font-bold border border-dashed border-base-300 hover:border-base-400 rounded-xl transition-all cursor-pointer bg-base-200/50"
-          >
-            <Cpu className="w-3.5 h-3.5" />
-            {showDevBypass ? "Hide Sandbox Bypass" : "Show Sandbox Bypass"}
-          </button>
-
-          {showDevBypass && (
-            <form onSubmit={handleDevBypass} className="mt-3.5 p-4 rounded-2xl bg-base-200 border border-base-300 flex flex-col gap-3.5 w-full">
-              <div className="flex items-center gap-1.5 text-warning text-xs font-bold">
-                <ShieldAlert className="w-4 h-4 text-warning shrink-0" />
-                <span>Local Sandbox Bypass</span>
-              </div>
-              <select
-                value={devEmail}
-                onChange={(e) => {
-                  const selected = DEV_ACCOUNTS.find(acc => acc.email === e.target.value);
-                  if (selected) {
-                    setDevEmail(selected.email);
-                    setDevName(selected.name.replace(/\s*\(.*\)/, ""));
-                    setDevRole(selected.role);
-                  }
-                }}
-                className="select select-sm w-full border-base-300"
-              >
-                {DEV_ACCOUNTS.map((acc) => (
-                  <option key={acc.email} value={acc.email}>{acc.name}</option>
-                ))}
-              </select>
-              <button type="submit" className="btn btn-primary btn-sm w-full">
-                Bypass Sandbox
-              </button>
-            </form>
-          )}
         </div>
       </div>
     );
@@ -405,9 +231,8 @@ export default function ProfileContent() {
             {isOwner && !dataLoading && (
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={async () => {
-                    await logout();
-                    router.push('/');
+                  onClick={() => {
+                    router.push('/logout');
                   }}
                   className="btn btn-ghost btn-sm gap-1 text-error/80 hover:text-error"
                 >
