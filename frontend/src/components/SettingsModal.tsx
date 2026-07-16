@@ -34,7 +34,6 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
 
   const [emailDigest, setEmailDigest] = useState(true);
   const [articleEditsAlert, setArticleEditsAlert] = useState(true);
-  const themeTransitionTimer = useRef<number | null>(null);
 
   const [isMounted, setIsMounted] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -85,18 +84,6 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
     document.removeEventListener("mouseup", handleMouseUp);
   }, [handleMouseMove]);
 
-  const withThemeTransition = (updateFn: () => void) => {
-    document.documentElement.classList.add("theme-changing");
-    if (themeTransitionTimer.current) {
-      window.clearTimeout(themeTransitionTimer.current);
-    }
-    updateFn();
-    themeTransitionTimer.current = window.setTimeout(() => {
-      document.documentElement.classList.remove("theme-changing");
-      themeTransitionTimer.current = null;
-    }, 280);
-  };
-
   useEffect(() => {
     setIsMounted(true);
     // Load settings from localStorage
@@ -142,27 +129,25 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
-      if (themeTransitionTimer.current) {
-        window.clearTimeout(themeTransitionTimer.current);
-      }
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [initialTab, handleMouseMove, handleMouseUp]);
 
   const handleSaveTheme = (newTheme: string) => {
-    withThemeTransition(() => {
-      setTheme(newTheme);
-      localStorage.setItem("wiki_theme", newTheme);
-      localStorage.setItem("wiki_daisyui_theme", newTheme);
-      document.documentElement.setAttribute("data-theme", newTheme);
-      if (DARK_THEMES.includes(newTheme)) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-      window.dispatchEvent(new Event("wiki_settings_changed"));
-    });
+    // Apply everything in a single synchronous update so the entire palette
+    // (background, borders, primary, etc.) swaps in one repaint instead of
+    // animating each property independently.
+    setTheme(newTheme);
+    localStorage.setItem("wiki_theme", newTheme);
+    localStorage.setItem("wiki_daisyui_theme", newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+    if (DARK_THEMES.includes(newTheme)) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveFontSize = (size: string) => {
@@ -446,39 +431,34 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   {/* Theme Mode */}
                   <div className="space-y-2">
                     <label className="text-[12px] font-semibold text-base-content block">Interface Theme</label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {WIKI_THEMES.map((t) => {
                         const isSel = theme === t.id;
                         return (
-                          <label
+                          <button
                             key={t.id}
-                            className="theme-controller cursor-pointer group"
+                            type="button"
+                            role="radio"
+                            aria-checked={isSel}
+                            aria-label={t.label}
                             title={t.label}
+                            onClick={() => handleSaveTheme(t.id)}
+                            data-theme={t.id}
+                            className={`group flex items-center gap-2 rounded-lg border-2 bg-base-100 px-2.5 py-2 transition-transform duration-150 cursor-pointer ${
+                              isSel
+                                ? "border-primary ring-2 ring-primary ring-offset-1 ring-offset-base-100"
+                                : "border-base-300 hover:scale-[1.03]"
+                            }`}
                           >
-                            <input
-                              type="radio"
-                              name="theme-controller"
-                              value={t.id}
-                              checked={isSel}
-                              onChange={() => handleSaveTheme(t.id)}
-                              className="sr-only"
-                            />
-                            <div
-                              data-theme={t.id}
-                              className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 bg-base-100 transition-transform duration-150 ${
-                                isSel
-                                  ? "border-primary ring-2 ring-primary ring-offset-2 ring-offset-base-100"
-                                  : "border-base-300 group-hover:scale-105"
-                              }`}
-                            >
-                              <div className="flex gap-1">
-                                <span className="h-2.5 w-2.5 rounded-full bg-primary" />
-                                <span className="h-2.5 w-2.5 rounded-full bg-secondary" />
-                                <span className="h-2.5 w-2.5 rounded-full bg-accent" />
-                                <span className="h-2.5 w-2.5 rounded-full bg-base-content" />
-                              </div>
+                            <div className="flex shrink-0 gap-0.5">
+                              <span className="h-4 w-1.5 rounded-sm bg-primary" />
+                              <span className="h-4 w-1.5 rounded-sm bg-secondary" />
+                              <span className="h-4 w-1.5 rounded-sm bg-accent" />
                             </div>
-                          </label>
+                            <span className="truncate text-[11px] font-semibold text-base-content">
+                              {t.label}
+                            </span>
+                          </button>
                         );
                       })}
                     </div>
