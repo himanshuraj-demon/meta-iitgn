@@ -605,7 +605,7 @@ export default function WikiClient({
             {isEditing && (
               <div
                 ref={setToolbarContainer}
-                className="border border-base-300 rounded-xl bg-base-200 p-1.5 mb-6 milkdown flex items-center justify-center min-h-10"
+                className="editor-toolbar-container border border-base-300 rounded-xl bg-base-200 p-1.5 mb-6 milkdown flex items-center justify-center min-h-10"
               />
             )}
             {/* Title Header (Separated from editor to prevent accidental deletion) */}
