@@ -17,7 +17,6 @@ export const invalidateSearchCache = () => {
 
 let syncCheckCache: {
   news: { last_updated: number; count: number } | null;
-  contributors: { last_updated: number; count: number } | null;
   pendingpages: { last_updated: number; count: number } | null;
   updatedpages: { last_updated: number; count: number } | null;
   featured: { last_updated: number; count: number } | null;
@@ -27,7 +26,6 @@ let syncCheckCache: {
   popular: { last_updated: number; count: number } | null;
 } = {
   news: null,
-  contributors: null,
   pendingpages: null,
   updatedpages: null,
   featured: null,
@@ -37,12 +35,11 @@ let syncCheckCache: {
   popular: null
 };
 
-export const invalidateSyncCache = (key?: 'news' | 'contributors' | 'pendingpages' | 'updatedpages' | 'featured' | 'events' | 'messmenu' | 'transport' | 'popular') => {
+export const invalidateSyncCache = (key?: 'news' | 'pendingpages' | 'updatedpages' | 'featured' | 'events' | 'messmenu' | 'transport' | 'popular') => {
   if (key) {
     syncCheckCache[key] = null;
   } else {
     syncCheckCache.news = null;
-    syncCheckCache.contributors = null;
     syncCheckCache.pendingpages = null;
     syncCheckCache.updatedpages = null;
     syncCheckCache.featured = null;
@@ -825,17 +822,6 @@ export const getSyncCheck = async (req: Request, res: Response) => {
       syncCheckCache.news = { last_updated: news_last_updated, count: newsItems.length };
     }
 
-    // 2. contributors
-    if (!syncCheckCache.contributors) {
-      const userStats = await prisma.users.aggregate({
-        _max: { created_at: true },
-        _count: { user_id: true },
-        where: { deleted_at: null }
-      });
-      const contributors_last_updated = userStats._max.created_at ? userStats._max.created_at.getTime() : 0;
-      const contributors_count = userStats._count.user_id;
-      syncCheckCache.contributors = { last_updated: contributors_last_updated, count: contributors_count };
-    }
 
     // 3. pendingpages
     if (!syncCheckCache.pendingpages) {
@@ -940,7 +926,6 @@ export const getSyncCheck = async (req: Request, res: Response) => {
 
     return res.json({
       news: syncCheckCache.news,
-      contributors: syncCheckCache.contributors,
       pendingpages: syncCheckCache.pendingpages,
       updatedpages: syncCheckCache.updatedpages,
       featured: syncCheckCache.featured,

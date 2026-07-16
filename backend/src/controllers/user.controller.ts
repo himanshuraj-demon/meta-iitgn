@@ -44,7 +44,6 @@ export const devBypass = async (req: Request, res: Response) => {
       });
     }
     userCache.delete(user.user_id);
-    invalidateSyncCache('contributors');
 
     const token = createToken({
       user_id: user.user_id,
@@ -187,7 +186,6 @@ export const handleGoogleAuth = async (req: Request, res: Response) => {
       });
     }
     userCache.delete(user.user_id);
-    invalidateSyncCache('contributors');
 
     const token = createToken({
       user_id: user.user_id,

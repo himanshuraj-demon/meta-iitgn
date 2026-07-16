@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useHomeStore } from "@/store/useHomeStore";
 import { apiService } from "@/api";
 import GenericOverlayModal from "@/components/GenericOverlayModal";
+import Link from "next/link";
 
 interface FeaturedEditOverlayProps {
   isOpen: boolean;
@@ -209,9 +210,10 @@ export default function FeaturedEditOverlay({
                   className="w-14 h-14 object-cover rounded-lg shrink-0 bg-base-200"
                 />
                 <div className="flex-1 min-w-0">
+                  <Link href={`/wiki/page/${f.slug}`}>
                   <p className="text-sm font-bold text-base-content truncate">
                     {f.title}
-                  </p>
+                  </p></Link>
                   <p className="text-[10px] uppercase tracking-wider text-base-content/50 truncate">
                     {f.tag || "Featured"}
                     {f.location ? ` · ${f.location}` : ""}
