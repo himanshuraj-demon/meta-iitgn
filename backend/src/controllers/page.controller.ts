@@ -641,14 +641,14 @@ export const getPageCount = async (req: Request, res: Response) => {
  */
 export const createPage = async (req: Request, res: Response) => {
   try {
-    const { title, content, metadata, video_url } = req.body;
+    const { title, content, metadata, video_url, slug: customSlug } = req.body;
     if (!title) {
       return res.status(400).json({ error: 'Title is required' });
     }
 
     const creatorId = Number(req.user.user_id);
 
-    let baseSlug = (title || 'untitled')
+    let baseSlug = customSlug || (title || 'untitled')
       .replace(/[^a-zA-Z0-9\s-]/g, '')
       .trim()
       .toLowerCase()
@@ -712,6 +712,14 @@ export const updatePage = async (req: Request, res: Response) => {
     const { title, content, metadata, video_url } = req.body;
 
     const editorId = Number(req.user.user_id);
+
+    // Secure profile README pages: only owner or admin can edit
+    if (slug.startsWith('profile-')) {
+      const profileUserId = Number(slug.replace('profile-', ''));
+      if (profileUserId !== editorId && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'You are only allowed to edit your own profile README' });
+      }
+    }
 
     const livePage = await prisma.live_pages.findUnique({
       where: { slug },

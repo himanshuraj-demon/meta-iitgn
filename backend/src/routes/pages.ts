@@ -44,7 +44,16 @@ router.post("/:slug/view", incrementViewCount);
 router.get("/:slug/edit", checkAuth, getPageForEdit);
 router.get("/:slug", getPage);
 router.get("/page/:slug", getPage);
-router.post("/", checkAuth, protect("admin", "moderator"), createPage);
+router.post("/", checkAuth, (req, res, next) => {
+  const { title, slug } = req.body;
+  const isSelfProfile = (title === `profile-${req.user.user_id}`) || 
+                        (slug === `profile-${req.user.user_id}`) ||
+                        (title && title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/[\s-]+/g, '-') === `profile-${req.user.user_id}`);
+  if (isSelfProfile) {
+    return next();
+  }
+  return protect("admin", "moderator")(req, res, next);
+}, createPage);
 router.patch("/:slug", checkAuth, updatePage);
 router.delete("/:slug", checkAuth, protect("admin"), deletePage);
 
