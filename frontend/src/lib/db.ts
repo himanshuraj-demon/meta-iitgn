@@ -3,7 +3,6 @@ import Dexie, { type Table } from 'dexie';
 export class WikiDexie extends Dexie {
   bookmarks!: Table<any, string>;
   news!: Table<any, string>;
-  contributors!: Table<any, string>;
   pendingpages!: Table<any, string>;
   updatedpages!: Table<any, string>;
   meta!: Table<any, string>;
@@ -29,6 +28,20 @@ export class WikiDexie extends Dexie {
       events: 'id',
       messmenu: 'id',
       transport: 'id',
+    });
+    this.version(4).stores({
+      bookmarks: 'id',
+      news: 'id',
+      pendingpages: 'id',
+      updatedpages: 'id',
+      meta: 'key',
+      cachedpages: 'slug',
+      featured: 'id',
+      popular: 'id',
+      events: 'id',
+      messmenu: 'id',
+      transport: 'id',
+      contributors: null,
     });
   }
 }

@@ -172,7 +172,7 @@ export default function HistoryOverlay({
                 <div
                   key={item.slug || idx}
                   onClick={() => setActiveHistoryItem(item)}
-                  className="p-5 border border-base-300 bg-base-100 rounded-2xl shadow-xs hover:shadow-md hover:border-blue-400 transition-all duration-150 cursor-pointer text-left animate-in fade-in"
+                  className="p-5 border border-base-300 bg-base-200/50 rounded-2xl shadow-xs hover:shadow-md hover:border-blue-400 transition-all duration-150 cursor-pointer text-left animate-in fade-in"
                 >
                   <h4 className="text-base font-bold text-base-content">{item.title}</h4>
                   <p className="text-xs text-base-content/60 mt-1 line-clamp-2">

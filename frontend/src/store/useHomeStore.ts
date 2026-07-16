@@ -6,7 +6,6 @@ import { loadCachedCollection } from "../lib/cache";
 export interface HomeState {
   // Data collections
   newsPages: any[];
-  editors: any[];
   pendingPages: any[];
   newPages: any[];
   updatedPages: any[];
@@ -20,8 +19,8 @@ export interface HomeState {
   campusTransport: any | null;
   loading: boolean;
 
-  // Active overlay (new, updated, pending, news, trivia, history, editors, mess, featured-edit, transport, portal, null)
-  activeOverlay: "new" | "updated" | "pending" | "news" | "trivia" | "history" | "editors" | "mess" | "featured-edit" | "transport" | "portal" | null;
+  // Active overlay (new, updated, pending, news, trivia, history, mess, featured-edit, transport, portal, null)
+  activeOverlay: "new" | "updated" | "pending" | "news" | "trivia" | "history" | "mess" | "featured-edit" | "transport" | "portal" | null;
 
   // Slug of the category shown by the "portal" overlay (opened from Quick Portals)
   activePortalCategory: string | null;
@@ -56,7 +55,6 @@ export interface HomeState {
 
   // Setters
   setNewsPages: (newsPages: any[]) => void;
-  setEditors: (editors: any[]) => void;
   setPendingPages: (pendingPages: any[]) => void;
   setNewPages: (newPages: any[]) => void;
   setUpdatedPages: (updatedPages: any[]) => void;
@@ -69,7 +67,7 @@ export interface HomeState {
   setMessMenu: (menu: any | null) => void;
   setCampusTransport: (transport: any | null) => void;
   setLoading: (loading: boolean) => void;
-  setActiveOverlay: (overlay: "new" | "updated" | "pending" | "news" | "trivia" | "history" | "editors" | "mess" | "featured-edit" | "transport" | "portal" | null) => void;
+  setActiveOverlay: (overlay: "new" | "updated" | "pending" | "news" | "trivia" | "history" | "mess" | "featured-edit" | "transport" | "portal" | null) => void;
   setActivePortalCategory: (slug: string | null) => void;
 
   setNewPageNumber: (num: number) => void;
@@ -116,7 +114,6 @@ let publicDataLoaded = false;
 export const useHomeStore = create<HomeState>((set, get) => ({
   // Data collections initial state
   newsPages: [],
-  editors: [],
   pendingPages: [],
   newPages: [],
   updatedPages: [],
@@ -164,7 +161,6 @@ export const useHomeStore = create<HomeState>((set, get) => ({
 
   // Setters
   setNewsPages: (newsPages) => set({ newsPages }),
-  setEditors: (editors) => set({ editors }),
   setPendingPages: (pendingPages) => set({ pendingPages }),
   setNewPages: (newPages) => set({ newPages }),
   setUpdatedPages: (updatedPages) => set({ updatedPages }),
@@ -327,7 +323,6 @@ export const useHomeStore = create<HomeState>((set, get) => ({
         // 1. Load from Dexie immediately for Stale-While-Revalidate instant render
         const [
           cachedNews,
-          cachedEditors,
           cachedPending,
           cachedUpdated,
           cachedBookmarks,
@@ -338,7 +333,6 @@ export const useHomeStore = create<HomeState>((set, get) => ({
           cachedTransport,
         ] = await Promise.all([
           safeToArray(db.news),
-          safeToArray(db.contributors),
           safeToArray(db.pendingpages),
           safeToArray(db.updatedpages),
           safeToArray(db.bookmarks),
@@ -350,15 +344,21 @@ export const useHomeStore = create<HomeState>((set, get) => ({
         ]);
         
         
+        
+        const sortedCachedNews = [...cachedNews].sort(
+          (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+        );
+        const sortedCachedEvents = [...cachedEvents].sort(
+          (a, b) => new Date(a.event_date || 0).getTime() - new Date(b.event_date || 0).getTime()
+        );
 
         set({
-          newsPages: cachedNews.slice(0, 5),
-          editors: cachedEditors,
+          newsPages: sortedCachedNews.slice(0, 5),
           pendingPages: cachedPending.slice(0, 4),
           pendingPagesHasMore: cachedPending.length > 4,
           featuredPages: cachedFeatured,
           popularPages: cachedPopular,
-          upcomingEvents: cachedEvents,
+          upcomingEvents: sortedCachedEvents,
           messMenu: cachedMessMenu[0] || null,
           campusTransport: cachedTransport[0] || null,
         });
@@ -500,24 +500,13 @@ export const useHomeStore = create<HomeState>((set, get) => ({
             mapper: (res: any) =>
               res.news.map((item: any) => ({ ...item, id: String(item.page_id) })),
             onDataLoaded: (data) => {
-              set({ newsPages: data.slice(0, 5) });
+              const sorted = [...data].sort(
+                (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+              );
+              set({ newsPages: sorted.slice(0, 5) });
             },
             forceRefresh: force,
             preloadedData: cachedNews,
-          }),
-
-          loadCachedCollection({
-            key: "contributors",
-            table: db.contributors,
-            serverInfo: syncInfo.contributors,
-            fetcher: () => apiService.getUsers(),
-            mapper: (data: any[]) =>
-              data.map((item: any) => ({ ...item, id: String(item.user_id) })),
-            onDataLoaded: (data) => {
-              set({ editors: data });
-            },
-            forceRefresh: force,
-            preloadedData: cachedEditors,
           }),
 
           loadCachedCollection({
@@ -631,7 +620,10 @@ export const useHomeStore = create<HomeState>((set, get) => ({
             mapper: (res: any) =>
               (res.data || []).map((item: any) => ({ ...item, id: String(item.event_id) })),
             onDataLoaded: (data) => {
-              set({ upcomingEvents: data });
+              const sorted = [...data].sort(
+                (a, b) => new Date(a.event_date || 0).getTime() - new Date(b.event_date || 0).getTime()
+              );
+              set({ upcomingEvents: sorted });
             },
             forceRefresh: force,
             preloadedData: cachedEvents,

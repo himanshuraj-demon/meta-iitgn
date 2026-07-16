@@ -444,10 +444,18 @@ export default function WikiClient({
         return;
       }
 
-      const description = parsed.infobox.description || "";
+      const tagRow = parsed.infobox?.rows?.find(
+        (row: any) => row.label?.toLowerCase() === "tag"
+      );
+      const locationRow = parsed.infobox?.rows?.find(
+        (row: any) => row.label?.toLowerCase() === "location"
+      );
+      const description = parsed.infobox?.description || "";
       const metadata = {
         category,
         description,
+        tag: tagRow?.value || "Featured Story",
+        location: locationRow?.value || "",
       };
 
       const payload = {
@@ -571,18 +579,6 @@ export default function WikiClient({
     }
   };
 
-  if (showRevisions) {
-    return <RevisionsView setShowRevisions={setShowRevisions} />;
-  }
-
-  if (showPendingChanges) {
-    return (
-      <PendingChangesView
-        setShowPendingChanges={setShowPendingChanges}
-        pageId={dbPageId}
-      />
-    );
-  }
 
   return (
     <>
@@ -605,7 +601,7 @@ export default function WikiClient({
             {isEditing && (
               <div
                 ref={setToolbarContainer}
-                className="border border-base-300 rounded-xl bg-base-200 p-1.5 mb-6 milkdown flex items-center justify-center min-h-10"
+                className="editor-toolbar-container border border-base-300 rounded-xl bg-base-200 p-1.5 mb-6 milkdown flex items-center justify-center min-h-10"
               />
             )}
             {/* Title Header (Separated from editor to prevent accidental deletion) */}
@@ -925,6 +921,18 @@ export default function WikiClient({
           isOpen={showTransportEditor}
           onClose={() => router.back()}
           transport={transportProp}
+        />
+      )}
+
+      {/* Wiki overlays for revisions and pending approvals */}
+      {showRevisions && (
+        <RevisionsView setShowRevisions={setShowRevisions} />
+      )}
+
+      {showPendingChanges && (
+        <PendingChangesView
+          setShowPendingChanges={setShowPendingChanges}
+          pageId={dbPageId}
         />
       )}
     </>

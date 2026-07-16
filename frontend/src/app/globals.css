@@ -276,6 +276,7 @@ html[data-font-size="small"] .milkdown-container,
 html[data-font-size="small"] .prose p {
   font-size: inherit;
 }
+
 html[data-font-size="small"] article {
   font-size: 0.75rem !important;
 }
@@ -284,6 +285,7 @@ html[data-font-size="normal"] .milkdown-container,
 html[data-font-size="normal"] .prose p {
   font-size: inherit;
 }
+
 html[data-font-size="normal"] article {
   font-size: 1rem !important;
 }
@@ -292,6 +294,7 @@ html[data-font-size="large"] .milkdown-container,
 html[data-font-size="large"] .prose p {
   font-size: inherit;
 }
+
 html[data-font-size="large"] article {
   font-size: 1.3rem !important;
 }
@@ -319,12 +322,45 @@ html[data-font-style="mono"] article {
 }
 
 /* Make Milkdown editor theme-aware using daisyUI CSS variables */
+.milkdown,
+.crepe {
+  --crepe-color-background: var(--color-base-100, var(--b1, #ffffff)) !important;
+  --crepe-color-surface: var(--color-base-200, var(--b2, #f3f4f6)) !important;
+  --crepe-color-surface-low: var(--color-base-300, var(--b3, #e5e7eb)) !important;
+  --crepe-color-on-background: var(--color-base-content, var(--bc, #1f2937)) !important;
+  --crepe-color-on-surface: var(--color-base-content, var(--bc, #1f2937)) !important;
+  --crepe-color-on-surface-variant: color-mix(in srgb, var(--color-base-content, var(--bc, #1f2937)) 70%, transparent) !important;
+  --crepe-color-primary: var(--color-primary, var(--p, #4f46e5)) !important;
+  --crepe-color-secondary: var(--color-secondary, var(--s, #818cf8)) !important;
+  --crepe-color-on-secondary: var(--color-secondary-content, var(--sc, #ffffff)) !important;
+  --crepe-color-outline: var(--color-base-300, var(--b3, #e5e7eb)) !important;
+  --crepe-color-hover: var(--color-base-300, var(--b3, #e5e7eb)) !important;
+  --crepe-color-selected: var(--color-base-300, var(--b3, #e5e7eb)) !important;
+  --crepe-color-error: var(--color-error, var(--er, #ef4444)) !important;
+}
+
 .milkdown-container,
 .milkdown-container .crepe,
 .milkdown-container .milkdown,
 .milkdown-container .editor {
   background-color: transparent !important;
   color: var(--color-base-content) !important;
+}
+
+/* Sticky editor toolbar globally in edit mode (covers fixed top navbar) */
+.editor-toolbar-container {
+  position: sticky !important;
+  top: -20px !important;
+  z-index: 10020 !important; 
+  background-color: var(--color-base-200) !important;
+  transition: all 0.2s ease-in-out;
+}
+.milkdown-container:not(.read-only) .milkdown-top-bar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 50 !important;
+  background-color: var(--color-base-200) !important;
+  border-bottom: 1px solid var(--color-base-300) !important;
 }
 
 /* Override editor text content colors */
@@ -360,9 +396,11 @@ html[data-font-style="mono"] article {
   0% {
     transform: translateX(-100%) scaleX(0.2);
   }
+
   50% {
     transform: translateX(0%) scaleX(0.5);
   }
+
   100% {
     transform: translateX(100%) scaleX(0.2);
   }
@@ -435,14 +473,26 @@ html[data-font-style="mono"] article {
   --primary-foreground: var(--color-primary-content, var(--pc, #ffffff)) !important;
   --muted: var(--color-base-300, var(--b3, #e5e7eb)) !important;
   --muted-foreground: color-mix(in srgb, var(--color-base-content, var(--bc, #171717)) 60%, transparent) !important;
+
+  /* BlockNote Native CSS Variable Overrides */
+  --bn-colors-editor-background: transparent !important;
+  --bn-colors-editor-text: var(--color-base-content, var(--bc, #171717)) !important;
+  --bn-colors-menu-background: var(--color-base-100, var(--b1, #ffffff)) !important;
+  --bn-colors-menu-text: var(--color-base-content, var(--bc, #171717)) !important;
+  --bn-colors-tooltip-background: var(--color-base-300, var(--b3, #e5e7eb)) !important;
+  --bn-colors-hovered-background: var(--color-base-200, var(--b2, #f3f4f6)) !important;
+  --bn-colors-selected-background: var(--color-base-300, var(--b3, #e5e7eb)) !important;
 }
 
-/* Fix background of select popups and menus inside BlockNote */
+/* Fix background of select popups, menus, and file uploader panels inside BlockNote */
 .bn-popover,
 .bn-suggestion-menu,
 .bn-menu-content,
 .bn-toolbar,
-[data-radix-popper-content-wrapper] > div,
+.bn-file-panel,
+.bn-file-uploader,
+.bn-link-toolbar,
+[data-radix-popper-content-wrapper]>div,
 [role="menu"],
 [role="listbox"],
 [data-popover],
@@ -479,6 +529,7 @@ html[data-font-style="mono"] article {
 .bn-side-menu button {
   color: var(--color-base-content, var(--bc, #171717)) !important;
 }
+
 .bn-side-menu button:hover {
   background-color: var(--color-base-200, var(--b2, #f3f4f6)) !important;
 }
@@ -504,6 +555,7 @@ html[data-font-style="mono"] article {
 }
 
 @media (min-width: 640px) {
+
   .bn-root h1,
   .bn-root [data-content-type="heading"][data-level="1"] {
     font-size: 2.25rem !important;
@@ -517,5 +569,61 @@ html[data-font-style="mono"] article {
   .bn-root h3,
   .bn-root [data-content-type="heading"][data-level="3"] {
     font-size: 1.45rem !important;
+  }
+}
+
+.bn-container {
+  padding: 0 !important;
+}
+
+.bn-editor {
+  padding: 0 !important;
+}
+
+.bn-root,
+.bn-container,
+.bn-editor {
+  padding: 0 !important;
+  background-color: transparent !important;
+  color: var(--color-base-content) !important;
+}
+
+@media (max-width: 768px) {
+
+  .bn-root,
+  .bn-container,
+  .bn-editor {
+    padding-inline: 8px !important;
+  }
+}
+
+@media (max-width: 768px) {
+
+  /* Slash menu / + menu */
+  .bn-suggestion-menu,
+  .bn-menu-dropdown,
+  .bn-popover,
+  [role="listbox"] {
+    max-height: 45vh !important;
+    overflow-y: auto !important;
+    width: 90vw !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Items */
+  .bn-menu-item,
+  .bn-suggestion-menu-item,
+  [role="option"] {
+    min-height: 38px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    gap: 8px !important;
+  }
+
+  /* Icons */
+  .bn-menu-item svg,
+  .bn-suggestion-menu-item svg {
+    width: 16px !important;
+    height: 16px !important;
   }
 }

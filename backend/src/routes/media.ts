@@ -85,20 +85,28 @@ router.post("/upload", checkAuth, upload.single("file"), async (req: any, res) =
         fs.unlinkSync(filePath);
       }
 
+      let fileUrl = existingAsset.file_url;
+      if (fileUrl.startsWith("/uploads/")) {
+        const host = req.get("host") || "localhost:3001";
+        const protocol = req.protocol || "http";
+        fileUrl = `${protocol}://${host}${fileUrl}`;
+      }
+
       // Create new reference for this user in DB
       const newAsset = await prisma.media_assets.create({
         data: {
           user_id: userId,
-          file_url: existingAsset.file_url,
+          file_url: fileUrl,
           file_type: mimeType,
           file_size: fileSize,
-          hash: fileHash
+          hash: fileHash,
+          public_id: existingAsset.public_id,
         }
       });
 
       return res.json({
         success: true,
-        url: existingAsset.file_url,
+        url: fileUrl,
         asset: newAsset,
         duplicate: true
       });
@@ -107,20 +115,28 @@ router.post("/upload", checkAuth, upload.single("file"), async (req: any, res) =
     // 4. Upload to Cloudinary (will delete local file upon success)
     const uploadResult = await uploadToCloudinary(filePath);
 
+    let fileUrl = uploadResult.url;
+    if (fileUrl.startsWith("/uploads/")) {
+      const host = req.get("host") || "localhost:3001";
+      const protocol = req.protocol || "http";
+      fileUrl = `${protocol}://${host}${fileUrl}`;
+    }
+
     // 5. Store in database
     const newAsset = await prisma.media_assets.create({
       data: {
         user_id: userId,
-        file_url: uploadResult.url,
+        file_url: fileUrl,
         file_type: mimeType,
         file_size: fileSize,
-        hash: fileHash
+        hash: fileHash,
+        public_id: uploadResult.publicId,
       }
     });
 
     return res.json({
       success: true,
-      url: uploadResult.url,
+      url: fileUrl,
       asset: newAsset,
       duplicate: false
     });

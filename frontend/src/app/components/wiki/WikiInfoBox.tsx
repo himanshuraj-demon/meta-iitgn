@@ -56,7 +56,7 @@ export default function WikiInfoBox({
       <aside
         style={{ width: rightSidebarOpen ? (isMobile ? "320px" : `${rightWidth}px`) : undefined }}
         className={`
-          border-l border-base-200 shrink-0 overflow-y-auto overflow-x-hidden bg-base-100 flex flex-col select-none right-sidebar-mobile-toggle no-scrollbar
+          border-l border-base-200 shrink-0 overflow-y-auto overflow-x-hidden bg-base-100 flex flex-col select-none right-sidebar-mobile-toggle no-scrollbar 
           transition-transform duration-300 ease-in-out order-3
           fixed lg:relative top-16 lg:top-0 bottom-0 right-0 z-[10001] h-[calc(100vh-4rem)] lg:h-full
           ${
@@ -80,8 +80,8 @@ export default function WikiInfoBox({
           )}
           {/* Infobox Image */}
           <div
-            className={`w-full relative ${isEditing ? "mt-15" : "mt-0"} bg-base-200/50 border-b border-base-200 flex items-center justify-center overflow-hidden transition-all duration-300 shrink-0 ${
-              isEditing ? "h-32 p-4" : "aspect-square"
+            className={`w-full relative ${isEditing ? "mt-15" : "md:mt-18"} bg-base-200/50 border-b border-base-200 flex items-center justify-center overflow-hidden transition-all duration-300 shrink-0 ${
+              isEditing ? "h-32 p-4" : "object-cover p-1"
             }`}
           >
             <div className={`w-full h-full relative overflow-hidden transition-all duration-300 ${

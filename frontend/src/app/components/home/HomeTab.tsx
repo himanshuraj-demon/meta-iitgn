@@ -12,7 +12,6 @@ import {
   Calendar,
   BookOpen,
   Languages,
-  Users2,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -57,8 +56,6 @@ interface HomeTabProps {
   historyPages: any[];
   setShowAllHistory: (show: boolean) => void;
   setActiveHistoryItem: (item: any) => void;
-  editors: any[];
-  setShowAllEditors: (show: boolean) => void;
   totalPagesCount: number | null;
   featuredPages: any[];
   popularPages: any[];
@@ -91,7 +88,6 @@ const HOME_HIDDEN_CARDS_KEY = "meta_iitgn_home_hidden_cards";
 const CARD_LABELS: Record<string, string> = {
   "featured-article": "Featured Article",
   "in-the-news": "In the News",
-  contributors: "Wiki Contributors",
   "new-pages": "New Pages",
   "updated-pages": "Updated Pages",
   "pending-pages": "Pending Review",
@@ -100,6 +96,7 @@ const CARD_LABELS: Record<string, string> = {
   "mess-menu": "Today's Mess Menu",
   "campus-transport": "Campus Transport",
   "photo-of-week": "Photo of the Week",
+  events: "Upcoming Events",
 };
 
 // Logical groupings for the "Customize cards" panel.
@@ -107,11 +104,11 @@ const CARD_GROUPS: { title: string; ids: string[] }[] = [
   { title: "Discovery", ids: ["featured-article", "in-the-news", "popular-pages", "random-page"] },
   {
     title: "Wiki Activity",
-    ids: ["contributors", "new-pages", "updated-pages", "pending-pages"],
+    ids: ["new-pages", "updated-pages", "pending-pages"],
   },
   {
     title: "Community",
-    ids: ["photo-of-week"],
+    ids: ["photo-of-week", "events"],
   },
   { title: "Campus Services", ids: ["mess-menu", "campus-transport"] },
 ];
@@ -188,9 +185,6 @@ export default function HomeTab({
   setActiveTriviaItem,
   historyPages,
   setShowAllHistory,
-  setActiveHistoryItem,
-  editors,
-  setShowAllEditors,
   totalPagesCount,
   featuredPages,
   popularPages,
@@ -203,7 +197,7 @@ export default function HomeTab({
 }: HomeTabProps) {
   const { categories, activeTier, user } = useAuth();
   const router = useRouter();
-  const isGold = activeTier === "gold" || user?.role === "admin";
+  const isGold = activeTier === "gold" || user?.role === "admin" || user?.role === "moderator";
 
   // ── Card visibility preferences (local only) ───────────────────────────────
   const [hiddenCards, setHiddenCards] = useState<Set<string>>(() => {
@@ -364,7 +358,7 @@ export default function HomeTab({
     "featured-article": 3,
     "in-the-news": 4,
     "popular-pages": 8,
-    contributors: 9,
+    events: 9,
     "random-page": 10,
     "photo-of-week": 11,
     "new-pages": 16,
@@ -413,7 +407,7 @@ export default function HomeTab({
               <div className="flex gap-2">
                 {featuredSlides.map((_, index) => (
                   <button
-                    key={index}
+                    key={index+Math.random()}
                     type="button"
                     onClick={() => scrollToIndex(index)}
                     className="h-2.5 w-2.5 rounded-full bg-base-300 hover:bg-primary/60 transition-all cursor-pointer"
@@ -429,27 +423,38 @@ export default function HomeTab({
               const n = featuredSlides.length;
               const prevIndex = (index - 1 + n) % n;
               const nextIndex = (index + 1) % n;
+              const targetUrl = slide?.slug ? `/wiki/page/${slide.slug}` : null;
               return (
                 <div
-                  key={index}
+                  key={index+Math.random()}
                   id={`${carouselBase}-${index + 1}`}
                   className="carousel-item w-full"
                 >
                   <div className="w-full">
                     <div className="relative overflow-hidden rounded-xl">
-                      <img
-                        src={slide?.image || '/homepage_bg.png'}
-                        alt={slide?.title || 'Featured'}
-                        className="w-full h-52 object-cover"
-                      />
+                      {targetUrl ? (
+                        <Link href={targetUrl} className="block cursor-pointer">
+                          <img
+                            src={slide?.image || '/homepage_bg.png'}
+                            alt={slide?.title || 'Featured'}
+                            className="w-full h-52 object-cover"
+                          />
+                        </Link>
+                      ) : (
+                        <img
+                          src={slide?.image || '/homepage_bg.png'}
+                          alt={slide?.title || 'Featured'}
+                          className="w-full h-52 object-cover"
+                        />
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 pointer-events-none rounded-xl" />
 
                       {/* DaisyUI next/prev buttons */}
-                      <div className="absolute left-3 right-3 top-1/2 flex -translate-y-1/2 transform justify-between">
-                        <button type="button" onClick={() => scrollToIndex(prevIndex)} className="btn btn-circle btn-sm bg-base-100/80 border-0 shadow-sm hover:bg-base-100">
+                      <div className="absolute left-3 right-3 top-1/2 flex -translate-y-1/2 transform justify-between z-10">
+                        <button type="button" onClick={() => scrollToIndex(prevIndex)} className="btn btn-circle btn-sm bg-base-100/80 border-0 shadow-sm hover:bg-base-100 cursor-pointer">
                           <ChevronLeft className="h-4 w-4" />
                         </button>
-                        <button type="button" onClick={() => scrollToIndex(nextIndex)} className="btn btn-circle btn-sm bg-base-100/80 border-0 shadow-sm hover:bg-base-100">
+                        <button type="button" onClick={() => scrollToIndex(nextIndex)} className="btn btn-circle btn-sm bg-base-100/80 border-0 shadow-sm hover:bg-base-100 cursor-pointer">
                           <ChevronRight className="h-4 w-4" />
                         </button>
                       </div>
@@ -461,7 +466,13 @@ export default function HomeTab({
                         {slide?.location || 'Campus'}
                       </div>
                       <h3 className="text-lg font-black text-base-content font-serif">
-                        {slide?.title || 'Campus Article'}
+                        {targetUrl ? (
+                          <Link href={targetUrl} className="hover:text-primary transition-colors cursor-pointer">
+                            {slide?.title || 'Campus Article'}
+                          </Link>
+                        ) : (
+                          slide?.title || 'Campus Article'
+                        )}
                       </h3>
                       <p className="text-xs text-base-content/75 leading-relaxed font-semibold">
                         {slide?.description || ''}
@@ -501,7 +512,7 @@ export default function HomeTab({
               const IconComponent = Icons[index % Icons.length];
               const colors = ["bg-primary/10 text-primary", "bg-success/10 text-success", "bg-secondary/10 text-secondary"];
               return (
-                <button key={`news-${item.slug || index}`} type="button" onClick={() => setShowAllNews(true)} className="flex items-start gap-3 border-b border-base-200 pb-3 last:border-b-0 last:pb-0 cursor-pointer group text-left w-full">
+                <button key={`news-${item.slug || index+Math.random()}`} type="button" onClick={() => setShowAllNews(true)} className="flex items-start gap-3 border-b border-base-200 pb-3 last:border-b-0 last:pb-0 cursor-pointer group text-left w-full">
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${colors[index % colors.length]}`}>
                     <IconComponent className="h-4 w-4" />
                   </div>
@@ -518,48 +529,102 @@ export default function HomeTab({
       ),
     },
 
-    // ── 5. Wiki Contributors ─────────────────────────────────────────────────
+    // ── 5. Upcoming Events ─────────────────────────────────────────────────
     {
-      id: "contributors",
+      id: "events",
       content: (
-        <HomeCard
-          title="Wiki Contributors"
-          icon={<Users2 className="h-4 w-4" />}
-          accentColor="info"
-          footer={
-            <button onClick={() => setShowAllEditors(true)} className="btn btn-primary btn-sm w-full font-bold text-xs rounded-xl shadow-sm cursor-pointer">
-              View Active Editors
-            </button>
-          }
-        >
-          {editors.length > 0 ? (
-            <div className="space-y-2.5">
-              {editors.slice(0, 4).map((editor, index) => {
-                const initials = editor.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase() || "U";
+        <div className="flex flex-col rounded-2xl border border-base-200 bg-base-100 p-6 shadow-depth shadow-depth-hover sm:p-7">
+          {/* Header */}
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-primary">
+                <Calendar className="h-5 w-5 stroke-[2.5]" />
+              </span>
+              <h3 className="text-[18px] font-extrabold tracking-tight text-base-content">
+                Upcoming Events
+              </h3>
+            </div>
+            {upcomingEvents.length > 0 && (
+              <span className="rounded-full bg-primary/10 border border-primary/20 px-3.5 py-1 text-[9px] font-bold uppercase tracking-wide text-primary">
+                {upcomingEvents.length} {upcomingEvents.length === 1 ? "Event" : "Events"}
+              </span>
+            )}
+          </div>
+
+          {/* Event items */}
+          {loading ? (
+            <div className="flex items-center gap-2 py-2">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-xs text-base-content/50">Loading…</span>
+            </div>
+          ) : upcomingEvents && upcomingEvents.length > 0 ? (
+            <div className="space-y-4">
+              {upcomingEvents.slice(0, 3).map((event, i) => {
+                const dateObj = new Date(event.event_date);
+                const day = isNaN(dateObj.getTime()) ? "" : dateObj.toLocaleDateString("en-US", { day: "numeric" });
+                const month = isNaN(dateObj.getTime()) ? "" : dateObj.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+                
                 return (
-                  <Link
-                    key={`editor-${editor.user_id || index}`}
-                    href={`/user/profile?userId=${editor.user_id}`}
-                    className="group/editor -mx-1 flex items-center gap-2.5 rounded-xl px-1 py-1.5 transition-colors hover:bg-base-200/60"
-                  >
-                    <div className="avatar avatar-placeholder">
-                      <div className="w-7 rounded-full bg-base-200 border border-base-300 text-[10px] font-bold text-base-content">
-                        <span>{initials}</span>
+                  <div key={event.event_id || i} className="flex gap-4 items-start pb-3 border-b border-base-200 last:border-0 last:pb-0">
+                    {/* Date Block */}
+                    <div className="flex flex-col items-center justify-center w-12 h-12 shrink-0 rounded-xl bg-primary/5 border border-primary/10 text-primary">
+                      <span className="text-xs font-black leading-none">{day}</span>
+                      <span className="text-[9px] font-bold tracking-wider leading-none mt-1">{month}</span>
+                    </div>
+
+                    {/* Details */}
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <h4 className="text-xs font-black text-base-content leading-snug line-clamp-1">
+                        {event.title}
+                      </h4>
+                      <p className="text-[11px] text-base-content/60 font-semibold line-clamp-2">
+                        {event.description}
+                      </p>
+                      
+                      <div className="flex flex-wrap items-center gap-3 pt-0.5 text-[10px] text-base-content/40 font-bold uppercase tracking-wider">
+                        <span className="flex items-center gap-1">
+                          <MapPinned className="h-3.5 w-3.5" />
+                          {event.location}
+                        </span>
+                        {event.is_recurring ? (
+                          <span className="rounded bg-secondary/10 px-1.5 py-0.5 text-secondary text-[9px] font-black tracking-widest">
+                            RECURRING
+                          </span>
+                        ) : (
+                          event.recur_time || event.recur_day ? null : (
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              {new Date(event.event_date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                            </span>
+                          )
+                        )}
+                        {event.is_recurring && event.recur_time && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            {event.recur_time}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <span className="text-xs text-base-content/80 font-semibold truncate transition-colors group-hover/editor:text-primary">
-                      {editor.name}
-                    </span>
-                  </Link>
+                  </div>
                 );
               })}
             </div>
           ) : (
-            <p className="text-xs text-base-content/60 leading-relaxed font-semibold">
-              META IITGN is built by the student body. Share tips, course feedback, and project work.
-            </p>
+            <div className="py-4 text-center">
+              <p className="text-xs text-base-content/50">No upcoming events listed.</p>
+            </div>
           )}
-        </HomeCard>
+
+          {/* Action button */}
+          <Link
+            href="/wiki/page/upcoming-events"
+            className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl bg-primary py-4 text-[14px] font-bold tracking-wide text-primary-content shadow-lg shadow-primary/30 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-primary/40"
+          >
+            <CalendarDays className="h-[18px] w-[18px]" />
+            VIEW ALL EVENTS
+          </Link>
+        </div>
       ),
     },
 
@@ -587,7 +652,7 @@ export default function HomeTab({
           ) : (
             <ul className="space-y-3">
               {newPages.slice(0, 3).map((page, index) => (
-                <li key={`new-page-${page.page_id || index}`}>
+                <li key={`new-page-${page.page_id || index+Math.random()}`}>
                   <Link href={`/wiki/${(page.metadata as any)?.category || 'campus'}/${page.slug}`} className="block text-xs font-semibold text-base-content/85 hover:text-primary transition-colors truncate">
                     {page.title || "Untitled"}
                   </Link>
@@ -623,7 +688,7 @@ export default function HomeTab({
           ) : (
             <ul className="space-y-3">
               {updatedPages.slice(0, 3).map((page, index) => (
-                <li key={`updated-page-${page.page_id || index}`}>
+                <li key={`updated-page-${page.page_id || index+Math.random()}`}>
                   <Link href={`/wiki/${(page.metadata as any)?.category || 'campus'}/${page.slug}`} className="block text-xs font-semibold text-base-content/85 hover:text-primary transition-colors truncate">
                     {page.title || "Untitled"}
                   </Link>
@@ -660,7 +725,7 @@ export default function HomeTab({
             <ul className="space-y-3">
               {pendingPages.slice(0, 3).map((pending, index) => {
                 return (
-                  <li key={`pending-page-${pending.pending_id || index}`}>
+                  <li key={`pending-page-${pending.pending_id || index+1}`}>
                     <span className="block text-xs font-semibold text-base-content/85 truncate">{pending.title}</span>
                   </li>
                 );
@@ -690,7 +755,7 @@ export default function HomeTab({
             ) : popularPages.length > 0 ? (
               popularPages.slice(0, 5).map((page, i) => (
                 <Link
-                  key={page.page_id}
+                  key={page.page_id+Math.random()}
                   href={`/wiki/${(page.metadata as any)?.category || 'campus'}/${page.slug}`}
                   className="flex items-center justify-between rounded-xl border border-base-200 bg-base-200/40 p-3 text-xs font-semibold text-base-content/80 hover:border-primary/40 hover:text-primary transition-colors"
                 >
@@ -774,7 +839,7 @@ export default function HomeTab({
               {messMenuData.meals.map((meal, i) => {
                 const theme = MESS_MOCK_THEME[getTimeOfDay(meal)];
                 return (
-                  <div key={i}>
+                  <div key={i+Math.random()}>
                     <div className="mb-2.5 flex items-center justify-between gap-2">
                       <span
                         className={`text-[13px] font-extrabold uppercase tracking-[0.8px] ${theme.mealName}`}
@@ -1059,7 +1124,7 @@ export default function HomeTab({
                 return (
                   <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-3">
                     {columns.map((col, ci) => (
-                      <div key={ci} className="space-y-4">
+                      <div key={ci+Math.random()} className="space-y-4">
                         {col.map((group) => (
                           <div key={group.title}>
                             <div className="mb-3.5 flex items-center justify-between">
@@ -1078,7 +1143,7 @@ export default function HomeTab({
                                 const visible = !hiddenCards.has(c.id);
                                 return (
                                   <label
-                                    key={c.id}
+                                    key={c.id+1}
                                     className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-base-200/60"
                                   >
                                     <span className="text-sm font-medium text-base-content/80">
@@ -1121,7 +1186,7 @@ export default function HomeTab({
         />
 
         {/* ── Statistics Strip ────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+        <div className="grid grid-cols-3 gap-3 mt-4">
           <div className="stat bg-base-200/60 border border-base-300 rounded-2xl place-items-center py-4">
             <div className="stat-figure text-primary"><BookOpen className="h-5 w-5" /></div>
             <div className="stat-title text-[9px] font-bold uppercase tracking-wider">Total Articles</div>
@@ -1131,11 +1196,6 @@ export default function HomeTab({
             <div className="stat-figure text-success"><Languages className="h-5 w-5" /></div>
             <div className="stat-title text-[9px] font-bold uppercase tracking-wider">Categories</div>
             <div className="stat-value text-xl">{categoriesCount}</div>
-          </div>
-          <div className="stat bg-base-200/60 border border-base-300 rounded-2xl place-items-center py-4">
-            <div className="stat-figure text-secondary"><Users2 className="h-5 w-5" /></div>
-            <div className="stat-title text-[9px] font-bold uppercase tracking-wider">Editors</div>
-            <div className="stat-value text-xl">{editors.length || "…"}</div>
           </div>
           <div className="stat bg-base-200/60 border border-base-300 rounded-2xl place-items-center py-4">
             <div className="stat-figure text-warning"><Zap className="h-5 w-5" /></div>

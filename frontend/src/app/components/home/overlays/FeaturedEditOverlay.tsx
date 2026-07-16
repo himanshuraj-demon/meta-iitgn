@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useHomeStore } from "@/store/useHomeStore";
 import { apiService } from "@/api";
 import GenericOverlayModal from "@/components/GenericOverlayModal";
+import Link from "next/link";
 
 interface FeaturedEditOverlayProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ export default function FeaturedEditOverlay({
   onClose,
 }: FeaturedEditOverlayProps) {
   const { activeTier, user } = useAuth();
-  const isGold = activeTier === "gold" || user?.role === "admin";
+  const isGold = activeTier === "gold" || user?.role === "admin" || user?.role === "moderator";
 
   const featuredPages = useHomeStore((s) => s.featuredPages);
   const setFeaturedPages = useHomeStore((s) => s.setFeaturedPages);
@@ -51,8 +52,6 @@ export default function FeaturedEditOverlay({
     setSearching(true);
     try {
       const res = await apiService.searchPages(q, 1, 8, "All");
-      // Some backend versions don't include page_id in search results, so we
-      // filter by slug here and resolve page_id at add-time (via getPage).
       const featuredSlugs = new Set(
         featuredPages.map((f: any) => f.slug)
       );
@@ -73,7 +72,6 @@ export default function FeaturedEditOverlay({
   const handleAdd = async (result: any) => {
     setBusyId(`add-${result.slug}`);
     try {
-      // Prefer page_id from search (newer backend); otherwise resolve via slug.
       let pageId = result.page_id;
       if (pageId == null) {
         const page = await apiService.getPage(result.slug);
@@ -125,22 +123,30 @@ export default function FeaturedEditOverlay({
         {!isGold && (
           <div className="rounded-xl border border-base-300 bg-base-200/40 px-4 py-3 text-xs text-base-content/70 font-semibold">
             You&rsquo;re viewing the featured list. Editing is available to gold
-            members.
+            members and moderators.
           </div>
         )}
 
-        {/* Gold-only: search & add */}
+        {/* Gold-only: search & add / create */}
         {isGold && (
           <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/40" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search pages to feature…"
-                className="w-full border border-base-300 hover:border-base-content/30 focus:border-primary rounded-xl pl-9 pr-3 py-2.5 text-sm text-base-content placeholder-base-content/40 bg-base-100 focus:outline-none transition-all duration-150 shadow-sm"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/40" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="Search pages to feature…"
+                  className="w-full border border-base-300 hover:border-base-content/30 focus:border-primary rounded-xl pl-9 pr-3 py-2.5 text-sm text-base-content placeholder-base-content/40 bg-base-100 focus:outline-none transition-all duration-150 shadow-sm"
+                />
+              </div>
+              <Link
+                href="/wiki/page/new?title=New%20Featured%20Article&category=Featured"
+                className="btn btn-primary rounded-xl font-bold text-xs gap-1.5 shrink-0 cursor-pointer flex items-center justify-center text-primary-content hover:text-primary-content"
+              >
+                <Plus className="h-4 w-4" /> Create & Feature
+              </Link>
             </div>
 
             {searching && (
@@ -209,9 +215,11 @@ export default function FeaturedEditOverlay({
                   className="w-14 h-14 object-cover rounded-lg shrink-0 bg-base-200"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-base-content truncate">
-                    {f.title}
-                  </p>
+                  <Link href={`/wiki/page/${f.slug}`}>
+                    <span className="text-sm font-bold text-base-content hover:text-primary transition-colors cursor-pointer block truncate">
+                      {f.title}
+                    </span>
+                  </Link>
                   <p className="text-[10px] uppercase tracking-wider text-base-content/50 truncate">
                     {f.tag || "Featured"}
                     {f.location ? ` · ${f.location}` : ""}
@@ -222,7 +230,7 @@ export default function FeaturedEditOverlay({
                     type="button"
                     disabled={busyId === `remove-${f.featured_id}`}
                     onClick={() => handleRemove(f.featured_id)}
-                    className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10 shrink-0"
+                    className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10 shrink-0 cursor-pointer"
                     aria-label={`Remove ${f.title}`}
                     title="Remove from featured"
                   >

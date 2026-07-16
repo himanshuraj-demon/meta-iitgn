@@ -33,7 +33,7 @@ export default function BlogEditPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
 
   // BlockNote integration states
   const [initialContent, setInitialContent] = useState<string | undefined>(undefined);
@@ -123,8 +123,8 @@ export default function BlogEditPage() {
       formData.append("file", file);
 
       const res = await apiService.uploadMedia(formData);
-      if (res && res.file_url) {
-        return res.file_url;
+      if (res && res.url) {
+        return res.url;
       }
       throw new Error("Upload response did not contain URL");
     } catch (err: any) {
@@ -202,10 +202,10 @@ export default function BlogEditPage() {
   return (
     <main className="flex-1 flex overflow-hidden h-[calc(100vh-4rem)] w-full mt-16 bg-transparent relative">
       {/* Editor Main Workspace */}
-      <div className="flex-1 flex flex-col overflow-y-auto p-3 sm:p-6 md:p-8 pb-32">
+      <div className="flex-1 flex flex-col overflow-y-auto  sm:p-6 md:p-8 pb-32">
         <div className="max-w-5xl w-full mx-auto space-y-3 sm:space-y-6">
                     {/* Header */}
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex justify-between items-start gap-4 p-2">
             <div>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-serif font-black text-base-content tracking-tight">
                 {isNew ? "Write a New Blog Post" : "Edit Blog Post"}
@@ -223,7 +223,7 @@ export default function BlogEditPage() {
           )}
 
           {/* BlockNote editor container */}
-          <div className="border border-base-200 hover:border-base-300 rounded-xl sm:rounded-3xl overflow-hidden focus-within:border-primary/40 transition-colors select-text bg-base-100 p-2 sm:p-6 min-h-[500px]">
+          <div className="border border-base-200 hover:border-base-300 sm:rounded-3xl overflow-hidden focus-within:border-primary/40 transition-colors select-text bg-base-100 pl-8 sm:p-6 min-h-[500px]">
             {isContentReady ? (
               <BlockNoteEditor
                 initialContent={initialContent}

@@ -27,7 +27,6 @@ import PendingPagesOverlay from "./components/home/overlays/PendingPagesOverlay"
 import NewsOverlay from "./components/home/overlays/NewsOverlay";
 import TriviaOverlay from "./components/home/overlays/TriviaOverlay";
 import HistoryOverlay from "./components/home/overlays/HistoryOverlay";
-import EditorsOverlay from "./components/home/overlays/EditorsOverlay";
 import MessMenuOverlay from "./components/home/overlays/MessMenuOverlay";
 import TransportOverlay from "./components/home/overlays/TransportOverlay";
 import FeaturedEditOverlay from "./components/home/overlays/FeaturedEditOverlay";
@@ -47,7 +46,6 @@ export default function HomePage() {
   const {
     // Data collections
     newsPages,
-    editors,
     pendingPages,
     newPages,
     updatedPages,
@@ -65,7 +63,6 @@ export default function HomePage() {
     activeOverlay,
     setActiveOverlay,
     activePortalCategory,
-    setActivePortalCategory,
 
     // Pagination states
     newPagesHasMore,
@@ -397,14 +394,6 @@ export default function HomePage() {
         getRelativeTime,
       },
     },
-    editors: {
-      Component: EditorsOverlay,
-      props: {
-        isOpen: activeOverlay === "editors",
-        onClose: () => router.back(),
-        editors,
-      },
-    },
     mess: {
       Component: MessMenuOverlay,
       props: {
@@ -533,10 +522,6 @@ export default function HomePage() {
                   setActiveOverlay(val ? "history" : null)
                 }
                 setActiveHistoryItem={setActiveHistoryItem}
-                editors={editors}
-                setShowAllEditors={(val) =>
-                  setActiveOverlay(val ? "editors" : null)
-                }
                 totalPagesCount={totalPagesCount}
                 featuredPages={featuredPages}
                 popularPages={popularPages}
@@ -596,7 +581,6 @@ export default function HomePage() {
       <NewsOverlay {...(OVERLAYS.news.props as any)} />
       <TriviaOverlay {...(OVERLAYS.trivia.props as any)} />
       <HistoryOverlay {...(OVERLAYS.history.props as any)} />
-      <EditorsOverlay {...(OVERLAYS.editors.props as any)} />
       <MessMenuOverlay {...(OVERLAYS.mess.props as any)} />
       <TransportOverlay {...(OVERLAYS.transport.props as any)} />
       <FeaturedEditOverlay {...(OVERLAYS["featured-edit"].props as any)} />

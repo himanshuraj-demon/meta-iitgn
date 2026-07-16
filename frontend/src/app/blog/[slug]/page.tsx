@@ -148,7 +148,7 @@ export default function BlogDetailPage() {
       <article className="md:max-w-6xl w-dvw mx-auto space-y-4 sm:space-y-6">
         
         {/* Blog Title & Meta */}
-        <div className="space-y-3 pb-4 sm:pb-6">
+        <div className="pb-2">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-black text-base-content tracking-tight leading-tight">
             {blog.title}
           </h1>
@@ -176,7 +176,7 @@ export default function BlogDetailPage() {
         </div>
 
         {/* BlockNote Article content */}
-        <div className="bg-base-100 select-text w-dvw md:w-auto -m-4 p-0 mb-20">
+        <div className="bg-base-100 select-text w-dvw md:w-auto -mx-6 md:m-0  mb-20">
           <BlockNoteReader contentJson={blog.content} theme={editorTheme} />
         </div>
 
