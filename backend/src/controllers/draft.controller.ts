@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { invalidateCategoriesCache } from './category.controller.js';
 import { invalidateStatsCache, invalidateSearchCache, invalidateSyncCache } from './page.controller.js';
 import { recomputeUserPoints } from '../utils/points.js';
+import { processAndMarkMediaUsed } from '../utils/cleanup.js';
 
 /**
  * POST /drafts
@@ -12,8 +13,7 @@ import { recomputeUserPoints } from '../utils/points.js';
  */
 export const submitDraft = async (req: Request, res: Response) => {
   try {
-    console.log('Received submitDraft request body:', req.body);
-    const { page_id, title, content, metadata, editor_id, base_version, video_url } = req.body;
+     const { page_id, title, content, metadata, editor_id, base_version, video_url } = req.body;
 
     if (!title || editor_id === undefined || editor_id === null) {
       return res.status(400).json({ error: 'Title and editor_id are required' });
@@ -56,6 +56,7 @@ export const submitDraft = async (req: Request, res: Response) => {
             status: 'in_review'
           }
         });
+        await processAndMarkMediaUsed(content, (metadata as any)?.image);
         invalidateSyncCache('pendingpages');
         return res.status(200).json(updatedDraft);
       } else {
@@ -90,6 +91,7 @@ export const submitDraft = async (req: Request, res: Response) => {
             status: 'in_review'
           }
         });
+        await processAndMarkMediaUsed(content, (metadata as any)?.image);
         invalidateSyncCache('pendingpages');
         return res.status(201).json(newDraft);
       }
@@ -128,6 +130,7 @@ export const submitDraft = async (req: Request, res: Response) => {
             status: 'in_review'
           }
         });
+        await processAndMarkMediaUsed(content, (metadata as any)?.image);
         invalidateSyncCache('pendingpages');
         return res.status(200).json(updatedDraft);
       }
@@ -144,6 +147,7 @@ export const submitDraft = async (req: Request, res: Response) => {
           status: 'in_review'
         }
       });
+      await processAndMarkMediaUsed(content, (metadata as any)?.image);
       invalidateSyncCache('pendingpages');
       return res.status(201).json(newDraft);
     }

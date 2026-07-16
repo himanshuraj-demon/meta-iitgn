@@ -443,11 +443,14 @@ html[data-font-style="mono"] article {
   --muted-foreground: color-mix(in srgb, var(--color-base-content, var(--bc, #171717)) 60%, transparent) !important;
 }
 
-/* Fix background of select popups and menus inside BlockNote */
+/* Fix background of select popups, menus, and file uploader panels inside BlockNote */
 .bn-popover,
 .bn-suggestion-menu,
 .bn-menu-content,
 .bn-toolbar,
+.bn-file-panel,
+.bn-file-uploader,
+.bn-link-toolbar,
 [data-radix-popper-content-wrapper] > div,
 [role="menu"],
 [role="listbox"],

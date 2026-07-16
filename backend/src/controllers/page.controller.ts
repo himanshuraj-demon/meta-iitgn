@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { invalidateCategoriesCache } from './category.controller.js';
+import { processAndMarkMediaUsed } from '../utils/cleanup.js';
 
 let statsCache: { totalPages: number } | null = null;
 
@@ -683,6 +684,8 @@ export const createPage = async (req: Request, res: Response) => {
       },
     });
 
+    await processAndMarkMediaUsed(content, (metadata as any)?.image);
+
     invalidateCategoriesCache();
     invalidateStatsCache();
     invalidateSearchCache();
@@ -749,6 +752,11 @@ export const updatePage = async (req: Request, res: Response) => {
         updated_at: new Date(),
       },
     });
+
+    await processAndMarkMediaUsed(
+      content !== undefined ? content : livePage.content,
+      metadata !== undefined ? (metadata as any)?.image : (livePage.metadata as any)?.image
+    );
 
     invalidateCategoriesCache();
     invalidateStatsCache();

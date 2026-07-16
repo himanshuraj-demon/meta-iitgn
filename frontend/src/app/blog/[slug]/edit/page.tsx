@@ -123,8 +123,8 @@ export default function BlogEditPage() {
       formData.append("file", file);
 
       const res = await apiService.uploadMedia(formData);
-      if (res && res.file_url) {
-        return res.file_url;
+      if (res && res.url) {
+        return res.url;
       }
       throw new Error("Upload response did not contain URL");
     } catch (err: any) {
