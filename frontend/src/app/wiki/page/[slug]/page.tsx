@@ -17,20 +17,38 @@ interface WikiArticlePageProps {
 
 export default async function WikiArticlePage({ params, searchParams }: WikiArticlePageProps) {
   const { slug } = await params;
-  const { title, edit } = await searchParams;
+  const { title, edit, category } = await searchParams;
 
   if (slug === "new") {
     const displayTitle = title ? title : "Untitled Article";
-    const template = `---
-image: https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600
-imageAlt: New Article
-rows:
-  - label: Type
+    
+    let templateRows = `  - label: Type
     value: 
     type: text
   - label: Status
     value: Draft
+    type: text`;
+
+    if (category === "Featured") {
+      templateRows = `  - label: Category
+    value: Featured
     type: text
+  - label: Tag
+    value: Featured Story
+    type: text
+  - label: Location
+    value: 
+    type: text
+  - label: Status
+    value: Draft
+    type: text`;
+    }
+
+    const template = `---
+image: https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600
+imageAlt: New Article
+rows:
+${templateRows}
 ---
 
 # ${displayTitle}

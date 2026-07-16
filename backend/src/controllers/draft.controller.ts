@@ -289,6 +289,20 @@ export const reviewDraft = async (req: Request, res: Response) => {
           },
         });
 
+        // Auto-feature if category is "Featured" or "featured"
+        const metaCategory = String(meta?.category || '').toLowerCase();
+        if (metaCategory === 'featured' || meta?.featured === true) {
+          await tx.featured_pages.create({
+            data: {
+              page_id: newLivePage.page_id,
+              tag: meta?.tag || 'Featured Story',
+              location: meta?.location || '',
+              description: meta?.description || draft.title,
+              order: 0
+            }
+          });
+        }
+
         // Update pending page to approved
         await tx.pending_pages.update({
           where: { pending_id },
@@ -368,6 +382,44 @@ export const reviewDraft = async (req: Request, res: Response) => {
             updated_at: new Date(),
           },
         });
+
+        // Auto-feature / Update feature if category is "Featured" or "featured"
+        const upMeta = updatedLivePage.metadata as any;
+        const metaCategory = String(upMeta?.category || '').toLowerCase();
+        if (metaCategory === 'featured' || upMeta?.featured === true) {
+          const existingFeatured = await tx.featured_pages.findFirst({
+            where: { page_id: updatedLivePage.page_id }
+          });
+          if (existingFeatured) {
+            await tx.featured_pages.update({
+              where: { featured_id: existingFeatured.featured_id },
+              data: {
+                tag: upMeta?.tag || 'Featured Story',
+                location: upMeta?.location || '',
+                description: upMeta?.description || updatedLivePage.title,
+              }
+            });
+          } else {
+            await tx.featured_pages.create({
+              data: {
+                page_id: updatedLivePage.page_id,
+                tag: upMeta?.tag || 'Featured Story',
+                location: upMeta?.location || '',
+                description: upMeta?.description || updatedLivePage.title,
+                order: 0
+              }
+            });
+          }
+        } else {
+          const existingFeatured = await tx.featured_pages.findFirst({
+            where: { page_id: updatedLivePage.page_id }
+          });
+          if (existingFeatured) {
+            await tx.featured_pages.delete({
+              where: { featured_id: existingFeatured.featured_id }
+            });
+          }
+        }
 
         // Update pending page to approved
         await tx.pending_pages.update({

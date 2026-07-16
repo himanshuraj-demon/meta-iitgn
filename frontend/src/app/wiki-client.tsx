@@ -444,10 +444,18 @@ export default function WikiClient({
         return;
       }
 
-      const description = parsed.infobox.description || "";
+      const tagRow = parsed.infobox?.rows?.find(
+        (row: any) => row.label?.toLowerCase() === "tag"
+      );
+      const locationRow = parsed.infobox?.rows?.find(
+        (row: any) => row.label?.toLowerCase() === "location"
+      );
+      const description = parsed.infobox?.description || "";
       const metadata = {
         category,
         description,
+        tag: tagRow?.value || "Featured Story",
+        location: locationRow?.value || "",
       };
 
       const payload = {

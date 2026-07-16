@@ -684,6 +684,21 @@ export const createPage = async (req: Request, res: Response) => {
       },
     });
 
+    // Auto-feature if category is "Featured" or "featured"
+    const meta = metadata as any;
+    const metaCategory = String(meta?.category || '').toLowerCase();
+    if (metaCategory === 'featured' || meta?.featured === true) {
+      await prisma.featured_pages.create({
+        data: {
+          page_id: newPage.page_id,
+          tag: meta?.tag || 'Featured Story',
+          location: meta?.location || '',
+          description: meta?.description || title,
+          order: 0
+        }
+      });
+    }
+
     await processAndMarkMediaUsed(content, (metadata as any)?.image);
 
     invalidateCategoriesCache();
@@ -760,6 +775,44 @@ export const updatePage = async (req: Request, res: Response) => {
         updated_at: new Date(),
       },
     });
+
+    // Auto-feature / Update feature if category is "Featured" or "featured"
+    const upMeta = updatedPage.metadata as any;
+    const metaCategory = String(upMeta?.category || '').toLowerCase();
+    if (metaCategory === 'featured' || upMeta?.featured === true) {
+      const existingFeatured = await prisma.featured_pages.findFirst({
+        where: { page_id: livePage.page_id }
+      });
+      if (existingFeatured) {
+        await prisma.featured_pages.update({
+          where: { featured_id: existingFeatured.featured_id },
+          data: {
+            tag: upMeta?.tag || 'Featured Story',
+            location: upMeta?.location || '',
+            description: upMeta?.description || updatedPage.title,
+          }
+        });
+      } else {
+        await prisma.featured_pages.create({
+          data: {
+            page_id: livePage.page_id,
+            tag: upMeta?.tag || 'Featured Story',
+            location: upMeta?.location || '',
+            description: upMeta?.description || updatedPage.title,
+            order: 0
+          }
+        });
+      }
+    } else {
+      const existingFeatured = await prisma.featured_pages.findFirst({
+        where: { page_id: livePage.page_id }
+      });
+      if (existingFeatured) {
+        await prisma.featured_pages.delete({
+          where: { featured_id: existingFeatured.featured_id }
+        });
+      }
+    }
 
     await processAndMarkMediaUsed(
       content !== undefined ? content : livePage.content,
