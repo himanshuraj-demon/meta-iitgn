@@ -585,7 +585,7 @@ export default function WikiClient({
       {/* Mobile backdrop for the drawer — tap to close instead of shifting the whole page */}
       {isMobile && rightSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-[1px] z-[10000] lg:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 bg-base-content/30 backdrop-blur-[1px] z-[10000] lg:hidden animate-in fade-in duration-200"
           onClick={() => setRightSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -797,7 +797,7 @@ export default function WikiClient({
 
       {/* Conflict Resolution Modal Overlay */}
       {conflictData && (
-        <div className="fixed inset-0 z-[20005] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[20005] bg-base-content/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-base-100 rounded-3xl border border-base-200 shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <header className="px-6 py-4 border-b border-base-200 flex items-center justify-between shrink-0 bg-base-100">
               <div>

@@ -29,7 +29,7 @@ interface PendingDraft {
 }
 
 const DraftSkeleton = () => (
-  <div className="p-4 sm:p-5 border border-base-300 bg-base-200/50 rounded-2xl shadow-sm animate-pulse select-none">
+  <div className="p-4 sm:p-5 border border-base-300 bg-base-100 rounded-2xl shadow-sm animate-pulse select-none">
     <div className="flex items-start gap-4">
       <div className="w-10 h-10 rounded-xl bg-base-300 shrink-0"></div>
       <div className="flex-1 min-w-0 space-y-3">
@@ -161,7 +161,7 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
             </button>
           </div>
         ) : drafts.length === 0 ? (
-          <div className="text-center py-20 border border-dashed border-base-300 bg-base-200/30 rounded-2xl">
+          <div className="text-center py-20 border border-dashed border-base-300 bg-base-100 rounded-2xl">
             <p className="text-base-content/60 font-medium">No pending drafts awaiting review.</p>
           </div>
         ) : (
@@ -177,7 +177,7 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
               });
 
               return (
-                <div key={pending.pending_id} className="p-4 sm:p-5 border border-base-300 bg-base-200/50 rounded-2xl shadow-sm hover:shadow-md transition-all duration-150 relative group">
+                <div key={pending.pending_id} className="p-4 sm:p-5 border border-base-300 bg-base-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-150 relative group">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center font-bold text-sm text-base-content/80 shrink-0">
                       {initials}
@@ -283,13 +283,13 @@ export default function PendingChangesView({ setShowPendingChanges, pageId }: Pe
                 </button>
                 <button
                   onClick={() => handleReview(activeReviewDraft.pending_id, "reject")}
-                  className="btn btn-error btn-sm rounded-xl text-white"
+                  className="btn btn-error btn-sm rounded-xl text-error-content"
                 >
                   Reject Draft
                 </button>
                 <button
                   onClick={() => handleReview(activeReviewDraft.pending_id, "approve")}
-                  className="btn btn-success btn-sm rounded-xl text-white"
+                  className="btn btn-success btn-sm rounded-xl text-success-content"
                 >
                   Approve & Publish
                 </button>

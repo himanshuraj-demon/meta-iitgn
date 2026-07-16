@@ -143,7 +143,7 @@ export default function CategoriesPage() {
                   reset();
                   setError("");
                 }}
-                className="btn btn-primary btn-sm font-bold rounded-xl shadow-sm transition-all duration-200 cursor-pointer text-white"
+                className="btn btn-primary btn-sm font-bold rounded-xl shadow-sm transition-all duration-200 cursor-pointer text-primary-content"
               >
                 <PlusCircle className="h-4.5 w-4.5" />
                 <span>Create Category</span>
@@ -178,7 +178,7 @@ export default function CategoriesPage() {
                 type="text"
                 {...register("name", { required: "Category name is required" })}
                 placeholder="e.g. Alumni, Research Grants, Internships"
-                className="w-full px-3 py-2 text-sm border border-gray-200 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-3 py-2 text-sm border border-base-300 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors"
               />
               {errors.name && (
                 <span className="text-[10px] text-rose-500 font-semibold">{errors.name.message}</span>
@@ -193,7 +193,7 @@ export default function CategoriesPage() {
                 id="cat-desc"
                 {...register("description", { required: "Description is required" })}
                 placeholder="Brief summary of what pages are found in this category..."
-                className="w-full px-3 py-2 text-sm border border-gray-200 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors min-h-20 max-h-40"
+                className="w-full px-3 py-2 text-sm border border-base-300 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors min-h-20 max-h-40"
               />
               {errors.description && (
                 <span className="text-[10px] text-rose-500 font-semibold">{errors.description.message}</span>
@@ -215,8 +215,8 @@ export default function CategoriesPage() {
                       type="button"
                       onClick={() => setValue("icon", iconKey)}
                       className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${isSelected
-                          ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20 scale-105"
-                          : "bg-base-100 border-gray-200 text-base-content/60 hover:text-gray-850 hover:border-gray-350"
+                          ? "bg-primary border-primary text-primary-content shadow-md shadow-primary/20 scale-105"
+                          : "bg-base-100 border-base-300 text-base-content/60 hover:text-gray-850 hover:border-gray-350"
                         }`}
                       title={iconKey}
                     >
@@ -237,13 +237,13 @@ export default function CategoriesPage() {
                   setShowAddForm(false);
                   setError("");
                 }}
-                className="px-3.5 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-base-content/60 hover:bg-gray-50 transition-colors"
+                className="px-3.5 py-1.5 border border-base-300 rounded-xl text-xs font-bold text-base-content/60 hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer"
+                className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-content rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer"
               >
                 Create
               </button>
@@ -253,7 +253,7 @@ export default function CategoriesPage() {
 
         {/* Edit Category Modal Overlay */}
         {editingCategory && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="fixed inset-0 bg-base-content/40 backdrop-blur-xs flex items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
             <form
               onSubmit={handleSubmitEdit(onEditSubmit)}
               className="w-full h-full sm:h-auto sm:max-w-md bg-base-100 border-0 sm:border border-base-200 p-6 rounded-none sm:rounded-2xl shadow-none sm:shadow-xl space-y-4 animate-in zoom-in-95 duration-200 overflow-y-auto"
@@ -289,7 +289,7 @@ export default function CategoriesPage() {
                   type="text"
                   {...registerEdit("name", { required: "Category name is required" })}
                   placeholder="Category Name"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-3 py-2 text-sm border border-base-300 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors"
                 />
                 {editErrors.name && (
                   <span className="text-[10px] text-rose-500 font-semibold">{editErrors.name.message}</span>
@@ -303,7 +303,7 @@ export default function CategoriesPage() {
                 <textarea
                   {...registerEdit("description", { required: "Description is required" })}
                   placeholder="Description..."
-                  className="w-full px-3 py-2 text-sm border border-gray-200 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors min-h-20 max-h-40"
+                  className="w-full px-3 py-2 text-sm border border-base-300 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors min-h-20 max-h-40"
                 />
                 {editErrors.description && (
                   <span className="text-[10px] text-rose-500 font-semibold">{editErrors.description.message}</span>
@@ -325,8 +325,8 @@ export default function CategoriesPage() {
                         type="button"
                         onClick={() => setValueEdit("icon", iconKey)}
                         className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${isSelected
-                            ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20 scale-105"
-                            : "bg-base-100 border-gray-200 text-base-content/60 hover:text-gray-850 hover:border-gray-350"
+                            ? "bg-primary border-primary text-primary-content shadow-md shadow-primary/20 scale-105"
+                            : "bg-base-100 border-base-300 text-base-content/60 hover:text-gray-850 hover:border-gray-350"
                           }`}
                         title={iconKey}
                       >
@@ -347,13 +347,13 @@ export default function CategoriesPage() {
                     setEditingCategory(null);
                     setEditError("");
                   }}
-                  className="px-3.5 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-base-content/60 hover:bg-gray-55 transition-colors"
+                  className="px-3.5 py-1.5 border border-base-300 rounded-xl text-xs font-bold text-base-content/60 hover:bg-gray-55 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer"
+                  className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-content rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer"
                 >
                   Save Changes
                 </button>

@@ -113,7 +113,7 @@ export default function BlogDetailPage() {
         <div className="max-w-3xl mx-auto text-center py-20">
           <h1 className="text-3xl font-bold text-base-content font-serif">Blog Post Not Found</h1>
           <p className="text-base-content/60 mt-2">{error || "The requested blog post does not exist or has been deleted."}</p>
-          <Link href="/blog" className="btn btn-primary inline-flex items-center gap-2 mt-6 rounded-xl text-white">
+          <Link href="/blog" className="btn btn-primary inline-flex items-center gap-2 mt-6 rounded-xl text-primary-content">
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Blogs</span>
           </Link>

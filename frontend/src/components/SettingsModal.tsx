@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { X, Eye, Layout, Bell, ChevronLeft, Search, User, Shield, HelpCircle, HardDrive, Cpu, Maximize2, Minimize2 } from "lucide-react";
 import { WIKI_THEMES, DARK_THEMES } from "@/lib/constants";
+import ProfilePopover from "@/components/ProfilePopover";
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -33,7 +34,6 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
 
   const [emailDigest, setEmailDigest] = useState(true);
   const [articleEditsAlert, setArticleEditsAlert] = useState(true);
-  const themeTransitionTimer = useRef<number | null>(null);
 
   const [isMounted, setIsMounted] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -84,18 +84,6 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
     document.removeEventListener("mouseup", handleMouseUp);
   }, [handleMouseMove]);
 
-  const withThemeTransition = (updateFn: () => void) => {
-    document.documentElement.classList.add("theme-changing");
-    if (themeTransitionTimer.current) {
-      window.clearTimeout(themeTransitionTimer.current);
-    }
-    updateFn();
-    themeTransitionTimer.current = window.setTimeout(() => {
-      document.documentElement.classList.remove("theme-changing");
-      themeTransitionTimer.current = null;
-    }, 280);
-  };
-
   useEffect(() => {
     setIsMounted(true);
     // Load settings from localStorage
@@ -141,27 +129,25 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
-      if (themeTransitionTimer.current) {
-        window.clearTimeout(themeTransitionTimer.current);
-      }
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [initialTab, handleMouseMove, handleMouseUp]);
 
   const handleSaveTheme = (newTheme: string) => {
-    withThemeTransition(() => {
-      setTheme(newTheme);
-      localStorage.setItem("wiki_theme", newTheme);
-      localStorage.setItem("wiki_daisyui_theme", newTheme);
-      document.documentElement.setAttribute("data-theme", newTheme);
-      if (DARK_THEMES.includes(newTheme)) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-      window.dispatchEvent(new Event("wiki_settings_changed"));
-    });
+    // Apply everything in a single synchronous update so the entire palette
+    // (background, borders, primary, etc.) swaps in one repaint instead of
+    // animating each property independently.
+    setTheme(newTheme);
+    localStorage.setItem("wiki_theme", newTheme);
+    localStorage.setItem("wiki_daisyui_theme", newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+    if (DARK_THEMES.includes(newTheme)) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveFontSize = (size: string) => {
@@ -253,7 +239,7 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
         {/* Unified Settings Header - using theme color, not too dark */}
         <div
           onMouseDown={handleMouseDown}
-          className={`grid grid-cols-3 items-center px-4 py-2.5 border-b border-base-300 bg-base-200 text-base-content select-none shrink-0 ${
+          className={`flex items-center justify-between px-4 py-2.5 border-b border-base-300 bg-base-200 text-base-content select-none shrink-0 ${
             isMaximized ? "cursor-default" : "cursor-move"
           }`}
         >
@@ -277,13 +263,9 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
             </button>
           </div>
 
-          {/* Center: Title */}
-          <div className="flex items-center justify-center">
-            <span className="font-bold text-sm tracking-tight text-center truncate px-2">Settings</span>
-          </div>
-
           {/* Right: Actions */}
           <div className="flex items-center justify-end gap-1">
+            <ProfilePopover />
             <button
               onClick={() => setIsMaximized(!isMaximized)}
               className="hidden sm:inline-flex p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
@@ -449,30 +431,37 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                   {/* Theme Mode */}
                   <div className="space-y-2">
                     <label className="text-[12px] font-semibold text-base-content block">Interface Theme</label>
-                    <div className="flex flex-wrap gap-2.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {WIKI_THEMES.map((t) => {
                         const isSel = theme === t.id;
                         return (
-                          <label key={t.id} className="theme-controller cursor-pointer" title={t.label}>
-                            <input
-                              type="radio"
-                              name="theme-controller"
-                              value={t.id}
-                              checked={isSel}
-                              onChange={() => handleSaveTheme(t.id)}
-                              className="sr-only"
-                            />
-                            <div
-                              data-theme={t.id}
-                              className={`grid place-items-center w-9 h-9 rounded-full bg-base-100 border-2 transition-transform duration-150 ${isSel ? "border-primary ring-2 ring-primary ring-offset-2 ring-offset-base-100" : "border-base-300 hover:scale-110"}`}
-                            >
-                              <span className="text-[9px] font-bold text-base-content leading-none">{t.label.split(" ")[0]}</span>
+                          <button
+                            key={t.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={isSel}
+                            aria-label={t.label}
+                            title={t.label}
+                            onClick={() => handleSaveTheme(t.id)}
+                            data-theme={t.id}
+                            className={`group flex items-center gap-2 rounded-lg border-2 bg-base-100 px-2.5 py-2 transition-transform duration-150 cursor-pointer ${
+                              isSel
+                                ? "border-primary ring-2 ring-primary ring-offset-1 ring-offset-base-100"
+                                : "border-base-300 hover:scale-[1.03]"
+                            }`}
+                          >
+                            <div className="flex shrink-0 gap-0.5">
+                              <span className="h-4 w-1.5 rounded-sm bg-primary" />
+                              <span className="h-4 w-1.5 rounded-sm bg-secondary" />
+                              <span className="h-4 w-1.5 rounded-sm bg-accent" />
                             </div>
-                          </label>
+                            <span className="truncate text-[11px] font-semibold text-base-content">
+                              {t.label}
+                            </span>
+                          </button>
                         );
                       })}
                     </div>
-
                   </div>
                 </div>
               </div>
@@ -750,8 +739,8 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
                       <span className="text-[10px] text-base-content/50 block">Read system instructions and project code rules.</span>
                     </div>
                     <div className="flex gap-2">
-                      <a href="https://github.com" target="_blank" rel="noreferrer" className="btn btn-outline btn-xs font-semibold text-blue-600">Docs</a>
-                      <a href="https://github.com" target="_blank" rel="noreferrer" className="btn btn-outline btn-xs font-semibold text-blue-600">License</a>
+                      <a href="https://github.com" target="_blank" rel="noreferrer" className="btn btn-outline btn-xs font-semibold text-primary">Docs</a>
+                      <a href="https://github.com" target="_blank" rel="noreferrer" className="btn btn-outline btn-xs font-semibold text-primary">License</a>
                     </div>
                   </div>
                 </div>

@@ -180,7 +180,7 @@ export default function Navbar({
             className="flex items-center gap-2 select-none cursor-pointer group ml-1"
           >
             <div className="block">
-              <span className="font-serif text-2xl font-extrabold tracking-tight text-blue-600 group-hover:text-blue-700 transition-colors duration-200">
+              <span className="font-serif text-2xl font-extrabold tracking-tight text-primary group-hover:text-primary/80 transition-colors duration-200">
                 META
               </span>
               <span className="ml-1 text-sm font-semibold text-base-content uppercase tracking-wider group-hover:opacity-80 transition-opacity duration-200">
@@ -208,7 +208,7 @@ export default function Navbar({
           {!user ? (
             <Link
               href="/login"
-              className="btn btn-primary btn-sm rounded-full text-white font-semibold shadow-md cursor-pointer transition-all duration-200"
+              className="btn btn-primary btn-sm rounded-full text-primary-content font-semibold shadow-md cursor-pointer transition-all duration-200"
             >
               Sign In
             </Link>
@@ -239,7 +239,7 @@ export default function Navbar({
                   />
                 ) : (
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-inner transition-colors duration-300 ${activeTierData.progressBar}`}
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-primary-content shadow-inner transition-colors duration-300 ${activeTierData.progressBar}`}
                   >
                     {getInitials(user.name)}
                   </div>
@@ -335,7 +335,7 @@ export default function Navbar({
                 <div className="mt-3 p-3 bg-blue-50/50 rounded-2xl border border-blue-100/30 text-[11px] leading-relaxed">
                   <div className="flex items-center gap-1.5 text-blue-850 font-bold mb-0.5">
                     <Sparkles className="h-3.5 w-3.5 text-blue-500 shrink-0 animate-pulse" />
-                    <span className="text-black">Contribution Value</span>
+                    <span className="text-base-content">Contribution Value</span>
                   </div>
                   <p className="text-slate-600 font-medium">
                     Current Perks:{" "}
@@ -358,7 +358,7 @@ export default function Navbar({
                 <div className="border-t border-base-200 mt-4 pt-2.5 grid grid-cols-3 text-center">
                   <Link
                     href="/user/profile"
-                    className="flex flex-col items-center gap-1 py-1 text-base-content/80 hover:text-blue-600 hover:bg-base-200 rounded-xl transition-colors duration-150"
+                    className="flex flex-col items-center gap-1 py-1 text-base-content/80 hover:text-primary hover:bg-base-200 rounded-xl transition-colors duration-150"
                     onClick={() => setDropdownOpen(false)}
                   >
                     <User className="h-5 w-5 text-base-content/50" />
@@ -369,7 +369,7 @@ export default function Navbar({
                       setDropdownOpen(false);
                       setSettingsTab("appearance");
                     }}
-                    className="flex flex-col items-center gap-1 py-1 text-base-content/80 hover:text-blue-600 hover:bg-base-200 rounded-xl transition-colors duration-150 cursor-pointer"
+                    className="flex flex-col items-center gap-1 py-1 text-base-content/80 hover:text-primary hover:bg-base-200 rounded-xl transition-colors duration-150 cursor-pointer"
                   >
                     <Settings className="h-5 w-5 text-base-content/50" />
                     <span className="text-[11px] font-bold">Settings</span>

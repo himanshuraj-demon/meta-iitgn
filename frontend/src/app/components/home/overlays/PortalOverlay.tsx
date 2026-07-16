@@ -6,7 +6,6 @@ import { Pencil, PlusCircle } from "lucide-react";
 import GenericOverlayModal from "@/components/GenericOverlayModal";
 import CategoryPage from "@/components/CategoryPage";
 import CategoryEditModal from "@/components/CategoryEditModal";
-import ProfilePopover from "@/components/ProfilePopover";
 import { useAuth } from "@/hooks/useAuth";
 
 interface PortalOverlayProps {
@@ -19,8 +18,8 @@ interface PortalOverlayProps {
  * Opens a wiki category ("Quick Portal") inside the global modal instead of
  * navigating to a new page. The category page is rendered in an embedded mode
  * so its page-only chrome (edit/new buttons, nested edit modal) is suppressed;
- * those actions are surfaced into the modal header instead, alongside a
- * profile popover that sits immediately left of the maximize button.
+ * those actions are surfaced into the modal header as optional `headerActions`,
+ * separated from the standard profile + maximize controls by a divider.
  */
 export default function PortalOverlay({
   isOpen,
@@ -49,7 +48,7 @@ export default function PortalOverlay({
           instead of opening the editor. */}
       <Link
         href={`/wiki/${categorySlug}/new`}
-        className="btn btn-primary btn-sm font-bold rounded-xl shadow-md transition-all duration-200 cursor-pointer text-white"
+        className="btn btn-primary btn-sm font-bold rounded-xl shadow-md transition-all duration-200 cursor-pointer text-primary-content"
       >
         <PlusCircle className="h-4.5 w-4.5" />
         <span className="hidden sm:inline">New Article</span>
@@ -64,7 +63,6 @@ export default function PortalOverlay({
       title={title}
       maxWidthClass="max-w-5xl"
       headerActions={headerActions}
-      headerTrailing={<ProfilePopover />}
     >
       <CategoryPage categorySlug={categorySlug} embedded />
       {isEditing && category && (

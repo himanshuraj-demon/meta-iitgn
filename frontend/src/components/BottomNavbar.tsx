@@ -67,7 +67,7 @@ export default function BottomNavbar({
                     className={`h-5 w-5 transition-transform duration-200 ${isActive ? "scale-105" : "group-hover:scale-105"}`}
                   />
                   {tab.badgeCount !== undefined && tab.badgeCount > 0 && (
-                    <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white leading-none shadow-sm">
+                    <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-error hover:bg-error/90 text-[9px] font-black text-error-content leading-none shadow-sm">
                       {tab.badgeCount}
                     </span>
                   )}

@@ -118,13 +118,13 @@ export default function PendingPagesOverlay({
                 </button>
                 <button
                   onClick={() => handleReviewAction(activeReviewDraft.pending_id, "reject")}
-                  className="btn btn-error btn-sm rounded-xl text-white"
+                  className="btn btn-error btn-sm rounded-xl text-error-content"
                 >
                   Reject Draft
                 </button>
                 <button
                   onClick={() => handleReviewAction(activeReviewDraft.pending_id, "approve")}
-                  className="btn btn-success btn-sm rounded-xl text-white"
+                  className="btn btn-success btn-sm rounded-xl text-success-content"
                 >
                   Approve &amp; Publish
                 </button>

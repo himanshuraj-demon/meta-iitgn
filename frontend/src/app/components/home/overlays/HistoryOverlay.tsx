@@ -85,7 +85,7 @@ export default function HistoryOverlay({
           {!activeHistoryItem && !showAddHistoryForm && (
             <button
               onClick={() => setShowAddHistoryForm(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97"
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-content font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97"
             >
               Add History
             </button>
@@ -129,7 +129,7 @@ export default function HistoryOverlay({
             <button
               type="submit"
               disabled={isSubmittingHistory}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-sm rounded-xl cursor-pointer transition-all duration-150 active:scale-97"
+              className="w-full py-3 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-primary-content font-bold text-sm rounded-xl cursor-pointer transition-all duration-150 active:scale-97"
             >
               {isSubmittingHistory ? "Submitting..." : "Submit History Page"}
             </button>
@@ -164,7 +164,7 @@ export default function HistoryOverlay({
         ) : (
           <div className="space-y-4">
             {historyPages.length === 0 ? (
-              <div className="text-center py-20 border border-dashed border-base-300 bg-base-200/30 rounded-2xl">
+              <div className="text-center py-20 border border-dashed border-base-300 bg-base-100 rounded-2xl">
                 <p className="text-base-content/60 font-medium">No history events found.</p>
               </div>
             ) : (

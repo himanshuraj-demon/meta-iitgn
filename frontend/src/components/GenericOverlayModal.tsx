@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { X, Maximize2, Minimize2 } from "lucide-react";
+import ProfilePopover from "@/components/ProfilePopover";
 
 interface GenericOverlayModalProps {
   isOpen: boolean;
@@ -120,7 +121,7 @@ export default function GenericOverlayModal({
         {/* Unified Draggable Header */}
         <div
           onMouseDown={handleMouseDown}
-          className={`grid grid-cols-3 items-center px-4 py-2.5 border-b border-base-300 bg-base-200 text-base-content select-none shrink-0 ${
+          className={`flex items-center justify-between px-4 py-2.5 border-b border-base-300 bg-base-200 text-base-content select-none shrink-0 ${
             isMaximized ? "cursor-default" : "cursor-move"
           }`}
         >
@@ -135,15 +136,13 @@ export default function GenericOverlayModal({
             </button>
           </div>
 
-          {/* Center: Title */}
-          <div className="flex items-center justify-center">
-            <span className="font-bold text-sm tracking-tight text-center truncate px-2">{title}</span>
-          </div>
-
           {/* Right: Actions */}
           <div className="flex items-center justify-end gap-1">
             {headerActions}
-            {headerTrailing}
+            {headerActions ? (
+              <span className="mx-1 h-5 w-px bg-base-300/80" aria-hidden="true" />
+            ) : null}
+            {headerTrailing ?? <ProfilePopover />}
             <button
               onClick={() => setIsMaximized(!isMaximized)}
               className="hidden sm:inline-flex p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"

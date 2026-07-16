@@ -97,7 +97,7 @@ export default function Sidebar({
       {/* Backdrop overlay - visible when sidebar is open */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/30 z-40 transition-opacity duration-300 animate-in fade-in"
+          className="fixed inset-0 bg-base-content/30 z-40 transition-opacity duration-300 animate-in fade-in"
           onClick={onClose}
         />
       )}

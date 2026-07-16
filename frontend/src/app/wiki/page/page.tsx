@@ -3,7 +3,7 @@ import { ChevronLeft } from "lucide-react";
 
 export default async function ArticlePage() {
     return (
-      <main className="flex-1 p-6 md:p-8 lg:p-12 bg-[#FCFCFD]">
+      <main className="flex-1 p-6 md:p-8 lg:p-12 bg-base-100">
         <div className="max-w-4xl mx-auto text-center py-20">
           <h1 className="text-3xl font-bold text-gray-800">Page Not Found</h1>
           <p className="text-gray-500 mt-2">The requested Page could not be found.</p>

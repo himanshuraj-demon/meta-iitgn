@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, X } from "lucide-react";
+import { Pencil, X, Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiService } from "@/api";
 import { ICON_MAP } from "@/components/CategoryPage";
+import ProfilePopover from "@/components/ProfilePopover";
 
 interface CategoryEditModalProps {
   category: {
@@ -26,6 +27,7 @@ export default function CategoryEditModal({ category, onClose }: CategoryEditMod
   const [editIcon, setEditIcon] = useState(category.icon || "BookOpen");
   const [editError, setEditError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   const onEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,99 +57,123 @@ export default function CategoryEditModal({ category, onClose }: CategoryEditMod
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[21000] p-0 sm:p-4 animate-in fade-in duration-200">
+    <div className={`fixed inset-0 bg-base-content/40 backdrop-blur-xs flex items-center justify-center z-[21000] animate-in fade-in duration-200 ${isMaximized ? "p-0" : "p-0 sm:p-4"}`}>
       <form
         onSubmit={onEditSubmit}
-        className="w-full h-full sm:h-auto sm:max-w-md bg-base-100 border-0 sm:border border-base-200 p-6 rounded-none sm:rounded-2xl shadow-none sm:shadow-xl space-y-4 animate-in zoom-in-95 duration-200 overflow-y-auto"
+        className={`relative flex flex-col overflow-hidden bg-base-100 border-0 sm:border border-base-200 animate-in zoom-in-95 duration-200 ${
+          isMaximized
+            ? "w-full h-full max-w-none rounded-none shadow-none border-0"
+            : "w-full h-full sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:max-w-md rounded-none sm:rounded-2xl shadow-none sm:shadow-xl"
+        }`}
       >
-        <div className="flex items-center justify-between pb-3">
+        {/* Window Header — close (left) · profile + maximize (right) */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-base-200 bg-base-200 text-base-content select-none shrink-0">
           <div className="flex items-center gap-2 text-primary font-bold">
             <Pencil className="h-5 w-5" />
             <span>Edit Category</span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-base-content/50 hover:text-base-content/85 cursor-pointer"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {editError && (
-          <div className="p-3 text-xs bg-error/10 text-error border border-error/20 rounded-lg">
-            {editError}
-          </div>
-        )}
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-base-content/70 uppercase">
-            Category Name
-          </label>
-          <input
-            type="text"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            placeholder="Category Name"
-            className="input input-bordered w-full text-base-content"
-            required
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-base-content/70 uppercase">
-            Description
-          </label>
-          <textarea
-            value={editDescription}
-            onChange={(e) => setEditDescription(e.target.value)}
-            placeholder="Description..."
-            className="textarea textarea-bordered w-full text-base-content min-h-20 max-h-40"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-base-content/70 uppercase block">
-            Category Icon
-          </label>
-          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 bg-base-200 p-3.5 rounded-2xl border border-base-300 max-w-lg">
-            {Object.keys(ICON_MAP).map((iconKey) => {
-              const IconComponent = ICON_MAP[iconKey];
-              const isSelected = editIcon === iconKey;
-              return (
-                <button
-                  key={iconKey}
-                  type="button"
-                  onClick={() => setEditIcon(iconKey)}
-                  className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${isSelected
-                    ? "bg-primary border-primary text-primary-content shadow-md shadow-primary/20 scale-105"
-                    : "bg-base-100 border-base-300 text-base-content/70 hover:text-base-content hover:bg-base-200"
-                    }`}
-                  title={iconKey}
-                >
-                  <IconComponent className="h-5 w-5" />
-                </button>
-              );
-            })}
+          <div className="flex items-center justify-end gap-1">
+            <ProfilePopover />
+            <button
+              type="button"
+              onClick={() => setIsMaximized(!isMaximized)}
+              className="hidden sm:inline-flex p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
+              aria-label={isMaximized ? "Restore" : "Maximize"}
+            >
+              {isMaximized ? (
+                <Minimize2 className="w-4 h-4 shrink-0" />
+              ) : (
+                <Maximize2 className="w-4 h-4 shrink-0" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 shrink-0" />
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 justify-end pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn btn-ghost btn-sm text-base-content/60"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="btn btn-primary btn-sm text-primary-content"
-          >
-            {submitting ? "Saving..." : "Save Changes"}
-          </button>
+        {/* Body */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4">
+          {editError && (
+            <div className="p-3 text-xs bg-error/10 text-error border border-error/20 rounded-lg">
+              {editError}
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-base-content/70 uppercase">
+              Category Name
+            </label>
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Category Name"
+              className="input input-bordered w-full text-base-content"
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-base-content/70 uppercase">
+              Description
+            </label>
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Description..."
+              className="textarea textarea-bordered w-full text-base-content min-h-20 max-h-40"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-base-content/70 uppercase block">
+              Category Icon
+            </label>
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 bg-base-200 p-3.5 rounded-2xl border border-base-300 max-w-lg">
+              {Object.keys(ICON_MAP).map((iconKey) => {
+                const IconComponent = ICON_MAP[iconKey];
+                const isSelected = editIcon === iconKey;
+                return (
+                  <button
+                    key={iconKey}
+                    type="button"
+                    onClick={() => setEditIcon(iconKey)}
+                    className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${isSelected
+                      ? "bg-primary border-primary text-primary-content shadow-md shadow-primary/20 scale-105"
+                      : "bg-base-100 border-base-300 text-base-content/70 hover:text-base-content hover:bg-base-200"
+                      }`}
+                    title={iconKey}
+                  >
+                    <IconComponent className="h-5 w-5" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 justify-end pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-ghost btn-sm text-base-content/60"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn btn-primary btn-sm text-primary-content"
+            >
+              {submitting ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
         </div>
       </form>
     </div>

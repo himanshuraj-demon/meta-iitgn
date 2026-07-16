@@ -1,43 +1,33 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Bus, Clock, MapPin, Navigation, ArrowRight, X } from "lucide-react";
+import { Bus, Clock, ArrowRight, Route, X } from "lucide-react";
 import {
-  TransportLine,
   TransportTrip,
   parseTransport,
   tripTimeToMinutes,
   lineTheme,
   lineActiveTheme,
+  formatRoute,
 } from "@/lib/transport";
 
 interface TransportViewProps {
   content?: string | null;
 }
 
-/** Distinct, de-duplicated stop names for a given direction across all lines. */
-function uniqueStops(lines: TransportLine[], dir: "from" | "to"): string[] {
-  const set = new Set<string>();
-  for (const line of lines) {
-    for (const slot of line.slots) {
-      for (const t of slot.trips) {
-        const v = dir === "from" ? t.from : t.to;
-        if (v?.trim()) set.add(v.trim());
-      }
-    }
-  }
-  return [...set].sort((a, b) => a.localeCompare(b));
+interface RouteOption {
+  from: string;
+  to: string;
+  label: string;
 }
 
 /**
  * Read-only structured view of the campus transport schedule.
  *
- * A journey filter at the top has two stacked rows of stop buttons —
- * **From** (line 1) and **To** (line 2) — that filter *together*: a trip is
- * shown only when its origin matches the selected From stop AND its
- * destination matches the selected To stop. Tapping a stop button selects it;
- * tapping the same button again clears it (undo). Matching trips are grouped
- * by bus line, each on two lines:
+ * A **Routes** filter at the top lists every unique from→to route (e.g.
+ * "(Kudasan-Palaj)") as a toggle button. Tapping a route shows only the trips
+ * that run on that exact route; tapping it again clears the filter. Matching
+ * trips are grouped by bus line, each on two lines:
  *   · time · route (from → to)            ← line 1
  *   · Via: …                              ← line 2 (when present)
  *
@@ -46,23 +36,31 @@ function uniqueStops(lines: TransportLine[], dir: "from" | "to"): string[] {
  */
 export default function TransportView({ content }: TransportViewProps) {
   const lines = parseTransport(content ?? "");
-  const [fromQ, setFromQ] = useState("");
-  const [toQ, setToQ] = useState("");
 
-  const fromStops = useMemo(() => uniqueStops(lines, "from"), [lines]);
-  const toStops = useMemo(() => uniqueStops(lines, "to"), [lines]);
+  // Unique routes (from→to pairs) across the whole schedule, de-duplicated.
+  const routes = useMemo<RouteOption[]>(() => {
+    const seen = new Set<string>();
+    const list: RouteOption[] = [];
+    for (const line of lines) {
+      for (const slot of line.slots) {
+        for (const t of slot.trips) {
+          const key = `${t.from}|${t.to ?? ""}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          list.push({ from: t.from, to: t.to ?? "", label: formatRoute(t) });
+        }
+      }
+    }
+    return list;
+  }, [lines]);
 
-  const fromQl = fromQ.trim().toLowerCase();
-  const toQl = toQ.trim().toLowerCase();
-
-  const toggleFrom = (stop: string) =>
-    setFromQ(fromQl === stop.toLowerCase() ? "" : stop);
-  const toggleTo = (stop: string) =>
-    setToQ(toQl === stop.toLowerCase() ? "" : stop);
+  const [routeQ, setRouteQ] = useState<RouteOption | null>(null);
+  const toggleRoute = (r: RouteOption) =>
+    setRouteQ(routeQ && routeQ.from === r.from && routeQ.to === r.to ? null : r);
 
   const tripMatches = (trip: TransportTrip) =>
-    (!fromQl || trip.from.toLowerCase().includes(fromQl)) &&
-    (!toQl || (trip.to ?? "").toLowerCase().includes(toQl));
+    !routeQ ||
+    (trip.from === routeQ.from && (trip.to ?? "") === routeQ.to);
 
   const filteredLines = lines
     .map((line) => ({
@@ -97,20 +95,20 @@ export default function TransportView({ content }: TransportViewProps) {
 
   return (
     <>
-      {/* ── From / To journey filter (two lines of stop buttons) ────────────── */}
-      <div className="space-y-3 mb-5">
-        {/* Line 1 — From */}
-        <div>
+      {/* ── Route filter (unique from→to routes as toggle buttons) ─────────── */}
+      {routes.length > 0 && (
+        <div className="mb-5">
           <label className="mb-1.5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-primary">
-            <MapPin className="h-3 w-3" /> From
+            <Route className="h-3 w-3" /> Routes
           </label>
           <div className="flex flex-wrap gap-1.5">
-            {fromStops.map((stop) => {
-              const selected = fromQl === stop.toLowerCase();
+            {routes.map((r) => {
+              const selected =
+                routeQ !== null && routeQ.from === r.from && routeQ.to === r.to;
               return (
                 <button
-                  key={stop}
-                  onClick={() => toggleFrom(stop)}
+                  key={`${r.from}|${r.to}`}
+                  onClick={() => toggleRoute(r)}
                   aria-pressed={selected}
                   className={`relative inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold cursor-pointer transition-all ${
                     selected
@@ -118,7 +116,7 @@ export default function TransportView({ content }: TransportViewProps) {
                       : "bg-base-100 border-base-300 text-base-content/70 hover:border-primary/50"
                   }`}
                 >
-                  {stop}
+                  {r.label}
                   {selected && (
                     <X className="absolute -right-1.5 -top-1.5 h-3 w-3 rounded-full border border-base-300 bg-base-100 text-base-content/70 shadow-sm" />
                   )}
@@ -127,41 +125,12 @@ export default function TransportView({ content }: TransportViewProps) {
             })}
           </div>
         </div>
-
-        {/* Line 2 — To */}
-        <div>
-          <label className="mb-1.5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-secondary">
-            <Navigation className="h-3 w-3 rotate-45" /> To
-          </label>
-          <div className="flex flex-wrap gap-1.5">
-            {toStops.map((stop) => {
-              const selected = toQl === stop.toLowerCase();
-              return (
-                <button
-                  key={stop}
-                  onClick={() => toggleTo(stop)}
-                  aria-pressed={selected}
-                  className={`relative inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold cursor-pointer transition-all ${
-                    selected
-                      ? "bg-secondary text-secondary-content border-secondary shadow-sm"
-                      : "bg-base-100 border-base-300 text-base-content/70 hover:border-secondary/50"
-                  }`}
-                >
-                  {stop}
-                  {selected && (
-                    <X className="absolute -right-1.5 -top-1.5 h-3 w-3 rounded-full border border-base-300 bg-base-100 text-base-content/70 shadow-sm" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* ── Matching trips, grouped by line ────────────────────────────────── */}
       {filteredLines.length === 0 ? (
         <p className="text-sm text-base-content/50 italic px-1">
-          No trips {fromQ && `from “${fromQ}”`} {toQ && `to “${toQ}”`} in the current schedule.
+          No trips {routeQ && `on route “${routeQ.label}”`} in the current schedule.
         </p>
       ) : (
         filteredLines.map(({ line, trips }, i) => (

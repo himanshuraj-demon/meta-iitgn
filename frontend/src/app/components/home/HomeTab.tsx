@@ -969,9 +969,9 @@ export default function HomeTab({
                     Also departing
                   </p>
                   <div className="space-y-2">
-                    {moreTrips.map(({ line, index, trip }) => (
+                    {moreTrips.map(({ line, index, trip }, mi) => (
                       <div
-                        key={index+Math.random()}
+                        key={mi}
                         className="flex items-center justify-between gap-2 rounded-xl border border-base-200 bg-base-100 px-2.5 py-2"
                       >
                         <div className="flex min-w-0 flex-1 items-center gap-2">

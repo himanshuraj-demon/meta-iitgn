@@ -18,13 +18,19 @@ Minimal guide for local development and Render deployment.
 2. **Configure environment:**
    Create a `.env` file in the root of the backend folder:
    ```env
+   # Runtime connection (transaction pooler) — safe for the app server
    DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true"
    PORT=3001
+
+   # Direct connection (port 5432) for DDL operations (prisma db push / migrate)
+   DATABASE_URL_DDL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
    ```
+   > **Why two URLs?** Supabase's `:6543` connection pooler runs in transaction mode and rejects DDL statements (`CREATE TABLE`, etc.). `prisma db push` / `migrate` must connect directly on `:5432`, so use `DATABASE_URL_DDL` for those commands.
 
 3. **Synchronize database & generate Prisma client:**
    ```bash
-   npx prisma db push
+   # DDL requires the direct connection (port 5432)
+   DATABASE_URL=$DATABASE_URL_DDL npx prisma db push
    ```
 
 4. **Start the development server:**

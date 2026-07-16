@@ -22,22 +22,22 @@ export default function LogoutPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-radial from-slate-900 via-zinc-950 to-black overflow-hidden font-sans">
+    <div className="relative min-h-screen flex items-center justify-center bg-radial from-base-300 via-base-200 to-base-100 overflow-hidden font-sans">
       {/* Background blur blobs */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-error/10 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-amber-600/5 rounded-full blur-3xl" />
 
       {/* Confirmation card */}
-      <div className="relative w-full max-w-sm mx-4 p-8 bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/80 rounded-2xl shadow-2xl flex flex-col items-center text-center">
+      <div className="relative w-full max-w-sm mx-4 p-8 bg-base-100/80 backdrop-blur-xl border border-base-300 rounded-2xl shadow-2xl flex flex-col items-center text-center">
         {/* Warning Icon */}
         <div className="w-16 h-16 rounded-2xl bg-rose-950/40 border border-rose-800/50 flex items-center justify-center mb-6 shadow-inner text-rose-400">
           <LogOut className="w-8 h-8" />
         </div>
 
-        <h1 className="text-xl font-bold text-white mb-2">
+        <h1 className="text-xl font-bold text-base-content mb-2">
           Confirm Sign Out
         </h1>
-        <p className="text-sm text-zinc-400 mb-8 font-medium leading-relaxed">
+        <p className="text-sm text-base-content/60 mb-8 font-medium leading-relaxed">
           Are you sure you want to sign out of your META IITGN account? Any unsaved edits will be discarded.
         </p>
 
@@ -46,7 +46,7 @@ export default function LogoutPage() {
           <button
             onClick={handleLogout}
             disabled={loading}
-            className="w-full h-11 flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-800 text-white font-semibold rounded-xl shadow-lg transition-colors cursor-pointer disabled:cursor-not-allowed text-sm"
+            className="w-full h-11 flex items-center justify-center gap-2 bg-error hover:bg-error/90 disabled:bg-error/80 text-error-content font-semibold rounded-xl shadow-lg transition-colors cursor-pointer disabled:cursor-not-allowed text-sm"
           >
             {loading ? (
               <>
@@ -61,7 +61,7 @@ export default function LogoutPage() {
           <button
             onClick={() => router.back()}
             disabled={loading}
-            className="mx-auto p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+            className="mx-auto p-1.5 text-base-content/60 hover:text-base-content hover:bg-base-300 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
             aria-label="Go back"
             title="Go back"
           >

@@ -55,7 +55,7 @@ export default function RevisionsView({ setShowRevisions }: RevisionsViewProps) 
               details: "Imported markdown core structure, category hierarchies, and initial infobox configurations.",
             },
           ].map((revision) => (
-            <div key={revision.rev} className="p-4 sm:p-5 border border-base-300 bg-base-200/50 rounded-2xl shadow-sm hover:shadow-md transition-all duration-150 relative group">
+            <div key={revision.rev} className="p-4 sm:p-5 border border-base-300 bg-base-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-150 relative group">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center font-bold text-sm text-base-content/80 shrink-0">
                   {revision.avatar}

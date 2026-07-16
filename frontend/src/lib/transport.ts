@@ -60,6 +60,13 @@ export function lineActiveTheme(index: number): string {
   return TRANSPORT_LINE_ACTIVE[index % TRANSPORT_LINE_ACTIVE.length];
 }
 
+// Format a trip as a compact route label, e.g. "(Kudasan-Palaj)".
+// Used in summary displays instead of a spread-out "From → To" line.
+export function formatRoute(trip: TransportTrip): string {
+  const parts = [trip.from.trim(), trip.to?.trim()].filter(Boolean);
+  return `(${parts.join("-")})`;
+}
+
 // ── Time helpers ─────────────────────────────────────────────────────────────
 // Convert a trip time like "7:45 am", "1:00 pm", "1:15 am" into minutes since
 // midnight (0–1439). Returns null if it can't be parsed.

@@ -74,7 +74,7 @@ export default function TriviaOverlay({
           {!activeTriviaItem && !showAddTriviaForm && (
             <button
               onClick={() => setShowAddTriviaForm(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97"
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-content font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all duration-150 active:scale-97"
             >
               Add Trivia
             </button>
@@ -108,7 +108,7 @@ export default function TriviaOverlay({
             <button
               type="submit"
               disabled={isSubmittingTrivia}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-sm rounded-xl cursor-pointer transition-all duration-150 active:scale-97"
+              className="w-full py-3 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-primary-content font-bold text-sm rounded-xl cursor-pointer transition-all duration-150 active:scale-97"
             >
               {isSubmittingTrivia ? "Submitting..." : "Submit Trivia Page"}
             </button>
@@ -126,7 +126,7 @@ export default function TriviaOverlay({
         ) : (
           <div className="space-y-4">
             {triviaPages.length === 0 ? (
-              <div className="text-center py-20 border border-dashed border-gray-300 bg-white rounded-2xl">
+              <div className="text-center py-20 border border-dashed border-base-300 bg-base-100 rounded-2xl">
                 <p className="text-base-content/60 font-medium">No trivia pages found.</p>
               </div>
             ) : (

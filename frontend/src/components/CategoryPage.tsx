@@ -147,7 +147,7 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
             {!embedded && (user?.role === "admin" || user?.role === "moderator") && (
               <Link
                 href={`/wiki/${categorySlug}/new`}
-                className="btn btn-primary btn-sm font-bold rounded-xl shadow-md transition-all duration-200 cursor-pointer text-white"
+                className="btn btn-primary btn-sm font-bold rounded-xl shadow-md transition-all duration-200 cursor-pointer text-primary-content"
               >
                 <PlusCircle className="h-4.5 w-4.5" />
                 <span>New Article</span>

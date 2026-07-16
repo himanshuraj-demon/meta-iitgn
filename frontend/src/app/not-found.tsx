@@ -2,9 +2,9 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#FCFCFD] px-6">
+    <main className="flex min-h-screen items-center justify-center bg-base-100 px-6">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-blue-600">404</h1>
+        <h1 className="text-7xl font-bold text-primary">404</h1>
 
         <h2 className="mt-4 text-3xl font-bold text-gray-900">
           Lost Your Way?
@@ -16,7 +16,7 @@ export default function NotFound() {
 
         <Link
           href="/"
-          className="mt-8 inline-flex items-center rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+          className="mt-8 inline-flex items-center rounded-lg bg-primary hover:bg-primary/90 px-6 py-3 text-sm font-semibold text-primary-content transition-colors hover:bg-primary/90"
         >
           ← Go Back Home
         </Link>

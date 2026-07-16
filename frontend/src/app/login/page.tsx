@@ -130,7 +130,7 @@ export default function LoginPage() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/65 overflow-hidden font-sans p-4">
       {/* Background decoration blobs inside popover */}
       <div className="absolute top-1/3 left-1/3 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Popover container card */}
       <div
@@ -159,8 +159,8 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-2 mt-2">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/25 shrink-0">
-            <BookOpen className="w-4.5 h-4.5 text-white" />
+          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/25 shrink-0">
+            <BookOpen className="w-4.5 h-4.5 text-primary-content" />
           </div>
           <span className="text-xl font-serif font-black tracking-tight text-base-content">
             META <span className="text-primary">IITGN</span>
@@ -195,9 +195,9 @@ export default function LoginPage() {
         <button
           onClick={() => handleGoogleLogin()}
           disabled={loading}
-          className="w-full h-11 flex items-center justify-center gap-3 px-6 bg-primary hover:bg-slate-800 disabled:bg-slate-350 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:cursor-not-allowed select-none active:scale-98 text-sm"
+          className="w-full h-11 flex items-center justify-center gap-3 px-6 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-primary-content font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:cursor-not-allowed select-none active:scale-98 text-sm"
         >
-          <svg className="w-4.5 h-4.5 text-white fill-current shrink-0" viewBox="0 0 24 24">
+          <svg className="w-4.5 h-4.5 text-primary-content fill-current shrink-0" viewBox="0 0 24 24">
             <path
               fill="#4285F4"
               d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.58c-.28 1.48-1.12 2.74-2.38 3.58v2.98h3.84c2.24-2.06 3.53-5.1 3.53-8.41z"
@@ -269,7 +269,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-9 flex items-center justify-center bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer transition-colors active:scale-98"
+                className="w-full h-9 flex items-center justify-center bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-primary-content text-xs font-bold rounded-xl shadow-sm cursor-pointer transition-colors active:scale-98"
               >
                 {loading ? "Logging in..." : "Bypass with Selected Account"}
               </button>

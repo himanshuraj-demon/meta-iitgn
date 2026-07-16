@@ -67,13 +67,13 @@ Write your content here...`;
 
   if (!articleContent) {
     return (
-      <main className="flex-1 p-6 md:p-8 lg:p-12 bg-[#FCFCFD]">
+      <main className="flex-1 p-6 md:p-8 lg:p-12 bg-base-100">
         <div className="max-w-4xl mx-auto text-center py-20">
           <h1 className="text-3xl font-bold text-gray-800">Article Not Found</h1>
           <p className="text-gray-500 mt-2">The requested article could not be found.</p>
           <Link
             href={`/wiki/${category}/new?title=${encodeURIComponent(slug.replace(/-/g, ' '))}`}
-            className="inline-flex items-center gap-2 mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors"
+            className="inline-flex items-center gap-2 mt-6 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-content rounded-lg text-sm font-semibold transition-colors"
           >
             Create this article
           </Link>
