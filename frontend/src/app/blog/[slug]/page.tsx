@@ -34,6 +34,7 @@ interface BlogData {
   view_count: number;
   original_author_id: number;
   original_author: BlogAuthor;
+  version?: number | null;
 }
 
 export default function BlogDetailPage() {
@@ -135,10 +136,11 @@ export default function BlogDetailPage() {
 
   const isAuthor = user?.user_id === blog.original_author_id;
   const isAdminOrMod = user?.role === "admin" || user?.role === "moderator";
-  const canEdit = isAuthor || isAdminOrMod;
+  const canEdit = !!user;
+  const canDelete = isAuthor || isAdminOrMod;
 
   const tabs = [
-    canEdit && {
+    canDelete && {
       id: "delete",
       label: "Delete Post",
       icon: Trash2,
@@ -196,6 +198,11 @@ export default function BlogDetailPage() {
                 <Eye className="h-4 w-4" />
                 {blog.view_count} views
               </span>
+              {blog.version !== undefined && blog.version !== null && (
+                <span className="badge badge-sm font-bold bg-neutral/20 text-base-content/80 border border-base-300 normal-case tracking-normal">
+                  v{blog.version}
+                </span>
+              )}
             </div>
           </div>
         </div>

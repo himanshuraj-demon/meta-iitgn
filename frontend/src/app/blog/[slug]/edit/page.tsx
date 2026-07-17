@@ -73,13 +73,7 @@ export default function BlogEditPage() {
           setTitle(res.blog.title);
           setDescription(res.blog.description || "");
 
-          // Check permissions
-          const isAuthor = res.blog.original_author_id === user?.user_id;
-          const isAdminOrMod = user?.role === "admin" || user?.role === "moderator";
-          if (!isAuthor && !isAdminOrMod) {
-            router.push(`/blog/${slug}`);
-            return;
-          }
+
 
           if (res.blog.content) {
             setInitialContent(res.blog.content);

@@ -215,10 +215,6 @@ export const updateBlog = async (req: any, res: Response) => {
     const isAdminOrMod = userRole === "admin" || userRole === "moderator";
     const isAuthor = blog.original_author_id === userId;
 
-    if (!isAuthor && !isAdminOrMod) {
-      return res.status(403).json({ error: "You do not have permission to edit this blog post" });
-    }
-
     // Generate unique slug if title has changed
     let updatedSlug = blog.slug;
     if (title && title.trim() !== blog.title) {
