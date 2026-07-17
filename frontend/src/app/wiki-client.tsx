@@ -462,27 +462,53 @@ export default function WikiClient({
         location: locationRow?.value || "",
       };
 
-      const payload = {
-        page_id: dbPageId || null,
-        title: parsed.title || "Untitled Page",
-        content:
-          resolvedContentOverride !== undefined
-            ? resolvedContentOverride
-            : markdownRef.current,
-        metadata,
-        editor_id: user?.user_id || 0,
-        base_version:
-          resolvedVersionOverride !== undefined
-            ? resolvedVersionOverride
-            : versionId,
-      };
+      const isStaff = user?.role === "admin" || user?.role === "moderator";
+      const isSelfProfile = currentSlug === `profile-${user?.user_id}`;
+      const contentVal = resolvedContentOverride !== undefined
+        ? resolvedContentOverride
+        : markdownRef.current;
 
-      await apiService.submitDraft(payload);
+      if (isStaff || isSelfProfile) {
+        if (dbPageId) {
+          const res = await apiService.updatePage(currentSlug || "", {
+            title: parsed.title || "Untitled Page",
+            content: contentVal,
+            metadata,
+          });
+          alert("Page updated successfully!");
+          setIsEditing(false);
+          router.push(`/wiki/page/${res.slug}`);
+          router.refresh();
+        } else {
+          const res = await apiService.createPage({
+            title: parsed.title || "Untitled Page",
+            content: contentVal,
+            metadata,
+          });
+          alert("Page created and published successfully!");
+          setIsEditing(false);
+          router.push(`/wiki/page/${res.slug}`);
+          router.refresh();
+        }
+      } else {
+        const payload = {
+          page_id: dbPageId || null,
+          title: parsed.title || "Untitled Page",
+          content: contentVal,
+          metadata,
+          editor_id: user?.user_id || 0,
+          base_version:
+            resolvedVersionOverride !== undefined
+              ? resolvedVersionOverride
+              : versionId,
+        };
 
-      alert("Proposed changes submitted for review successfully!");
-      setIsEditing(false);
-      setConflictData(null);
-      router.refresh();
+        await apiService.submitDraft(payload);
+        alert("Proposed changes submitted for review successfully!");
+        setIsEditing(false);
+        setConflictData(null);
+        router.refresh();
+      }
     } catch (error: any) {
       if (error.response?.status === 409) {
         const data = error.response.data;
