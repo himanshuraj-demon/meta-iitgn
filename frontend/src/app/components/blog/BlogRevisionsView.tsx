@@ -1,16 +1,58 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import GenericOverlayModal from "@/components/GenericOverlayModal";
 import { apiService } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { PanelRight, Check, X } from "lucide-react";
+
+import dynamic from "next/dynamic";
+
+const BlockNoteReader = dynamic<any>(
+  () => import("@/components/blog/BlockNoteReader"),
+  { ssr: false }
+);
 
 interface BlogRevisionsViewProps {
   setShowRevisions: (show: boolean) => void;
   slug: string;
 }
+
+const PreviewBlogInfoBox = ({ revision }: { revision: any }) => {
+  return (
+    <div className="w-80 border-l border-base-200 bg-base-100 flex flex-col shrink-0 h-full overflow-y-auto no-scrollbar p-6 space-y-6 select-none">
+      <div>
+        <h4 className="text-xs font-black text-primary uppercase tracking-wider mb-4">Blog Metadata</h4>
+        <div className="space-y-4">
+          <div>
+            <span className="text-[10px] text-base-content/50 uppercase font-black tracking-wider block">Title</span>
+            <span className="text-sm font-bold text-base-content block mt-0.5">{revision.title || "Untitled Blog"}</span>
+          </div>
+          {revision.description && (
+            <div>
+              <span className="text-[10px] text-base-content/50 uppercase font-black tracking-wider block">Description</span>
+              <span className="text-xs text-base-content/75 block mt-0.5 leading-relaxed italic">{revision.description}</span>
+            </div>
+          )}
+          <div>
+            <span className="text-[10px] text-base-content/50 uppercase font-black tracking-wider block">Author</span>
+            <span className="text-xs font-bold text-base-content block mt-0.5">{revision.creator?.name || `User #${revision.created_by_user_id}`}</span>
+          </div>
+          <div>
+            <span className="text-[10px] text-base-content/50 uppercase font-black tracking-wider block">Created At</span>
+            <span className="text-xs font-semibold text-base-content/75 block mt-0.5">{new Date(revision.created_at).toLocaleString()}</span>
+          </div>
+          <div>
+            <span className="text-[10px] text-base-content/50 uppercase font-black tracking-wider block">Version</span>
+            <span className="badge badge-sm font-bold bg-neutral/20 text-base-content/85 mt-1">v{revision.version || 1}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface RevisionRecord {
   revision_id: number;
@@ -44,6 +86,29 @@ export default function BlogRevisionsView({ setShowRevisions, slug }: BlogRevisi
   const [revertingId, setRevertingId] = useState<number | null>(null);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [revisionToRestore, setRevisionToRestore] = useState<number | null>(null);
+
+  const [selectedRevision, setSelectedRevision] = useState<RevisionRecord | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [editorTheme, setEditorTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) setSidebarOpen(false);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    if (typeof window !== "undefined") {
+      const isDark = document.documentElement.classList.contains("dark") || 
+                     document.documentElement.getAttribute("data-theme") === "dark";
+      setEditorTheme(isDark ? "dark" : "light");
+    }
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const limit = 5;
 
@@ -140,7 +205,8 @@ export default function BlogRevisionsView({ setShowRevisions, slug }: BlogRevisi
   };
 
   return (
-    <GenericOverlayModal isOpen={true} onClose={closeModal} title="Recent Blog Revisions">
+    <>
+      <GenericOverlayModal isOpen={true} onClose={closeModal} title="Recent Blog Revisions">
       <div className="max-w-3xl mx-auto space-y-6 w-full">
         <div className="flex flex-col gap-2">
           <h2 className="text-2xl font-serif font-black text-base-content tracking-tight">Recent Blog Revisions</h2>
@@ -175,7 +241,11 @@ export default function BlogRevisionsView({ setShowRevisions, slug }: BlogRevisi
               const badgeStyle = getBadgeStyle(revision.creator?.role || "normal");
 
               return (
-                <div key={revision.revision_id} className="p-4 sm:p-5 border border-base-300 bg-base-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-150 relative group">
+                <div
+                  key={revision.revision_id}
+                  onClick={() => setSelectedRevision(revision)}
+                  className="p-4 sm:p-5 border border-base-300 bg-base-100 rounded-2xl shadow-sm hover:shadow-md hover:border-primary/50 cursor-pointer transition-all duration-150 relative group"
+                >
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-base-200 border border-base-300 flex items-center justify-center font-bold text-sm text-base-content/80 shrink-0">
                       {initials}
@@ -206,7 +276,10 @@ export default function BlogRevisionsView({ setShowRevisions, slug }: BlogRevisi
 
                         {isAdminOrMod && (
                           <button
-                            onClick={() => handleRestore(revision.revision_id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRestore(revision.revision_id);
+                            }}
                             disabled={revertingId !== null}
                             className="text-xs font-extrabold text-primary hover:text-blue-700 disabled:text-gray-400 transition-colors cursor-pointer duration-150"
                           >
@@ -248,6 +321,77 @@ export default function BlogRevisionsView({ setShowRevisions, slug }: BlogRevisi
         cancelText="Cancel"
         type="warning"
       />
+
     </GenericOverlayModal>
+
+    {selectedRevision && (
+      <GenericOverlayModal
+        isOpen={true}
+        onClose={() => setSelectedRevision(null)}
+        title={`Revision Preview - v${selectedRevision.version}`}
+        maxWidthClass="max-w-6xl"
+        paddingClass="p-0"
+      >
+        <div className="flex flex-col lg:flex-row flex-1 h-full min-h-0 w-full relative overflow-hidden select-text pb-16 font-sans bg-base-100">
+          {/* Left pane: Main Content */}
+          <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6">
+            <h3 className="text-2xl font-serif font-black text-base-content mb-6">
+              {selectedRevision.title || "Untitled Version"}
+            </h3>
+            <div className="bg-base-100">
+              <BlockNoteReader
+                contentJson={selectedRevision.content}
+                theme={editorTheme}
+              />
+            </div>
+          </div>
+
+          {/* Right pane: Sidebar */}
+          {sidebarOpen && (
+            <div className="w-full lg:w-80 h-[35vh] lg:h-full shrink-0 border-t lg:border-t-0 lg:border-l border-base-200">
+              <PreviewBlogInfoBox
+                revision={selectedRevision}
+              />
+            </div>
+          )}
+
+          {/* Bottom Floating Control Bar */}
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-base-100 border-t border-base-200 flex items-center justify-between px-6 z-50">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className={`btn btn-sm rounded-xl font-bold flex items-center gap-1.5 cursor-pointer ${
+                  sidebarOpen ? "btn-primary" : "btn-outline"
+                }`}
+              >
+                <PanelRight className="h-4 w-4" />
+                <span>{sidebarOpen ? "Hide Details" : "Show Details"}</span>
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedRevision(null)}
+                className="btn btn-sm btn-ghost rounded-xl font-bold cursor-pointer"
+              >
+                Close Preview
+              </button>
+              {isAdminOrMod && (
+                <button
+                  onClick={() => {
+                    handleRestore(selectedRevision.revision_id);
+                  }}
+                  className="btn btn-sm btn-success text-success-content rounded-xl font-bold cursor-pointer"
+                >
+                  <Check className="h-4 w-4" />
+                  <span>Restore this Version</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </GenericOverlayModal>
+    )}
+    </>
   );
 }
