@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.5.0](https://github.com/Metis-IITGandhinagar/meta-iitgn/compare/backend-v1.4.0...backend-v1.5.0) (2026-07-17)
+
+
+### Features
+
+* added most settings ([3a145fc](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/3a145fc81a1969d37bd07a22ce90973f9fe24a11))
+* better cards ([06b1e2b](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/06b1e2b89e176851dbca1c88f13c3cb9c813968f))
+* better theme support ([1290b88](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/1290b88907bd587e99e4d50d3aba56c40757c627))
+
+
+### Bug Fixes
+
+* removed contributors and added event card in home page also fixed fetured article redirect issues ([678658b](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/678658b86585ee31a32224ed4ed921e4fe397572))
+
+
+### Code Refactoring
+
+* added profile readme add option and routes ([b0b221f](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/b0b221fe27f40964354b0ceb9c3bf7b896eaa302))
+* fixed edior and blogs image handling to upload on cloud and remove unused one every 24 hours ([159c7d0](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/159c7d0cd157c6f7fd986e2552b4a0dc5a048af7))
+* seperated routes to files ([5bbf769](https://github.com/Metis-IITGandhinagar/meta-iitgn/commit/5bbf76904b61f8772c4a9c9af00b6d99960311a4))
+
 ## [1.4.0](https://github.com/Metis-IITGandhinagar/meta-iitgn/compare/backend-v1.3.0...backend-v1.4.0) (2026-07-15)
 
 
