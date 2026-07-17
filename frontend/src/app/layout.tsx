@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Lora, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
@@ -25,10 +25,15 @@ const playfair = Playfair_Display({
 });
 
 import { Providers } from "./providers";
+import { ServiceWorkerRegister } from "./service-worker-register";
 
 export const metadata: Metadata = {
   title: "META IITGN",
   description: "The collaborative campus wiki for IIT Gandhinagar.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1e3a8a",
 };
 
 export default function RootLayout({
@@ -44,6 +49,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${playfair.variable} antialiased`}
       >
+        <ServiceWorkerRegister />
         <Providers>
           {children}
         </Providers>
