@@ -1053,3 +1053,160 @@ export const incrementViewCount = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
   }
 };
+
+/**
+ * GET /pages/:slug/revisions
+ * Get revision history for a page
+ */
+export const getPageRevisions = async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    const livePage = await prisma.live_pages.findUnique({
+      where: { slug: String(slug), deleted_at: null },
+    });
+
+    if (!livePage) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Page not found' } });
+    }
+
+    const [revisions, total] = await Promise.all([
+      prisma.revision_pages.findMany({
+        where: { page_id: livePage.page_id },
+        orderBy: { version: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          creator: {
+            select: {
+              user_id: true,
+              name: true,
+              avatar_url: true,
+              role: true,
+            },
+          },
+        },
+      }),
+      prisma.revision_pages.count({
+        where: { page_id: livePage.page_id },
+      }),
+    ]);
+
+    return res.json({
+      success: true,
+      revisions,
+      total,
+      page,
+      limit,
+      hasMore: skip + revisions.length < total,
+    });
+  } catch (error: any) {
+    console.error('Error in getPageRevisions:', error);
+    return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
+  }
+};
+
+/**
+ * POST /pages/:slug/revisions/:revision_id/revert
+ * Revert a live page to a previous revision
+ */
+export const revertPageToRevision = async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+    const revision_id = parseInt(req.params.revision_id as string, 10);
+    const userId = Number(req.user.user_id);
+
+    const livePage = await prisma.live_pages.findUnique({
+      where: { slug: String(slug), deleted_at: null },
+    });
+
+    if (!livePage) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Page not found' } });
+    }
+
+    const revision = await prisma.revision_pages.findUnique({
+      where: { revision_id },
+    });
+
+    if (!revision || revision.page_id !== livePage.page_id) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Revision not found' } });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Create a backup revision of the current live state
+      await tx.revision_pages.create({
+        data: {
+          page_id: livePage.page_id,
+          created_by_user_id: livePage.updated_by ?? livePage.original_author_id,
+          commit_message: `Automatic backup before revert to revision #${revision_id}`,
+          title: livePage.title,
+          slug: livePage.slug,
+          content: livePage.content,
+          metadata: livePage.metadata || {},
+          original_author_id: livePage.original_author_id,
+          contributors: livePage.contributors || [],
+          version: livePage.version,
+          created_at: livePage.created_at,
+          updated_at: livePage.updated_at,
+          deleted_at: livePage.deleted_at,
+        },
+      });
+
+      // 2. Fetch the user performing the revert to add them to contributors
+      const user = await tx.users.findUnique({ where: { user_id: userId } });
+      const userName = user?.name || 'Unknown';
+
+      let contributors: string[] = [];
+      if (Array.isArray(livePage.contributors)) {
+        contributors = [...livePage.contributors] as string[];
+      } else if (livePage.contributors && typeof livePage.contributors === 'object') {
+        contributors = Object.values(livePage.contributors) as string[];
+      }
+      if (!contributors.includes(userName)) {
+        contributors.push(userName);
+      }
+
+      const nextVersion = (livePage.version ?? 1) + 1;
+
+      // 3. Update the live page with the revision data
+      const updatedPage = await tx.live_pages.update({
+        where: { page_id: livePage.page_id },
+        data: {
+          title: revision.title,
+          content: revision.content,
+          metadata: revision.metadata || {},
+          contributors,
+          version: nextVersion,
+          updated_by: userId,
+          updated_at: new Date(),
+        },
+      });
+
+      // Log audit trail
+      await tx.audit_logs.create({
+        data: {
+          actor_id: userId,
+          action: 'REVERT_PAGE',
+          table_name: 'live_pages',
+          record_id: livePage.page_id,
+          ip_address: '127.0.0.1',
+        },
+      });
+
+      return updatedPage;
+    });
+
+    invalidateCategoriesCache();
+    invalidateStatsCache();
+    invalidateSearchCache();
+    invalidateSyncCache('updatedpages');
+
+    return res.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('Error in revertPageToRevision:', error);
+    return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: error.message } });
+  }
+};

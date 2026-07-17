@@ -20,8 +20,10 @@ import {
   HelpCircle,
   Trash2,
   Pencil,
+  FileText,
 } from "lucide-react";
 import BottomNavbar from "@/components/BottomNavbar";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 // Subcomponents
 import RevisionsView from "./components/wiki/RevisionsView";
@@ -151,6 +153,8 @@ export default function WikiClient({
   const [mobileNavHidden, setMobileNavHidden] = useState(false);
   const [showRevisions, setShowRevisions] = useState(false);
   const [showPendingChanges, setShowPendingChanges] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showHelpConfirm, setShowHelpConfirm] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [showMessEditor, setShowMessEditor] = useState(false);
   const [showTransportEditor, setShowTransportEditor] = useState(false);
@@ -388,14 +392,11 @@ export default function WikiClient({
     return normalized;
   };
 
-  const handleDelete = async () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this article? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
     try {
       let currentSlug = initialMetadata?.slug;
       if (!currentSlug && typeof window !== "undefined") {
@@ -675,15 +676,7 @@ export default function WikiClient({
                     label: "Help",
                     icon: HelpCircle,
                     onClick: () => {
-                      const proceed = window.confirm(
-                        "You are being redirected to an external site (Markdown Guide) for formatting help. Do you want to continue?"
-                      );
-                      if (proceed) {
-                        window.open(
-                          "https://www.markdownguide.org/basic-syntax/",
-                          "_blank"
-                        );
-                      }
+                      setShowHelpConfirm(true);
                     },
                   },
                   {
@@ -732,9 +725,21 @@ export default function WikiClient({
                         "bg-error/10 text-error border border-error/20 hover:bg-error/20 hover:text-error",
                     },
                   {
-                    id: "changes",
-                    label: "Changes",
+                    id: "revisions",
+                    label: "History",
                     icon: History,
+                    onClick: () => {
+                      setShowRevisions(true);
+                      setShowPendingChanges(false);
+                      window.dispatchEvent(
+                        new CustomEvent("show-wiki-revisions")
+                      );
+                    },
+                  },
+                  {
+                    id: "changes",
+                    label: "Pending Drafts",
+                    icon: FileText,
                     onClick: () => {
                       setShowPendingChanges(true);
                       setShowRevisions(false);
@@ -953,7 +958,10 @@ export default function WikiClient({
 
       {/* Wiki overlays for revisions and pending approvals */}
       {showRevisions && (
-        <RevisionsView setShowRevisions={setShowRevisions} />
+        <RevisionsView
+          setShowRevisions={setShowRevisions}
+          slug={initialMetadata?.slug || (typeof window !== "undefined" ? window.location.pathname.split("/").pop() || "" : "")}
+        />
       )}
 
       {showPendingChanges && (
@@ -962,6 +970,28 @@ export default function WikiClient({
           pageId={dbPageId}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="Delete Wiki Article"
+        message="Are you sure you want to delete this wiki article? This action is permanent and cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      <ConfirmationModal
+        isOpen={showHelpConfirm}
+        onClose={() => setShowHelpConfirm(false)}
+        onConfirm={() => window.open("https://www.markdownguide.org/basic-syntax/", "_blank")}
+        title="External Redirection"
+        message="You are being redirected to an external website (Markdown Guide) for formatting help. Do you want to continue?"
+        confirmText="Continue"
+        cancelText="Stay Here"
+        type="info"
+      />
     </>
   );
 }
