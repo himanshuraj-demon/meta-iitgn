@@ -724,7 +724,7 @@ export const createPage = async (req: Request, res: Response) => {
 export const updatePage = async (req: Request, res: Response) => {
   try {
     const slug = req.params.slug as string;
-    const { title, content, metadata, video_url } = req.body;
+    const { title, content, metadata, video_url, edit_summary } = req.body;
 
     const editorId = Number(req.user.user_id);
 
@@ -769,13 +769,19 @@ export const updatePage = async (req: Request, res: Response) => {
 
     const currentVersion = livePage.version !== null ? livePage.version : 1;
 
+    // Use the editor's typed summary as the human-readable change description;
+    // fall back to a clear version marker when none is provided.
+    const editSummary = typeof edit_summary === 'string' && edit_summary.trim()
+      ? edit_summary.trim()
+      : `Version ${currentVersion}`;
+
     const updatedPage = await prisma.$transaction(async (tx) => {
       // Snapshot the current live state into revision history.
       await tx.revision_pages.create({
         data: {
           page_id: livePage.page_id,
           created_by_user_id: editorId,
-          commit_message: 'Backup prior to direct edit',
+          commit_message: editSummary,
           title: livePage.title,
           slug: livePage.slug,
           content: livePage.content,
@@ -1141,7 +1147,8 @@ export const revertPageToRevision = async (req: Request, res: Response) => {
         data: {
           page_id: livePage.page_id,
           created_by_user_id: userId,
-          commit_message: `Automatic backup before revert to revision #${revision_id}`,
+          commit_message: `Reverted to v${revision.version ?? '?'}`,
+
           title: livePage.title,
           slug: livePage.slug,
           content: livePage.content,
