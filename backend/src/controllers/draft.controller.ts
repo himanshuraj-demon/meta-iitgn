@@ -407,8 +407,7 @@ export const reviewDraft = async (req: Request, res: Response) => {
         await tx.revision_pages.create({
           data: {
             page_id: livePage.page_id,
-            created_by_user_id:
-              livePage.updated_by !== null ? livePage.updated_by : livePage.original_author_id,
+            created_by_user_id: draft.editor_id,
             commit_message: `Backup prior to draft ${pending_id} approval`,
             title: livePage.title,
             slug: livePage.slug,

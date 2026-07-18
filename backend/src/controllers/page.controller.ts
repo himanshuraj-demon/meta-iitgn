@@ -774,8 +774,7 @@ export const updatePage = async (req: Request, res: Response) => {
       await tx.revision_pages.create({
         data: {
           page_id: livePage.page_id,
-          created_by_user_id:
-            livePage.updated_by !== null ? livePage.updated_by : livePage.original_author_id,
+          created_by_user_id: editorId,
           commit_message: 'Backup prior to direct edit',
           title: livePage.title,
           slug: livePage.slug,
@@ -1141,7 +1140,7 @@ export const revertPageToRevision = async (req: Request, res: Response) => {
       await tx.revision_pages.create({
         data: {
           page_id: livePage.page_id,
-          created_by_user_id: livePage.updated_by ?? livePage.original_author_id,
+          created_by_user_id: userId,
           commit_message: `Automatic backup before revert to revision #${revision_id}`,
           title: livePage.title,
           slug: livePage.slug,
