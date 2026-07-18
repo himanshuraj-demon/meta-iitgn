@@ -17,16 +17,17 @@ export const getCategories = async (req: Request, res: Response) => {
       orderBy: { name: "asc" }
     });
 
+    // Count live pages per category using the `category` column.
     const rawCounts = await prisma.live_pages.groupBy({
-      by: ['subcategory'],
-      where: { deleted_at: null, subcategory: { not: null } },
+      by: ['category'],
+      where: { deleted_at: null, category: { not: null } },
       _count: { _all: true }
     });
 
     const counts: Record<string, number> = {};
     for (const row of rawCounts) {
-      if (row.subcategory) {
-        counts[row.subcategory] = row._count._all;
+      if (row.category) {
+        counts[row.category] = row._count._all;
       }
     }
 
@@ -275,24 +276,18 @@ export const getCategoryArticles = async (req: Request, res: Response) => {
     const limitNum = parseInt(req.query.limit as string, 10) || 6;
     const skip = (pageNum - 1) * limitNum;
 
-    const PARENT_CATEGORIES = ["academics", "campus", "student-life", "research", "policies"];
-    const isParent = PARENT_CATEGORIES.includes(categorySlug);
-
-    const filterCondition = isParent
-      ? { category: categorySlug }
-      : { subcategory: categorySlug };
-
+    // Pages are associated with a category via the `category` column.
     const totalMatched = await prisma.live_pages.count({
       where: {
         deleted_at: null,
-        ...filterCondition
+        category: categorySlug
       }
     });
 
     const paginatedPages = await prisma.live_pages.findMany({
       where: {
         deleted_at: null,
-        ...filterCondition
+        category: categorySlug
       },
       select: {
         page_id: true,
