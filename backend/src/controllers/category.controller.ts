@@ -150,9 +150,28 @@ export const updateCategory = async (req: Request, res: Response) => {
       data.slug = slug;
     }
 
-    const updated = await prisma.categories.update({
-      where: { category_id: id },
-      data
+    const slugChanged = !!data.slug && data.slug !== existing.slug;
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // When the category is renamed, its slug changes. Pages store the
+      // category as a slug in their `category` column, so repoint any pages
+      // (live and pending drafts) that referenced the old slug to the new one.
+      // Without this they become orphaned and "disappear" from the category.
+      if (slugChanged) {
+        await tx.live_pages.updateMany({
+          where: { category: existing.slug },
+          data: { category: data.slug },
+        });
+        await tx.pending_pages.updateMany({
+          where: { category: existing.slug },
+          data: { category: data.slug },
+        });
+      }
+
+      return tx.categories.update({
+        where: { category_id: id },
+        data,
+      });
     });
 
     invalidateCategoriesCache();

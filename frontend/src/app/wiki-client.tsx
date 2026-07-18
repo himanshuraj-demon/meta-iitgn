@@ -873,8 +873,7 @@ export default function WikiClient({
                   },
                 ]
               : ([
-                  (user?.role === "admin" ||
-                    user?.role === "moderator") &&
+                  user?.role === "admin" &&
                     !isMessMenu &&
                     !isTransport && {
                       id: "delete",
