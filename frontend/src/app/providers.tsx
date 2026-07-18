@@ -10,7 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { parseModalParams, buildQuery } from "@/lib/modalUrl";
 
-const SettingsModal = dynamic(() => import("@/components/SettingsModal"), {
+const SettingsModal = dynamic(() => import("@/components/overlays/SettingsModal"), {
   ssr: false,
 });
 

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import Navbar from "@/components/navs/Navbar";
+import Sidebar from "@/components/navs/Sidebar";
 import { TIERS } from "@/lib/constants";
 
 export default function WikiLayout({ children }: { children: React.ReactNode }) {

@@ -31,6 +31,11 @@ export function EditableCell({ initialValue, onChange, placeholder, className, a
         ref={textareaRef}
         value={val}
         onChange={(e) => setVal(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === " ") {
+            e.stopPropagation();
+          }
+        }}
         onBlur={() => {
           if (val !== initialValue) {
             onChange(val);
@@ -49,6 +54,11 @@ export function EditableCell({ initialValue, onChange, placeholder, className, a
       type="text"
       value={val}
       onChange={(e) => setVal(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === " ") {
+          e.stopPropagation();
+        }
+      }}
       onBlur={() => {
         if (val !== initialValue) {
           onChange(val);

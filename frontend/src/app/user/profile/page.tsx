@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import Navbar from "@/components/navs/Navbar";
+import Sidebar from "@/components/navs/Sidebar";
 import { useAuth } from "@/hooks/useAuth";
-import ProfileContent from "@/components/ProfileContent";
+import ProfileContent from "@/components/helpers/ProfileContent";
 
 export default function ProfilePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);

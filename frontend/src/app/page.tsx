@@ -11,27 +11,27 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useHomeStore } from "@/store/useHomeStore";
-import BottomNavbar from "@/components/BottomNavbar";
-import AvatarIcon from "@/components/AvatarIcon";
+import BottomNavbar from "@/components/navs/BottomNavbar";
+import AvatarIcon from "@/components/helpers/AvatarIcon";
 import Loading from "./loading";
 
 // Subcomponents
-import LeftPanel from "./components/home/LeftPanel";
-import HomeTab from "./components/home/HomeTab";
-import SearchTab from "./components/home/SearchTab";
-import BookmarksTab from "./components/home/BookmarksTab";
-import ProfileTab from "./components/home/ProfileTab";
+import LeftPanel from "@/components/home/LeftPanel";
+import HomeTab from "@/components/home/HomeTab";
+import SearchTab from "@/components/home/SearchTab";
+import BookmarksTab from "@/components/home/BookmarksTab";
+import ProfileTab from "@/components/home/ProfileTab";
 
-import NewPagesOverlay from "./components/home/overlays/NewPagesOverlay";
-import UpdatedPagesOverlay from "./components/home/overlays/UpdatedPagesOverlay";
-import PendingPagesOverlay from "./components/home/overlays/PendingPagesOverlay";
-import NewsOverlay from "./components/home/overlays/NewsOverlay";
-import TriviaOverlay from "./components/home/overlays/TriviaOverlay";
-import HistoryOverlay from "./components/home/overlays/HistoryOverlay";
-import MessMenuOverlay from "./components/home/overlays/MessMenuOverlay";
-import TransportOverlay from "./components/home/overlays/TransportOverlay";
-import FeaturedEditOverlay from "./components/home/overlays/FeaturedEditOverlay";
-import PortalOverlay from "./components/home/overlays/PortalOverlay";
+import NewPagesOverlay from "@/components/overlays/NewPagesOverlay";
+import UpdatedPagesOverlay from "@/components/overlays/UpdatedPagesOverlay";
+import PendingPagesOverlay from "@/components/overlays/PendingPagesOverlay";
+import NewsOverlay from "@/components/overlays/NewsOverlay";
+import TriviaOverlay from "@/components/overlays/TriviaOverlay";
+import HistoryOverlay from "@/components/overlays/HistoryOverlay";
+import MessMenuOverlay from "@/components/overlays/MessMenuOverlay";
+import TransportOverlay from "@/components/overlays/TransportOverlay";
+import FeaturedEditOverlay from "@/components/overlays/FeaturedEditOverlay";
+import PortalOverlay from "@/components/overlays/PortalOverlay";
 
 let initialLoadDone = false;
 

@@ -13,8 +13,8 @@ import {
   PanelRight,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import BottomNavbar from "@/components/BottomNavbar";
-import ConfirmationModal from "@/components/ConfirmationModal";
+import BottomNavbar from "@/components/navs/BottomNavbar";
+import ConfirmationModal from "@/components/overlays/ConfirmationModal";
 
 // Dynamically import BlockNoteEditor to disable SSR
 const BlockNoteEditor = dynamic(

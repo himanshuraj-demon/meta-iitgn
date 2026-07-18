@@ -8,10 +8,10 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { apiService } from "@/api";
 import { Calendar, User as UserIcon, Eye, Pencil, Trash2, ArrowLeft, History, FileText } from "lucide-react";
 import dynamic from "next/dynamic";
-import BottomNavbar from "@/components/BottomNavbar";
-import BlogRevisionsView from "@/app/components/blog/BlogRevisionsView";
-import BlogPendingChangesView from "@/app/components/blog/BlogPendingChangesView";
-import ConfirmationModal from "@/components/ConfirmationModal";
+import BottomNavbar from "@/components/navs/BottomNavbar";
+import BlogRevisionsView from "@/components/blog/BlogRevisionsView";
+import BlogPendingChangesView from "@/components/blog/BlogPendingChangesView";
+import ConfirmationModal from "@/components/overlays/ConfirmationModal";
 
 const BlockNoteReader = dynamic(
   () => import("@/components/blog/BlockNoteReader"),

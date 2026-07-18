@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import MilkdownEditor from "@/components/article/milkdown-editor";
-import WikiInfoBox from "@/app/components/wiki/WikiInfoBox";
+import WikiInfoBox from "@/components/wiki/WikiInfoBox";
 import { parseMarkdown } from "@/lib/utils";
 
 interface WikiReadViewProps {

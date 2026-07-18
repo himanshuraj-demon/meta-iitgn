@@ -6,7 +6,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { ArrowRight, BookOpen, PlusCircle, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiService } from "@/api";
-import Avatar from "@/components/Avatar";
+import Avatar from "@/components/helpers/Avatar";
 
 interface BlogAuthor {
   user_id: number;

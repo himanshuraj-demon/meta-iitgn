@@ -20,9 +20,9 @@ import {
   ArrowLeft,
   LucideIcon
 } from "lucide-react";
-import { BeautifulSearchBox, BeautifulTabBar } from "@/components/SearchDesign";
+import { BeautifulSearchBox, BeautifulTabBar } from "@/components/helpers/SearchDesign";
 import { getSearchHistory, addSearchHistory, clearSearchHistory } from "@/lib/searchHistory";
-import Avatar from "@/components/Avatar";
+import Avatar from "@/components/helpers/Avatar";
 
 const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   Campus: Building2,

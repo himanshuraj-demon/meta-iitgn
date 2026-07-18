@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, Calendar, Video, Pencil, Trash2, X, Check, Loader2 } from "lucide-react";
 import { apiService, NewsItem } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
-import ConfirmationModal from "@/components/ConfirmationModal";
+import ConfirmationModal from "@/components/overlays/ConfirmationModal";
 
 interface NewsDetailClientProps {
   initialNewsItem: NewsItem;

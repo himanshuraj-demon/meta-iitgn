@@ -19,17 +19,17 @@ import {
   Trash2,
   FileClock,
 } from "lucide-react";
-import BottomNavbar from "@/components/BottomNavbar";
-import ConfirmationModal from "@/components/ConfirmationModal";
+import BottomNavbar from "@/components/navs/BottomNavbar";
+import ConfirmationModal from "@/components/overlays/ConfirmationModal";
 
 // Subcomponents
-import RevisionsView from "./components/wiki/RevisionsView";
-import PendingChangesView from "./components/wiki/PendingChangesView";
-import WikiInfoBox from "./components/wiki/WikiInfoBox";
+import RevisionsView from "@/components/wiki/RevisionsView";
+import PendingChangesView from "@/components/wiki/PendingChangesView";
+import WikiInfoBox from "@/components/wiki/WikiInfoBox";
 import MessMenuView from "@/components/article/MessMenuView";
-import MessMenuOverlay from "@/app/components/home/overlays/MessMenuOverlay";
+import MessMenuOverlay from "@/components/overlays/MessMenuOverlay";
 import TransportView from "@/components/article/TransportView";
-import TransportOverlay from "@/app/components/home/overlays/TransportOverlay";
+import TransportOverlay from "@/components/overlays/TransportOverlay";
 
 // Dynamically import MilkdownEditor so it doesn't run during SSR
 const MilkdownEditor = dynamic(
