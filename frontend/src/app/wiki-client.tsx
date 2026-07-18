@@ -67,7 +67,7 @@ export default function WikiClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isEditing, setIsEditing] = useState(defaultEditing || false);
-  const [markdown, setMarkdown] = useState(initialMarkdown);
+  const [markdown, setMarkdown] = useState(initialMarkdown ?? '');
   const [activeSection, setActiveSection] = useState<string>("");
   const [readingProgressPct, setReadingProgressPct] = useState(0);
   const [editorLoaded, setEditorLoaded] = useState(false);
@@ -92,6 +92,12 @@ export default function WikiClient({
   const [pendingCount, setPendingCount] = useState(0);
   const [showMessEditor, setShowMessEditor] = useState(false);
   const [showTransportEditor, setShowTransportEditor] = useState(false);
+
+  // Refs for stabilizing callbacks that depend on changing props
+  const dbPageIdRef = useRef(dbPageId);
+  useEffect(() => {
+    dbPageIdRef.current = dbPageId;
+  }, [dbPageId]);
 
   const parsed = useMemo(() => parseMarkdown(markdown), [markdown]);
   const isProfile = useMemo(() => {
@@ -157,15 +163,28 @@ export default function WikiClient({
 
   const fetchPendingCount = useCallback(async () => {
     try {
-      const data = await apiService.getPendingDrafts(dbPageId);
+      // Use the ref to get the latest dbPageId (already number | undefined)
+      const pageId = dbPageIdRef.current;
+      const data = await apiService.getPendingDrafts(pageId);
       const count = data.filter((d: any) => d.status === "in_review").length;
       setPendingCount(count);
     } catch (err) {
       console.error("Error fetching pending drafts count:", err);
     }
+  }, []); // empty deps because we use the ref
+
+  // Refetch pending count when dbPageId changes
+  useEffect(() => {
+    fetchPendingCount();
   }, [dbPageId]);
 
-  const lastPushedWmodal = useRef<string | null>(null);
+  // Set up event listener for pending count updates (runs once because fetchPendingCount is stable)
+  useEffect(() => {
+    window.addEventListener("wiki-pending-updated", fetchPendingCount);
+    return () => {
+      window.removeEventListener("wiki-pending-updated", fetchPendingCount);
+    };
+  }, [fetchPendingCount]);
 
   // Autosave to IndexedDB
   useEffect(() => {
@@ -191,14 +210,6 @@ export default function WikiClient({
     saveToIndexedDB();
   }, [markdown, isEditing, dbPageId, versionId, parsed.title]);
 
-  useEffect(() => {
-    fetchPendingCount();
-    window.addEventListener("wiki-pending-updated", fetchPendingCount);
-    return () => {
-      window.removeEventListener("wiki-pending-updated", fetchPendingCount);
-    };
-  }, [fetchPendingCount]);
-
   // URL -> state: open the matching wiki modal on deep-link load / back-forward.
   useEffect(() => {
     const { wmodal } = parseModalParams(searchParams);
@@ -216,6 +227,7 @@ export default function WikiClient({
 
   // state -> URL (open only): push one entry when a wiki modal opens, clearing
   // the settings/overlay params so the modal systems don't fight over the URL.
+  const lastPushedWmodal = useRef<string | null>(null);
   useEffect(() => {
     if (lastPushedWmodal.current === null && typeof window !== "undefined") {
       lastPushedWmodal.current = window.location.search.replace(/^\?/, "");
@@ -338,24 +350,6 @@ export default function WikiClient({
   useEffect(() => {
     setEditorLoaded(false);
   }, [isEditing]);
-
-  // Early return for access denied - AFTER all hooks
-  if (!authLoading && !dbPageId && !isStaff && !isSelfProfile) {
-    return (
-      <main className="flex-1 p-6 md:p-8 lg:p-12 bg-base-100 mt-16 text-center select-none">
-        <div className="max-w-4xl mx-auto py-20 flex flex-col items-center gap-4">
-          <div className="w-16 h-16 bg-error/10 text-error rounded-2xl flex items-center justify-center font-black">
-            ✕
-          </div>
-          <h1 className="text-3xl font-display font-black tracking-tight text-base-content">Access Denied</h1>
-          <p className="text-base-content/65 max-w-md">Only administrators and moderators are allowed to create new articles.</p>
-          <button onClick={() => router.back()} className="btn btn-primary rounded-xl font-bold mt-4">
-            Go Back
-          </button>
-        </div>
-      </main>
-    );
-  }
 
   const debouncedSetMarkdown = useMemo(() => {
     let timeout: NodeJS.Timeout;
