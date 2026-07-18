@@ -15,10 +15,8 @@ import {
   Check,
   X,
   PanelRight,
-  PlusCircle,
   HelpCircle,
   Trash2,
-  Pencil,
   FileClock,
 } from "lucide-react";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -64,11 +62,37 @@ export default function WikiClient({
   updatedByName,
   contributors,
 }: WikiClientProps) {
+  // ALL HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isEditing, setIsEditing] = useState(defaultEditing || false);
   const [markdown, setMarkdown] = useState(initialMarkdown);
+  const [activeSection, setActiveSection] = useState<string>("");
+  const [readingProgressPct, setReadingProgressPct] = useState(0);
+  const [editorLoaded, setEditorLoaded] = useState(false);
+  const [toolbarContainer, setToolbarContainer] =
+    useState<HTMLDivElement | null>(null);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  const [versionId, setVersionId] = useState<number>(version || 1);
+  const [conflictData, setConflictData] = useState<{
+    myDraft: string;
+    latestContent: string;
+    baseVersion: number;
+    currentVersion: number;
+  } | null>(null);
+  const [resolvedContent, setResolvedContent] = useState<string>("");
+  const [rightWidth, setRightWidth] = useState(320);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileNavHidden, setMobileNavHidden] = useState(false);
+  const [showRevisions, setShowRevisions] = useState(false);
+  const [showPendingChanges, setShowPendingChanges] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showHelpConfirm, setShowHelpConfirm] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [showMessEditor, setShowMessEditor] = useState(false);
+  const [showTransportEditor, setShowTransportEditor] = useState(false);
+
   const parsed = useMemo(() => parseMarkdown(markdown), [markdown]);
   const isProfile = useMemo(() => {
     let currentSlug = initialMetadata?.slug;
@@ -85,47 +109,6 @@ export default function WikiClient({
     (typeof window !== "undefined" && window.location.pathname.split("/").pop() === `profile-${user?.user_id}`) ||
     initialMetadata?.slug === `profile-${user?.user_id}`
   );
-
-  // All hooks must be called unconditionally before any early returns
-  const [activeSection, setActiveSection] = useState<string>("");
-  const [readingProgressPct, setReadingProgressPct] = useState(0);
-  const [editorLoaded, setEditorLoaded] = useState(false);
-  const [toolbarContainer, setToolbarContainer] =
-    useState<HTMLDivElement | null>(null);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
-
-  const [versionId, setVersionId] = useState<number>(version || 1);
-  const [conflictData, setConflictData] = useState<{
-    myDraft: string;
-    latestContent: string;
-    baseVersion: number;
-    currentVersion: number;
-  } | null>(null);
-  const [resolvedContent, setResolvedContent] = useState<string>("");
-
-  // Autosave to IndexedDB
-  useEffect(() => {
-    if (!isEditing) return;
-    // Respect the "Auto-save drafts" preference.
-    if (localStorage.getItem("wiki_editor_autosave") === "false") return;
-    const saveToIndexedDB = async () => {
-      try {
-        const pageKey = dbPageId
-          ? String(dbPageId)
-          : `new-${parsed.title || "untitled"}`;
-        const { db } = await import("@/lib/db");
-        await db.pendingpages.put({
-          id: pageKey,
-          content: markdown,
-          baseVersion: versionId,
-          updatedAt: Date.now(),
-        });
-      } catch (err) {
-        console.error("Failed to autosave draft to IndexedDB:", err);
-      }
-    };
-    saveToIndexedDB();
-  }, [markdown, isEditing, dbPageId, versionId, parsed.title]);
 
   const isNews = useMemo(() => {
     return (
@@ -166,40 +149,11 @@ export default function WikiClient({
     typeof window !== "undefined" &&
     localStorage.getItem("wiki_auto_fold") === "true";
 
-  const [rightWidth, setRightWidth] = useState(320);
-  const [isMobile, setIsMobile] = useState(false);
-  const [mobileNavHidden, setMobileNavHidden] = useState(false);
-  const [showRevisions, setShowRevisions] = useState(false);
-  const [showPendingChanges, setShowPendingChanges] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showHelpConfirm, setShowHelpConfirm] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [showMessEditor, setShowMessEditor] = useState(false);
-  const [showTransportEditor, setShowTransportEditor] = useState(false);
-
   // The right sidebar (and its toggle button) is suppressed for page types that
   // don't use it. Extend `hideSidebar` for any future page/modal that should take
   // over the whole reading area without the sidebar getting in the way.
   const hideSidebar = (isNews && isEditing) || isMessMenu || isTransport;
   const actualSidebarOpen = rightSidebarOpen && !hideSidebar;
-
-  // Early return for access denied - AFTER all hooks
-  if (!authLoading && !dbPageId && !isStaff && !isSelfProfile) {
-    return (
-      <main className="flex-1 p-6 md:p-8 lg:p-12 bg-base-100 mt-16 text-center select-none">
-        <div className="max-w-4xl mx-auto py-20 flex flex-col items-center gap-4">
-          <div className="w-16 h-16 bg-error/10 text-error rounded-2xl flex items-center justify-center font-black">
-            ✕
-          </div>
-          <h1 className="text-3xl font-display font-black tracking-tight text-base-content">Access Denied</h1>
-          <p className="text-base-content/65 max-w-md">Only administrators and moderators are allowed to create new articles.</p>
-          <button onClick={() => router.back()} className="btn btn-primary rounded-xl font-bold mt-4">
-            Go Back
-          </button>
-        </div>
-      </main>
-    );
-  }
 
   const fetchPendingCount = useCallback(async () => {
     try {
@@ -210,6 +164,32 @@ export default function WikiClient({
       console.error("Error fetching pending drafts count:", err);
     }
   }, [dbPageId]);
+
+  const lastPushedWmodal = useRef<string | null>(null);
+
+  // Autosave to IndexedDB
+  useEffect(() => {
+    if (!isEditing) return;
+    // Respect the "Auto-save drafts" preference.
+    if (localStorage.getItem("wiki_editor_autosave") === "false") return;
+    const saveToIndexedDB = async () => {
+      try {
+        const pageKey = dbPageId
+          ? String(dbPageId)
+          : `new-${parsed.title || "untitled"}`;
+        const { db } = await import("@/lib/db");
+        await db.pendingpages.put({
+          id: pageKey,
+          content: markdown,
+          baseVersion: versionId,
+          updatedAt: Date.now(),
+        });
+      } catch (err) {
+        console.error("Failed to autosave draft to IndexedDB:", err);
+      }
+    };
+    saveToIndexedDB();
+  }, [markdown, isEditing, dbPageId, versionId, parsed.title]);
 
   useEffect(() => {
     fetchPendingCount();
@@ -236,11 +216,10 @@ export default function WikiClient({
 
   // state -> URL (open only): push one entry when a wiki modal opens, clearing
   // the settings/overlay params so the modal systems don't fight over the URL.
-  const lastPushedWmodal = useRef<string | null>(null);
-  if (lastPushedWmodal.current === null && typeof window !== "undefined") {
-    lastPushedWmodal.current = window.location.search.replace(/^\?/, "");
-  }
   useEffect(() => {
+    if (lastPushedWmodal.current === null && typeof window !== "undefined") {
+      lastPushedWmodal.current = window.location.search.replace(/^\?/, "");
+    }
     let desired: string | null = null;
     if (showRevisions) desired = "revisions";
     else if (showPendingChanges) desired = "pending";
@@ -352,7 +331,6 @@ export default function WikiClient({
   };
 
   const markdownRef = useRef(markdown);
-
   useEffect(() => {
     markdownRef.current = markdown;
   }, [markdown]);
@@ -360,6 +338,24 @@ export default function WikiClient({
   useEffect(() => {
     setEditorLoaded(false);
   }, [isEditing]);
+
+  // Early return for access denied - AFTER all hooks
+  if (!authLoading && !dbPageId && !isStaff && !isSelfProfile) {
+    return (
+      <main className="flex-1 p-6 md:p-8 lg:p-12 bg-base-100 mt-16 text-center select-none">
+        <div className="max-w-4xl mx-auto py-20 flex flex-col items-center gap-4">
+          <div className="w-16 h-16 bg-error/10 text-error rounded-2xl flex items-center justify-center font-black">
+            ✕
+          </div>
+          <h1 className="text-3xl font-display font-black tracking-tight text-base-content">Access Denied</h1>
+          <p className="text-base-content/65 max-w-md">Only administrators and moderators are allowed to create new articles.</p>
+          <button onClick={() => router.back()} className="btn btn-primary rounded-xl font-bold mt-4">
+            Go Back
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   const debouncedSetMarkdown = useMemo(() => {
     let timeout: NodeJS.Timeout;
@@ -713,7 +709,6 @@ export default function WikiClient({
     }
     return [];
   }, [contributors]);
-
 
   return (
     <>
