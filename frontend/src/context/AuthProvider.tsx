@@ -60,8 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             db.featured.clear(),
             db.popular.clear(),
             db.events.clear(),
-            db.messmenu.clear(),
-            db.transport.clear(),
             db.meta.clear(),
           ]);
         } catch (e) {
@@ -99,8 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           db.featured.clear(),
           db.popular.clear(),
           db.events.clear(),
-          db.messmenu.clear(),
-          db.transport.clear(),
           db.meta.clear(),
         ]);
       } catch (e) {

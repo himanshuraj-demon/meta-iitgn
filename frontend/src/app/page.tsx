@@ -28,38 +28,8 @@ import PendingPagesOverlay from "@/components/overlays/PendingPagesOverlay";
 import NewsOverlay from "@/components/overlays/NewsOverlay";
 import TriviaOverlay from "@/components/overlays/TriviaOverlay";
 import HistoryOverlay from "@/components/overlays/HistoryOverlay";
-import MessMenuOverlay from "@/components/overlays/MessMenuOverlay";
-import TransportOverlay from "@/components/overlays/TransportOverlay";
 import FeaturedEditOverlay from "@/components/overlays/FeaturedEditOverlay";
 import PortalOverlay from "@/components/overlays/PortalOverlay";
-
-const getMessMenuArray = (val: any): any[] => {
-  if (Array.isArray(val)) return val;
-  if (val && Array.isArray(val.content)) return val.content;
-  if (val && typeof val === "object") {
-    const arr: any[] = [];
-    for (let i = 0; i < 7; i++) {
-      if (val[i]) arr.push(val[i]);
-    }
-    if (arr.length > 0) return arr;
-  }
-  return [];
-};
-
-const getTransportArray = (val: any): any[] => {
-  if (Array.isArray(val)) return val;
-  if (val && Array.isArray(val.content)) return val.content;
-  if (val && typeof val === "object") {
-    const arr: any[] = [];
-    let i = 0;
-    while (val[i]) {
-      arr.push(val[i]);
-      i++;
-    }
-    if (arr.length > 0) return arr;
-  }
-  return [];
-};
 
 let initialLoadDone = false;
 
@@ -84,8 +54,6 @@ export default function HomePage() {
     featuredPages,
     popularPages,
     upcomingEvents,
-    messMenu,
-    campusTransport,
     loading,
 
     // Overlays
@@ -446,28 +414,11 @@ export default function HomePage() {
         getRelativeTime,
       },
     },
-    mess: {
-      Component: MessMenuOverlay,
-      props: {
-        isOpen: activeOverlay === "mess",
-        onClose: () => router.back(),
-        messMenu: getMessMenuArray(messMenu),
-        onSaved: () => loadHomeData({ user, setTotalPagesCount, forceRefresh: true }),
-      },
-    },
     "featured-edit": {
       Component: FeaturedEditOverlay,
       props: {
         isOpen: activeOverlay === "featured-edit",
         onClose: () => router.back(),
-      },
-    },
-    transport: {
-      Component: TransportOverlay,
-      props: {
-        isOpen: activeOverlay === "transport",
-        onClose: () => router.back(),
-        transport: getTransportArray(campusTransport),
       },
     },
     portal: {
@@ -579,15 +530,9 @@ export default function HomePage() {
                 featuredPages={featuredPages}
                 popularPages={popularPages}
                 upcomingEvents={upcomingEvents}
-                messMenu={messMenu}
-                setShowMessMenu={(val) => setActiveOverlay(val ? "mess" : null)}
                 setShowEditFeatured={(val) =>
                   setActiveOverlay(val ? "featured-edit" : null)
                 }
-                setShowTransport={(val) =>
-                  setActiveOverlay(val ? "transport" : null)
-                }
-                campusTransport={campusTransport}
               />
             ) : activeTab === "search" ? (
               <SearchTab
@@ -634,8 +579,6 @@ export default function HomePage() {
       <NewsOverlay {...(OVERLAYS.news.props as any)} />
       <TriviaOverlay {...(OVERLAYS.trivia.props as any)} />
       <HistoryOverlay {...(OVERLAYS.history.props as any)} />
-      <MessMenuOverlay {...(OVERLAYS.mess.props as any)} />
-      <TransportOverlay {...(OVERLAYS.transport.props as any)} />
       <FeaturedEditOverlay {...(OVERLAYS["featured-edit"].props as any)} />
       <PortalOverlay {...(OVERLAYS.portal.props as any)} />
     </div>

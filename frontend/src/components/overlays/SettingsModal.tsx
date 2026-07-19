@@ -287,8 +287,6 @@ export default function SettingsModal({ onClose, initialTab = "appearance" }: Se
         db.featured.clear(),
         db.popular.clear(),
         db.events.clear(),
-        db.messmenu.clear(),
-        db.transport.clear(),
         db.meta.clear(),
       ]);
       localStorage.removeItem("syncCheck");

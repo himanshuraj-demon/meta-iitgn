@@ -10,7 +10,7 @@
  *   overlay   -> home overlay type ("new" | "updated" | ... | "portal")
  *   category  -> portal category slug (only meaningful when overlay=portal)
  *   settings  -> settings tab ("appearance" | "layout" | "search" | "alerts")
- *   wmodal    -> wiki overlay type ("revisions" | "pending" | "mess" | "transport")
+ *   wmodal    -> wiki overlay type ("revisions" | "pending")
  *
  * Each modal owns one param; buildQuery merges into the existing query so
  * multiple modals can be reflected at once without clobbering each other.

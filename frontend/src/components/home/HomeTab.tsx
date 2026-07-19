@@ -16,7 +16,6 @@ import {
   ChevronRight,
   Compass,
   MapPinned,
-  Bus,
   Newspaper,
   CalendarDays,
   TrendingUp,
@@ -31,8 +30,6 @@ import { useAuth } from "@/hooks/useAuth";
 import EventsOverlay from "@/components/overlays/EventsOverlay";
 import HomeCard from "@/components/home/HomeCard";
 import HomeMasonryGrid, { MasonryCardConfig } from "@/components/home/HomeMasonryGrid";
-import { getTimeOfDay, MESS_THEME } from "@/lib/messMenu";
-import { tripTimeToMinutes, TransportTrip, TransportBus } from "@/lib/transport";
 
 interface HomeTabProps {
   mousePos: { x: number; y: number };
@@ -59,26 +56,8 @@ interface HomeTabProps {
   featuredPages: any[];
   popularPages: any[];
   upcomingEvents: any[];
-  messMenu: any | null;
-  setShowMessMenu: (show: boolean) => void;
   setShowEditFeatured: (show: boolean) => void;
-  campusTransport: any | null;
-  setShowTransport: (show: boolean) => void;
 }
-
-// ── Mess menu types & parsers ────────────────────────────────────────────────
-interface MessMeal {
-  name: string;
-  time?: string;
-  items: string[];
-}
-
-interface MessDay {
-  day: string;
-  meals: MessMeal[];
-}
-
-const WEEK_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // localStorage key for the set of card ids the user has hidden via preferences.
 const HOME_HIDDEN_CARDS_KEY = "meta_iitgn_home_hidden_cards";
@@ -92,8 +71,6 @@ const CARD_LABELS: Record<string, string> = {
   "pending-pages": "Pending Review",
   "popular-pages": "Popular Pages",
   "random-page": "Random Page",
-  "mess-menu": "Today's Mess Menu",
-  "campus-transport": "Campus Transport",
   "photo-of-week": "Photo of the Week",
   events: "Upcoming Events",
 };
@@ -109,52 +86,7 @@ const CARD_GROUPS: { title: string; ids: string[] }[] = [
     title: "Community",
     ids: ["photo-of-week", "events"],
   },
-  { title: "Campus Services", ids: ["mess-menu", "campus-transport"] },
 ];
-
-const getMessMenuArray = (val: any): any[] => {
-  if (Array.isArray(val)) return val;
-  if (val && Array.isArray(val.content)) return val.content;
-  if (val && typeof val === "object") {
-    const arr: any[] = [];
-    for (let i = 0; i < 7; i++) {
-      if (val[i]) arr.push(val[i]);
-    }
-    if (arr.length > 0) return arr;
-  }
-  return [];
-};
-
-const getTransportArray = (val: any): any[] => {
-  if (Array.isArray(val)) return val;
-  if (val && Array.isArray(val.content)) return val.content;
-  if (val && typeof val === "object") {
-    const arr: any[] = [];
-    let i = 0;
-    while (val[i]) {
-      arr.push(val[i]);
-      i++;
-    }
-    if (arr.length > 0) return arr;
-  }
-  return [];
-};
-
-
-
-// ── Format event date ─────────────────────────────────────────────────────────
-// Next upcoming trip from a flat list of trips, given minutes-since-midnight.
-// Wraps to the first trip of the day if none remain today.
-function nextTrip(trips: TransportTrip[], nowMinutes: number): TransportTrip | null {
-  if (trips.length === 0) return null;
-  const withMin = trips
-    .map((t) => ({ t, m: tripTimeToMinutes(t.time) }))
-    .filter((x) => x.m !== null) as { t: TransportTrip; m: number }[];
-  if (withMin.length === 0) return trips[0];
-  const sorted = [...withMin].sort((a, b) => a.m - b.m);
-  const upcoming = sorted.filter((x) => x.m >= nowMinutes);
-  return (upcoming[0] ?? sorted[0]).t;
-}
 
 export default function HomeTab({
   mousePos,
@@ -179,11 +111,7 @@ export default function HomeTab({
   featuredPages,
   popularPages,
   upcomingEvents,
-  messMenu,
-  setShowMessMenu,
   setShowEditFeatured,
-  campusTransport,
-  setShowTransport,
 }: HomeTabProps) {
   const { categories } = useAuth();
   const router = useRouter();
@@ -234,50 +162,6 @@ export default function HomeTab({
 
   // Derived / computed states from cached store/Dexie props
   const featuredSlides = (featuredPages && featuredPages.length > 0) ? featuredPages : [];
-  const today = WEEK_DAYS[new Date().getDay()];
-  const messMenuArray = getMessMenuArray(messMenu);
-  const messMenuData: MessDay | null = messMenuArray.find((d: any) => d.day === today) || null;
-  const transportArray = getTransportArray(campusTransport);
-  const transportData = transportArray.map((item: any) => ({
-    name: item.route,
-    note: item.type,
-    trips: item.schedule || []
-  }));
-  const nowMinutes = (() => {
-    const d = new Date();
-    return d.getHours() * 60 + d.getMinutes();
-  })();
-  const transportNext = (transportData as TransportBus[])
-    .map((line: TransportBus, i: number) => ({
-      line,
-      index: i,
-      trip: nextTrip(line.trips, nowMinutes),
-    }))
-    .filter((x) => x.trip);
-  // Flattened, time-sorted view of every trip to find the single next departure.
-  const transportFlat = (transportData as TransportBus[])
-    .flatMap((line: TransportBus, index: number) =>
-      line.trips.map((trip: TransportTrip) => ({ line, index, trip }))
-    )
-    .map((x) => ({ ...x, m: tripTimeToMinutes(x.trip.time) }))
-    .filter((x) => x.m !== null) as Array<{
-    line: TransportBus;
-    index: number;
-    trip: TransportTrip;
-    m: number;
-  }>;
-  // Globally time-sorted upcoming departures — top 3 overall. The soonest is
-  // shown as a hero block; the next two as a smaller list below.
-  const topTrips = (() => {
-    if (transportFlat.length === 0) return [];
-    const upcoming = transportFlat
-      .filter((x) => x.m >= nowMinutes)
-      .sort((a, b) => a.m - b.m);
-    const sorted = upcoming.length > 0 ? upcoming : [...transportFlat].sort((a, b) => a.m - b.m);
-    return sorted.slice(0, 3);
-  })();
-  const nextDeparture = topTrips[0] ?? null;
-  const moreTrips = topTrips.slice(1, 3);
 
   useEffect(() => {
     if (categories && categories.length > 0) {
@@ -375,11 +259,9 @@ export default function HomeTab({
     : featuredIndex;
 
   // ─── Card definitions ──────────────────────────────────────────────────────
-  // Display order for the home feed. Mess first, Featured second, the activity
+  // Display order for the home feed. Featured first, the activity
   // cards (new / updated / pending) last.
   const CARD_ORDER: Record<string, number> = {
-    "mess-menu": 1,
-    "campus-transport": 2,
     "featured-article": 3,
     "in-the-news": 4,
     "popular-pages": 8,
@@ -818,210 +700,6 @@ export default function HomeTab({
       ),
     },
 
-    // ── 12. Today's Mess Menu (driven by the wiki mess-menu page content) ─────
-    {
-      id: "mess-menu",
-      content: (
-        <div className="flex flex-col rounded-2xl border border-base-200 bg-base-100 p-6 shadow-depth shadow-depth-hover sm:p-7">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-success">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
-                  <path d="M7 2v20" />
-                  <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
-                </svg>
-              </span>
-              <h3 className="text-[18px] font-extrabold tracking-tight text-base-content">
-                Today&rsquo;s Mess Menu
-              </h3>
-            </div>
-            {messMenuData && (
-              <span className="rounded-full bg-success px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-success-content">
-                {messMenuData.day}
-              </span>
-            )}
-          </div>
-
-          {/* Meal sections */}
-          {messMenuData && messMenuData.meals.length > 0 ? (
-            <div className="space-y-5">
-              {messMenuData.meals.map((meal: MessMeal, i: number) => {
-                const theme = MESS_THEME[getTimeOfDay(meal)];
-                return (
-                  <div key={i+Math.random()}>
-                    <div className="mb-2.5 flex items-center justify-between gap-2">
-                      <span
-                        className={`text-[13px] font-extrabold uppercase tracking-[0.8px] ${theme.mealName}`}
-                      >
-                        {meal.name}
-                      </span>
-                      {meal.time && (
-                        <span
-                          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold ${theme.timeBadge}`}
-                        >
-                          <Clock className="h-3.5 w-3.5" />
-                          {meal.time}
-                        </span>
-                      )}
-                    </div>
-                    {meal.items.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {meal.items.map((item, j) => (
-                          <span
-                            key={j}
-                            className="rounded-lg border border-base-300 bg-base-100 px-4 py-1.5 text-[13px] font-medium text-base-content/70"
-                          >
-                            {item}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs font-medium italic text-base-content/40">
-                        No items listed
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="py-4 text-center">
-              <p className="text-xs text-base-content/50">Menu not available yet.</p>
-              <button
-                onClick={() => setShowMessMenu(true)}
-                className="mt-1 block text-xs font-bold text-success"
-              >
-                View full week menu →
-              </button>
-            </div>
-          )}
-
-          {/* Action button */}
-          <button
-            onClick={() => setShowMessMenu(true)}
-            className="mt-8 flex w-full items-center justify-center gap-2.5 rounded-xl bg-success py-4 text-[14px] font-bold tracking-wide text-success-content shadow-lg shadow-success/30 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-success/40"
-          >
-            <CalendarDays className="h-[18px] w-[18px]" />
-            OPEN FULL MENU
-          </button>
-        </div>
-      ),
-    },
-
-    // ── 13. Campus Transport ──────────────────────────────────────────────────
-    {
-      id: "campus-transport",
-      content: (
-        <HomeCard
-          title="Campus Transport"
-          icon={<Bus className="h-4 w-4 text-secondary" />}
-          accentColor="secondary"
-          onClick={() => setShowTransport(true)}
-          badge={
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowTransport(true);
-              }}
-              className="btn btn-ghost btn-xs text-primary font-bold cursor-pointer"
-            >
-              View schedule
-            </button>
-          }
-          footer={
-            <button
-              type="button"
-              onClick={() => setShowTransport(true)}
-              className="btn btn-ghost btn-xs text-primary font-extrabold uppercase tracking-wider gap-1 cursor-pointer"
-            >
-              Full schedule <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          }
-        >
-          {nextDeparture ? (
-            <div className="space-y-3">
-              {/* Next departure highlight */}
-              <div className="relative overflow-hidden rounded-2xl border border-secondary/20 bg-secondary/10 p-3.5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-secondary/15 text-secondary">
-                    <Bus className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-secondary/70">
-                      Next departure
-                    </p>
-                    <p className="truncate text-[15px] font-black leading-tight text-base-content">
-                      {nextDeparture.trip.from}
-                      <ArrowRight className="mx-1 inline h-3.5 w-3.5 text-base-content/40" />
-                      {nextDeparture.trip.to ?? "—"}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <Clock className="h-4 w-4 text-base-content/70" />
-                    <span className="text-lg font-black tracking-tight text-base-content">
-                      {nextDeparture.trip.time}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Additional upcoming departures */}
-              {moreTrips.length > 0 && (
-                <>
-                  <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-base-content/40">
-                    Also departing
-                  </p>
-                  <div className="space-y-2">
-                    {moreTrips.map(({ trip }, mi) => (
-                      <div
-                        key={mi}
-                        className="flex items-center justify-between gap-2 rounded-xl border border-base-200 bg-base-100 px-2.5 py-2"
-                      >
-                        <div className="flex min-w-0 flex-1 items-center gap-2">
-                          <span className="badge badge-ghost gap-1 shrink-0 font-bold">
-                            <Clock className="h-3 w-3" />
-                            {trip!.time}
-                          </span>
-                          <span className="min-w-0 flex-1 truncate text-xs font-semibold text-base-content/80">
-                            {trip!.from}
-                            <ArrowRight className="mx-1 inline h-3 w-3 text-base-content/40" />
-                            {trip!.to ?? "—"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-xs text-base-content/50">Schedule not available yet.</p>
-              <button
-                type="button"
-                onClick={() => setShowTransport(true)}
-                className="text-xs text-primary font-bold mt-1 block cursor-pointer"
-              >
-                View full schedule →
-              </button>
-            </div>
-          )}
-        </HomeCard>
-      ),
-    },
 
   ];
 

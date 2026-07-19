@@ -15,12 +15,10 @@ export interface HomeState {
   featuredPages: any[];
   popularPages: any[];
   upcomingEvents: any[];
-  messMenu: any | null;
-  campusTransport: any | null;
   loading: boolean;
 
-  // Active overlay (new, updated, pending, news, trivia, history, mess, featured-edit, transport, portal, null)
-  activeOverlay: "new" | "updated" | "pending" | "news" | "trivia" | "history" | "mess" | "featured-edit" | "transport" | "portal" | null;
+  // Active overlay (new, updated, pending, news, trivia, history, featured-edit, portal, null)
+  activeOverlay: "new" | "updated" | "pending" | "news" | "trivia" | "history" | "featured-edit" | "portal" | null;
 
   // Slug of the category shown by the "portal" overlay (opened from Quick Portals)
   activePortalCategory: string | null;
@@ -64,10 +62,8 @@ export interface HomeState {
   setFeaturedPages: (pages: any[]) => void;
   setPopularPages: (pages: any[]) => void;
   setUpcomingEvents: (events: any[]) => void;
-  setMessMenu: (menu: any | null) => void;
-  setCampusTransport: (transport: any | null) => void;
   setLoading: (loading: boolean) => void;
-  setActiveOverlay: (overlay: "new" | "updated" | "pending" | "news" | "trivia" | "history" | "mess" | "featured-edit" | "transport" | "portal" | null) => void;
+  setActiveOverlay: (overlay: "new" | "updated" | "pending" | "news" | "trivia" | "history" | "featured-edit" | "portal" | null) => void;
   setActivePortalCategory: (slug: string | null) => void;
 
   setNewPageNumber: (num: number) => void;
@@ -126,8 +122,6 @@ export const useHomeStore = create<HomeState>((set, get) => ({
   featuredPages: [],
   popularPages: [],
   upcomingEvents: [],
-  messMenu: null,
-  campusTransport: null,
   loading: true,
 
   // Overlays initial state
@@ -173,8 +167,6 @@ export const useHomeStore = create<HomeState>((set, get) => ({
   setFeaturedPages: (featuredPages) => set({ featuredPages }),
   setPopularPages: (popularPages) => set({ popularPages }),
   setUpcomingEvents: (upcomingEvents) => set({ upcomingEvents }),
-  setMessMenu: (messMenu) => set({ messMenu }),
-  setCampusTransport: (campusTransport) => set({ campusTransport }),
   setLoading: (loading) => set({ loading }),
   setActiveOverlay: (activeOverlay) => set({ activeOverlay }),
   setActivePortalCategory: (activePortalCategory) => set({ activePortalCategory }),
@@ -332,8 +324,6 @@ export const useHomeStore = create<HomeState>((set, get) => ({
           cachedFeatured,
           cachedPopular,
           cachedEvents,
-          cachedMessMenu,
-          cachedTransport,
         ] = await Promise.all([
           safeToArray(db.news),
           safeToArray(db.pendingpages),
@@ -342,8 +332,6 @@ export const useHomeStore = create<HomeState>((set, get) => ({
           safeToArray(db.featured),
           safeToArray(db.popular),
           safeToArray(db.events),
-          safeToArray(db.messmenu),
-          safeToArray(db.transport),
         ]);
         
         
@@ -362,8 +350,6 @@ export const useHomeStore = create<HomeState>((set, get) => ({
           featuredPages: cachedFeatured,
           popularPages: cachedPopular,
           upcomingEvents: sortedCachedEvents,
-          messMenu: cachedMessMenu[0] || null,
-          campusTransport: cachedTransport[0] || null,
         });
 
         const cachedNewPages = cachedUpdated.filter((p: any) => p._type === "new");
@@ -630,34 +616,6 @@ export const useHomeStore = create<HomeState>((set, get) => ({
             },
             forceRefresh: force,
             preloadedData: cachedEvents,
-          }),
-
-          loadCachedCollection({
-            key: "messmenu",
-            table: db.messmenu,
-            serverInfo: syncInfo.messmenu,
-            fetcher: () => apiService.getMessMenu(),
-            mapper: (res: any) =>
-              res.data ? [{ content: res.data, id: "mess-menu" }] : [],
-            onDataLoaded: (data) => {
-              set({ messMenu: data[0] || null });
-            },
-            forceRefresh: force,
-            preloadedData: cachedMessMenu,
-          }),
-
-          loadCachedCollection({
-            key: "transport",
-            table: db.transport,
-            serverInfo: syncInfo.transport,
-            fetcher: () => apiService.getCampusTransport(),
-            mapper: (res: any) =>
-              res.data ? [{ content: res.data, id: "campus-transport" }] : [],
-            onDataLoaded: (data) => {
-              set({ campusTransport: data[0] || null });
-            },
-            forceRefresh: force,
-            preloadedData: cachedTransport,
           }),
         ];
 
@@ -944,7 +902,5 @@ ${content}`,
       featuredPages: [],
       popularPages: [],
       upcomingEvents: [],
-      messMenu: null,
-      campusTransport: null,
     }),
 }));

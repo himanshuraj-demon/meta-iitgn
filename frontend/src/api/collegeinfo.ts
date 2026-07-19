@@ -19,23 +19,3 @@ export const deleteEvent = async (eventId: number) => {
   const response = await api.delete(`/collegeinfo/events/${eventId}`, { withCredentials: true });
   return response.data;
 };
-
-export const getMessMenu = async () => {
-  const response = await api.get('/collegeinfo/mess-menu');
-  return response.data;
-};
-
-export const updateMessMenu = async (days: any[]) => {
-  const response = await api.put('/collegeinfo/mess-menu', { days }, { withCredentials: true });
-  return response.data;
-};
-
-export const getCampusTransport = async () => {
-  const response = await api.get('/collegeinfo/campus-transport');
-  return response.data;
-};
-
-export const updateCampusTransport = async (buses: any[]) => {
-  const response = await api.put('/collegeinfo/campus-transport', { buses }, { withCredentials: true });
-  return response.data;
-};

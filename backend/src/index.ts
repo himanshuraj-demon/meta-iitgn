@@ -21,7 +21,7 @@ router.use("/audit-logs", AuditLogRouter);
 // Pages routes
 router.use("/pages",PageRouter);
 
-// College Info routes (events, mess menu, campus transport)
+// College Info routes (events)
 router.use("/collegeinfo", CollegeInfoRouter);
 
 // Drafts / Workflows routes

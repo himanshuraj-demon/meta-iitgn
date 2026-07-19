@@ -7,8 +7,6 @@ export type SyncKey =
   | 'updatedpages'
   | 'featured'
   | 'events'
-  | 'messmenu'
-  | 'transport'
   | 'popular';
 
 export async function updateSyncMetadata(
@@ -30,10 +28,6 @@ export async function updateSyncMetadata(
       count = await client.featured_pages.count();
     } else if (key === 'events') {
       count = await client.events.count({ where: { deleted_at: null } });
-    } else if (key === 'messmenu') {
-      count = await client.mess_menu.count();
-    } else if (key === 'transport') {
-      count = await client.travel_schedule.count();
     }
 
     await client.sync_metadata.upsert({

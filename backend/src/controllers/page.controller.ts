@@ -23,8 +23,6 @@ let syncCheckCache: {
   updatedpages: { last_updated: number; count: number } | null;
   featured: { last_updated: number; count: number } | null;
   events: { last_updated: number; count: number } | null;
-  messmenu: { last_updated: number; count: number } | null;
-  transport: { last_updated: number; count: number } | null;
   popular: { last_updated: number; count: number } | null;
 } = {
   news: null,
@@ -32,12 +30,10 @@ let syncCheckCache: {
   updatedpages: null,
   featured: null,
   events: null,
-  messmenu: null,
-  transport: null,
   popular: null
 };
 
-export const invalidateSyncCache = (key?: 'news' | 'pendingpages' | 'updatedpages' | 'featured' | 'events' | 'messmenu' | 'transport' | 'popular') => {
+export const invalidateSyncCache = (key?: 'news' | 'pendingpages' | 'updatedpages' | 'featured' | 'events' | 'popular') => {
   if (key) {
     syncCheckCache[key] = null;
   } else {
@@ -46,8 +42,6 @@ export const invalidateSyncCache = (key?: 'news' | 'pendingpages' | 'updatedpage
     syncCheckCache.updatedpages = null;
     syncCheckCache.featured = null;
     syncCheckCache.events = null;
-    syncCheckCache.messmenu = null;
-    syncCheckCache.transport = null;
     syncCheckCache.popular = null;
   }
 };
@@ -1038,8 +1032,6 @@ export const getSyncCheck = async (req: Request, res: Response) => {
       updatedpages: formatMeta('updatedpages'),
       featured: formatMeta('featured'),
       events: formatMeta('events'),
-      messmenu: formatMeta('messmenu'),
-      transport: formatMeta('transport'),
       popular: formatMeta('popular'),
       bookmarks: { last_updated: bookmarks_last_updated, count: bookmarks_count }
     });

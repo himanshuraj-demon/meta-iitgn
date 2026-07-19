@@ -10,8 +10,6 @@ export class WikiDexie extends Dexie {
   featured!: Table<any, string>;
   popular!: Table<any, string>;
   events!: Table<any, string>;
-  messmenu!: Table<any, string>;
-  transport!: Table<any, string>;
 
   constructor() {
     super('WikiDB');
@@ -26,8 +24,6 @@ export class WikiDexie extends Dexie {
       featured: 'id',
       popular: 'id',
       events: 'id',
-      messmenu: 'id',
-      transport: 'id',
     });
     this.version(4).stores({
       bookmarks: 'id',
@@ -39,8 +35,6 @@ export class WikiDexie extends Dexie {
       featured: 'id',
       popular: 'id',
       events: 'id',
-      messmenu: 'id',
-      transport: 'id',
       contributors: null,
     });
   }

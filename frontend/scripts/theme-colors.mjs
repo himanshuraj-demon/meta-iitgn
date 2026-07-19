@@ -1,6 +1,6 @@
 // Mechanical pass: swap hardcoded palette colors for daisyUI semantic tokens
 // so the UI re-themes. Safe, repeated patterns only. Exclusions handled
-// elsewhere: Mess menu, globals.css (color defs), constants.ts (per-category
+// elsewhere: globals.css (color defs), constants.ts (per-category
 // brand colors), HomeTab hero (whites sit over a photo).
 import fs from "node:fs";
 import path from "node:path";
