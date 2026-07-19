@@ -268,20 +268,119 @@ html[data-interface-font-size="normal"] {
   border-bottom: none !important;
 }
 
-/* Make toolbar icons and heading selector darker and more legible */
+/* Make editor icon strokes high-contrast. Crepe paints many icon strokes with
+   --crepe-color-outline (mapped to base-300 for hairline borders), which is
+   near-invisible on base-100/base-200 surfaces. Paint them base-content
+   instead, and use the theme primary for active/toggled state. */
 .milkdown .milkdown-top-bar .top-bar-item svg,
-.milkdown .milkdown-top-bar .top-bar-heading-button,
-.milkdown .milkdown-top-bar .top-bar-heading-button .top-bar-heading-label,
-.milkdown .milkdown-toolbar .toolbar-item svg {
+.milkdown .milkdown-top-bar .top-bar-heading-button .top-bar-chevron svg,
+.milkdown .milkdown-toolbar .toolbar-item svg,
+.milkdown .milkdown-slash-menu .menu-groups .menu-group li svg,
+.milkdown .milkdown-slash-menu .tab-group ul li svg,
+.milkdown .milkdown-link-preview .link-icon svg,
+.milkdown .milkdown-link-preview .button svg,
+.milkdown .milkdown-link-edit .button svg,
+.milkdown .milkdown-block-handle .operation-item svg,
+.milkdown .milkdown-code-block .tools .language-button .expand-icon svg,
+.milkdown .milkdown-image-inline .empty-image-inline .image-icon svg,
+.milkdown .milkdown-image-block .image-edit .image-icon svg {
   color: var(--color-base-content, var(--bc, #374151)) !important;
   fill: var(--color-base-content, var(--bc, #374151)) !important;
 }
 
-/* Ensure active/toggled icons retain high-contrast Indigo */
+/* Task/bullet list markers and their checkboxes use --crepe-color-outline
+   too; paint them base-content (checked state stays primary via the rule
+   below). */
+.milkdown .milkdown-list-item-block li .label-wrapper,
+.milkdown .milkdown-list-item-block li .label-wrapper svg {
+  color: var(--color-base-content, var(--bc, #374151)) !important;
+  fill: var(--color-base-content, var(--bc, #374151)) !important;
+}
+
+/* Active / toggled icons use the theme primary (was a hardcoded indigo). */
 .milkdown .milkdown-top-bar .top-bar-item.active svg,
-.milkdown .milkdown-toolbar .toolbar-item.active svg {
-  color: #4f46e5 !important;
-  fill: #4f46e5 !important;
+.milkdown .milkdown-toolbar .toolbar-item.active svg,
+.milkdown .milkdown-slash-menu .menu-groups .menu-group li.active svg,
+.milkdown .milkdown-block-handle .operation-item.active svg {
+  color: var(--color-primary, var(--p, #4f46e5)) !important;
+  fill: var(--color-primary, var(--p, #4f46e5)) !important;
+}
+
+/* Block handle (+ and drag): give it a real surface so the controls read as
+   daisyUI buttons instead of floating transparent icons, and make hover /
+   active visible (Crepe's default hover bg == its icon colour, hiding it). */
+.milkdown .milkdown-block-handle {
+  background: var(--color-base-200, var(--b2, #f3f4f6)) !important;
+  border: 1px solid var(--color-base-300, var(--b3, #e5e7eb)) !important;
+  border-radius: 8px !important;
+  padding: 2px !important;
+}
+.milkdown .milkdown-block-handle .operation-item {
+  background: transparent !important;
+}
+.milkdown .milkdown-block-handle .operation-item:hover {
+  background: var(--color-base-300, var(--b3, #e5e7eb)) !important;
+}
+.milkdown .milkdown-block-handle .operation-item.active {
+  background: color-mix(in srgb, var(--color-primary, var(--p, #4f46e5)) 16%, transparent) !important;
+}
+
+/* Slash menu section headers are 60% transparent by default — too faint.
+   Bump them to a readable muted tone. */
+.milkdown .milkdown-slash-menu .menu-groups .menu-group h6 {
+  color: color-mix(in srgb, var(--color-base-content, var(--bc, #1f2937)) 70%, transparent) !important;
+}
+
+/* Floating formatting toolbar: separate it from the page with a daisyUI border
+   (it already uses the theme-aware --crepe-shadow-1 elevation). */
+.milkdown .milkdown-toolbar {
+  border: 1px solid var(--color-base-300, var(--b3, #e5e7eb)) !important;
+}
+
+/* Structural editor elements Crepe colours with --crepe-color-outline (mapped
+   to faint base-300) or leaves at a default that doesn't show. Make them
+   clearly visible and on-theme. */
+
+/* Tables: cell borders used a ~20%-opacity outline (near-invisible). Use a
+   solid base-300 border and a base-200 header for readable structure. */
+.milkdown .milkdown-table-block th,
+.milkdown .milkdown-table-block td {
+  border-color: var(--color-base-300, var(--b3, #e5e7eb)) !important;
+}
+.milkdown .milkdown-table-block th {
+  background: var(--color-base-200, var(--b2, #f3f4f6)) !important;
+}
+/* Table drag/resize handles and their icons. */
+.milkdown .milkdown-table-block svg,
+.milkdown .milkdown-table-block .cell-handle,
+.milkdown .milkdown-table-block .line-handle .add-button {
+  color: var(--color-base-content, var(--bc, #374151)) !important;
+  fill: var(--color-base-content, var(--bc, #374151)) !important;
+}
+
+/* Image resize handle: was a faint outline line; make it a solid, visible bar
+   (only shows on hover, so it stays out of the way otherwise). */
+.milkdown .milkdown-image-block .image-wrapper .image-resize-handle {
+  background: var(--color-base-content, var(--bc, #374151)) !important;
+}
+
+/* Block-drag drop indicator (ProseMirror dropcursor). Crepe leaves its colour
+   unset, so the separator line never paints — fill it with the theme primary
+   so the drop position is visible while dragging. */
+.prosemirror-dropcursor-block,
+.prosemirror-dropcursor-inline,
+.milkdown-container .prosemirror-dropcursor-block,
+.milkdown-container .prosemirror-dropcursor-inline {
+  background-color: var(--color-primary, var(--p, #4f46e5)) !important;
+}
+
+/* Horizontal rule (the `---` separator): Crepe paints it at ~20% outline
+   opacity (near-invisible). Use a solid base-300 line, primary when selected. */
+.milkdown .ProseMirror hr {
+  background-color: var(--color-base-300, var(--b3, #e5e7eb)) !important;
+}
+.milkdown .ProseMirror hr.ProseMirror-selectednode {
+  background-color: var(--color-primary, var(--p, #4f46e5)) !important;
 }
 
 /* Responsive styles for editor toolbars on small screens */
@@ -408,7 +507,12 @@ html[data-font-style="mono"] body {
   font-size: 18px !important;
 }
 
-/* Make Milkdown editor theme-aware using daisyUI CSS variables */
+/* Make Milkdown editor theme-aware using daisyUI CSS variables.
+   Crepe themes every component (toolbar, slash menu, link tooltip/balloon,
+   image-block controls, code-block panel, tables, inline code, block handle,
+   revision diffs) purely through these --crepe-color-* variables, so mapping
+   them to daisyUI tokens makes the whole editor follow the active
+   data-theme (light / dark / generated custom themes) automatically. */
 .milkdown,
 .crepe {
   --crepe-color-background: var(--color-base-100, var(--b1, #ffffff)) !important;
@@ -424,6 +528,39 @@ html[data-font-style="mono"] body {
   --crepe-color-hover: var(--color-base-300, var(--b3, #e5e7eb)) !important;
   --crepe-color-selected: var(--color-base-300, var(--b3, #e5e7eb)) !important;
   --crepe-color-error: var(--color-error, var(--er, #ef4444)) !important;
+  /* Raised surfaces (slash menu, image-block / AI circular buttons). */
+  --crepe-color-inverse: var(--color-base-200, var(--b2, #f3f4f6)) !important;
+  --crepe-color-on-inverse: var(--color-base-content, var(--bc, #1f2937)) !important;
+  /* Inline code: readable text on a subtle surface tint. */
+  --crepe-color-inline-code: var(--color-base-content, var(--bc, #1f2937)) !important;
+  --crepe-color-inline-area: var(--color-base-300, var(--b3, #e5e7eb)) !important;
+  /* Revision diff highlights. */
+  --crepe-color-diff-added: var(--color-success, var(--su, #10b981)) !important;
+  --crepe-color-diff-removed: var(--color-error, var(--er, #ef4444)) !important;
+  /* Crepe references these shadows on every floating panel but never defines
+     them, so they currently render flat. Define them as theme-aware daisyUI
+     elevations (base-content at low alpha works in both light and dark). */
+  --crepe-shadow-1: 0 1px 3px 0 color-mix(in srgb, var(--color-base-content, var(--bc, #1f2937)) 12%, transparent), 0 1px 2px -1px color-mix(in srgb, var(--color-base-content, var(--bc, #1f2937)) 12%, transparent) !important;
+  --crepe-shadow-2: 0 10px 15px -3px color-mix(in srgb, var(--color-base-content, var(--bc, #1f2937)) 18%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--color-base-content, var(--bc, #1f2937)) 12%, transparent) !important;
+}
+
+/* Crisp daisyUI surface for Milkdown's floating panels: the variable mapping
+   above already colours their backgrounds, this adds a base-300 border and
+   relies on the theme-aware --crepe-shadow-* for elevation so they read as
+   solid popovers (matching the BlockNote popovers themed just below). */
+.milkdown .milkdown-slash-menu,
+.milkdown .milkdown-link-preview > .link-preview,
+.milkdown .milkdown-link-edit > .link-edit,
+.milkdown .milkdown-code-block .tools,
+.milkdown .milkdown-table .toolbar {
+  border: 1px solid var(--color-base-300, var(--b3, #e5e7eb)) !important;
+}
+
+/* Highlighted slash-menu item uses the theme primary instead of the muted
+   selected colour, so keyboard/hovers read like a daisyUI menu selection. */
+.milkdown .milkdown-slash-menu .menu-groups .menu-group li.active,
+.milkdown .milkdown-slash-menu .menu-groups .menu-group li.hover {
+  background: color-mix(in srgb, var(--color-primary, var(--p, #4f46e5)) 14%, transparent) !important;
 }
 
 .milkdown-container,

@@ -2,12 +2,15 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Trash2, Loader2 } from "lucide-react";
+import { Search, Plus, Trash2, Loader2, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useHomeStore } from "@/store/useHomeStore";
 import { apiService } from "@/api";
 import GenericOverlayModal from "@/components/overlays/GenericOverlayModal";
 import Link from "next/link";
+import { useViewMode } from "@/hooks/useViewMode";
+import ViewSwitcher from "@/components/helpers/ViewSwitcher";
+import { getGridClass, getIconBoxClass } from "@/lib/viewModes";
 
 interface FeaturedEditOverlayProps {
   isOpen: boolean;
@@ -29,6 +32,10 @@ export default function FeaturedEditOverlay({
   const [results, setResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  // Article-list view (Default / Tiles / Details / Icons S–XL). Persisted to
+  // localStorage under a featured-specific key so it's independent of other surfaces.
+  const [view, setView] = useViewMode("meta_iitgn_featured_view");
 
   // Re-fetch the featured list from the server and sync the store so the
   // home carousel updates live.
@@ -110,6 +117,135 @@ export default function FeaturedEditOverlay({
     } finally {
       setBusyId(null);
     }
+  };
+
+  const renderFeatured = (f: any) => {
+    const open = () => router.push(`/wiki/page/${f.slug}`);
+    const removeBtn = canManageFeatured ? (
+      <button
+        type="button"
+        disabled={busyId === `remove-${f.featured_id}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleRemove(f.featured_id);
+        }}
+        className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10 shrink-0 cursor-pointer"
+        aria-label={`Remove ${f.title}`}
+        title="Remove from featured"
+      >
+        {busyId === `remove-${f.featured_id}` ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Trash2 className="h-4 w-4" />
+        )}
+      </button>
+    ) : null;
+
+    if (view.startsWith("icon-")) {
+      return (
+        <div
+          key={f.id}
+          onClick={open}
+          className="group relative flex flex-col items-center justify-center gap-2 p-2 rounded-xl hover:bg-primary/5 hover:border hover:border-primary cursor-pointer text-center"
+        >
+          <div
+            className={`${getIconBoxClass(view)} rounded-xl overflow-hidden border border-base-300 bg-base-200 flex items-center justify-center`}
+          >
+            {f.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={f.image} alt={f.title || "Featured"} className="w-full h-full object-cover" />
+            ) : (
+              <FileText className={getIconBoxClass(view)} />
+            )}
+          </div>
+          <span className="text-xs font-medium text-base-content/80 group-hover:text-primary transition-colors duration-200 max-w-full break-words text-center">
+            {f.title}
+          </span>
+          {removeBtn && <div className="absolute top-1 right-1">{removeBtn}</div>}
+        </div>
+      );
+    }
+
+    if (view === "tiles") {
+      return (
+        <div
+          key={f.id}
+          onClick={open}
+          className="flex flex-col gap-2 p-3 border border-base-300 bg-base-100 rounded-2xl shadow-xs hover:border-primary transition-all duration-150 cursor-pointer text-left"
+        >
+          <div className="w-full h-24 rounded-lg overflow-hidden border border-base-300 bg-base-200">
+            {f.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={f.image} alt={f.title || "Featured"} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-base-content/40">
+                <FileText className="h-6 w-6" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-base-content hover:text-primary transition-colors truncate">
+              {f.title}
+            </span>
+            <p className="text-[10px] uppercase tracking-wider text-base-content/50 truncate">
+              {f.tag || "Featured"}
+              {f.location ? ` · ${f.location}` : ""}
+            </p>
+          </div>
+          {removeBtn}
+        </div>
+      );
+    }
+
+    if (view === "details") {
+      return (
+        <div
+          key={f.id}
+          onClick={open}
+          className="flex items-center gap-3 p-3 rounded-xl border border-base-300 bg-base-100 shadow-xs hover:border-primary transition-all duration-150 cursor-pointer text-left"
+        >
+          <div className="w-10 h-10 rounded-lg border border-base-300 bg-base-200 flex items-center justify-center text-primary shrink-0">
+            <FileText className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-base-content hover:text-primary transition-colors truncate">
+              {f.title}
+            </span>
+            <p className="text-[10px] uppercase tracking-wider text-base-content/50 truncate">
+              {f.tag || "Featured"}
+              {f.location ? ` · ${f.location}` : ""}
+            </p>
+          </div>
+          {removeBtn}
+        </div>
+      );
+    }
+
+    // default (current)
+    return (
+      <div
+        key={f.id}
+        onClick={open}
+        className="flex items-center gap-3 rounded-xl border border-base-300 bg-base-100 p-2.5 shadow-xs hover:border-primary transition-all duration-150 cursor-pointer"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={f.image || "/homepage_bg.png"}
+          alt={f.title || "Featured"}
+          className="w-14 h-14 object-cover rounded-lg shrink-0 bg-base-200"
+        />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-bold text-base-content hover:text-primary transition-colors block truncate">
+            {f.title}
+          </span>
+          <p className="text-[10px] uppercase tracking-wider text-base-content/50 truncate">
+            {f.tag || "Featured"}
+            {f.location ? ` · ${f.location}` : ""}
+          </p>
+        </div>
+        {removeBtn}
+      </div>
+    );
   };
 
   if (!isOpen) return null;
@@ -196,57 +332,21 @@ export default function FeaturedEditOverlay({
 
         {/* Listing (everyone) */}
         <div className="space-y-3">
-          <h4 className="text-[10px] font-bold text-base-content/50 tracking-wider uppercase">
-            {canManageFeatured ? "Currently Featured" : "Featured List"}
-          </h4>
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-[10px] font-bold text-base-content/50 tracking-wider uppercase">
+              {canManageFeatured ? "Currently Featured" : "Featured List"}
+            </h4>
+            <ViewSwitcher view={view} onChange={setView} />
+          </div>
 
           {featuredPages.length === 0 ? (
             <p className="text-sm text-base-content/50 py-6 text-center border border-dashed border-base-300 rounded-2xl">
               No featured pages yet.
             </p>
           ) : (
-            featuredPages.map((f: any) => (
-              <div
-                key={f.id}
-                onClick={() => router.push(`/wiki/page/${f.slug}`)}
-                className="flex items-center gap-3 rounded-xl border border-base-300 bg-base-100 p-2.5 shadow-xs hover:border-primary transition-all duration-150 cursor-pointer"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={f.image || "/homepage_bg.png"}
-                  alt={f.title || "Featured"}
-                  className="w-14 h-14 object-cover rounded-lg shrink-0 bg-base-200"
-                />
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-bold text-base-content hover:text-primary transition-colors block truncate">
-                    {f.title}
-                  </span>
-                  <p className="text-[10px] uppercase tracking-wider text-base-content/50 truncate">
-                    {f.tag || "Featured"}
-                    {f.location ? ` · ${f.location}` : ""}
-                  </p>
-                </div>
-                {canManageFeatured && (
-                  <button
-                    type="button"
-                    disabled={busyId === `remove-${f.featured_id}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemove(f.featured_id);
-                    }}
-                    className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10 shrink-0 cursor-pointer"
-                    aria-label={`Remove ${f.title}`}
-                    title="Remove from featured"
-                  >
-                    {busyId === `remove-${f.featured_id}` ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </button>
-                )}
-              </div>
-            ))
+            <div className={getGridClass(view)}>
+              {featuredPages.map(renderFeatured)}
+            </div>
           )}
         </div>
       </div>
