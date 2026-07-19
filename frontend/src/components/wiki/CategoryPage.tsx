@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, PlusCircle, Pencil, Sparkles, Building2, Users2, Trophy, Tent, MapPin, FlaskConical, Calendar, Shield, TrendingUp, GraduationCap } from "lucide-react";
+import { BookOpen, PlusCircle, Pencil, Sparkles, Building2, Users2, Trophy, Tent, MapPin, FlaskConical, Calendar, Shield, TrendingUp, GraduationCap, FileText, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiService } from "@/api";
 import CategoryEditModal from "@/components/overlays/CategoryEditModal";
+import { useViewMode } from "@/hooks/useViewMode";
+import ViewSwitcher from "@/components/helpers/ViewSwitcher";
+import { getGridClass, getIconBoxClass, humanizeSlug } from "@/lib/viewModes";
 
 export interface Article {
   slug: string;
@@ -35,6 +38,9 @@ interface CategoryPageProps {
   embedded?: boolean;
 }
 
+// localStorage key for the user's preferred article-list view on category pages.
+const CATEGORY_VIEW_KEY = "meta_iitgn_category_view";
+
 const ArticleSkeleton = () => (
   <div className="card card-compact card-border w-full flex flex-col justify-between p-4 md:p-6 bg-base-100 border-base-200 shadow-[0_2px_10px_rgba(0,0,0,0.01)] animate-pulse select-none">
     <div className="space-y-3">
@@ -58,6 +64,11 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Article-list view (Default / Tiles / Details / Icons S–XL). Persisted to
+  // localStorage under a category-page-specific key; hydrated after mount to
+  // avoid a hydration mismatch (the server render has no localStorage).
+  const [view, setView] = useViewMode(CATEGORY_VIEW_KEY);
 
   // Edit Category modal state — the form itself lives in <CategoryEditModal />.
   const [isEditing, setIsEditing] = useState(false);
@@ -122,7 +133,13 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
         {/* Category Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div className="space-y-3 flex-1">
-            <div className="inline-flex items-center justify-center p-3 bg-primary/10 text-primary rounded-2xl shadow-sm">
+            <div
+              className="inline-flex items-center justify-center p-3 rounded-2xl shadow-sm"
+              style={{
+                backgroundColor: `${category.color || "#4f46e5"}1a`,
+                color: category.color || "#4f46e5",
+              }}
+            >
               {(() => {
                 const IconComponent = ICON_MAP[category.icon || "BookOpen"] || BookOpen;
                 return <IconComponent className="h-6 w-6" />;
@@ -140,7 +157,7 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
             {!embedded && (user?.role === "admin" || user?.role === "moderator") && (
               <button
                 onClick={handleStartEdit}
-                className="btn btn-outline btn-sm font-bold rounded-xl shadow-xs transition-all duration-200 cursor-pointer active:scale-95"
+                className="btn btn-outline btn-sm font-bold rounded-xl shadow-sm transition-all duration-200 cursor-pointer active:scale-95"
               >
                 <Pencil className="h-4.5 w-4.5" />
                 <span>Edit Category</span>
@@ -149,7 +166,7 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
             {!embedded && (user?.role === "admin" || user?.role === "moderator") && (
               <Link
                 href={`/wiki/${categorySlug}/new`}
-                className="btn btn-primary btn-sm font-bold rounded-xl shadow-md transition-all duration-200 cursor-pointer text-primary-content"
+                className="btn btn-primary btn-sm font-bold rounded-xl shadow-sm transition-all duration-200 cursor-pointer active:scale-95 text-primary-content"
               >
                 <PlusCircle className="h-4.5 w-4.5" />
                 <span>New Article</span>
@@ -160,9 +177,13 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
 
         {/* Articles List / Grid (Horizontal Stack) */}
         <div>
-          <h2 className="text-lg font-serif font-bold text-base-content mb-4 tracking-tight">
-            Articles in this Category
-          </h2>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h2 className="text-lg font-serif font-bold text-base-content tracking-tight">
+              Articles in this Category
+            </h2>
+
+            <ViewSwitcher view={view} onChange={setView} />
+          </div>
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
@@ -176,21 +197,102 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
             </div>
           ) : (
             <div className="w-full flex flex-col gap-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {articles.map((article) => (
-                  <Link
-                    key={article.slug}
-                    href={`/wiki/${categorySlug}/${article.slug}`}
-                    className="card card-compact card-border w-full flex flex-col justify-between p-4 md:p-6 bg-base-100 border-base-200 shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-primary transition-all duration-300 group cursor-pointer"
-                  >
-                    <div className="space-y-2 md:space-y-3">
-                      <h3 className="text-sm md:text-base font-bold text-base-content font-serif group-hover:text-primary transition-colors duration-300">
+              <div className={getGridClass(view)}>
+                {articles.map((article) => {
+                  const iconBoxStyle = {
+                    backgroundColor: `${category.color || "#4f46e5"}1a`,
+                    borderColor: `${category.color || "#4f46e5"}33`,
+                    color: category.color || "#4f46e5",
+                  };
+                  const href = `/wiki/${categorySlug}/${article.slug}`;
+
+                  if (view === "tiles") {
+                    return (
+                      <Link
+                        key={article.slug}
+                        href={href}
+                        className="card card-compact card-border flex flex-col items-start gap-3 p-4 md:p-5 bg-base-100 border-base-200 shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-primary hover:bg-primary/5 active:scale-[0.98] transition-all duration-300 group cursor-pointer"
+                      >
+                        <div
+                          className="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm transition-all duration-300"
+                          style={iconBoxStyle}
+                        >
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <h3 className="min-w-0 text-sm md:text-base font-bold text-base-content font-serif group-hover:text-primary transition-colors duration-300 line-clamp-2">
+                          {article.title}
+                        </h3>
+                      </Link>
+                    );
+                  }
+
+                  if (view === "details") {
+                    return (
+                      <Link
+                        key={article.slug}
+                        href={href}
+                        className="card card-compact card-border w-full flex flex-row items-center gap-3 p-3 md:p-4 bg-base-100 border-base-200 shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:border-primary hover:bg-primary/5 active:scale-[0.98] transition-all duration-300 group cursor-pointer"
+                      >
+                        <div
+                          className="w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-sm transition-all duration-300"
+                          style={iconBoxStyle}
+                        >
+                          <FileText className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm md:text-base font-bold text-base-content font-serif group-hover:text-primary transition-colors duration-300 truncate">
+                            {article.title}
+                          </h3>
+                          <p className="text-xs text-base-content/50 truncate">
+                            {humanizeSlug(article.slug)}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-base-content/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-300" />
+                      </Link>
+                    );
+                  }
+
+                  if (view.startsWith("icon-")) {
+                    return (
+                      <Link
+                        key={article.slug}
+                        href={href}
+                        className="group flex flex-col items-center justify-center gap-2 p-2 rounded-xl hover:bg-primary/5 hover:border hover:border-primary cursor-pointer text-center"
+                      >
+                        <div
+                          className={`${getIconBoxClass(view)} rounded-xl border flex items-center justify-center`}
+                          style={iconBoxStyle}
+                        >
+                          <FileText className={getIconBoxClass(view)} />
+                        </div>
+                        <span className="text-xs font-medium text-base-content/80 group-hover:text-primary transition-colors duration-200 max-w-full break-words text-center">
+                          {article.title}
+                        </span>
+                      </Link>
+                    );
+                  }
+
+                  // default: horizontal compact row (original layout)
+                  return (
+                    <Link
+                      key={article.slug}
+                      href={href}
+                      className="card card-compact card-border w-full flex flex-row items-center gap-3 p-4 md:p-5 bg-base-100 border-base-200 shadow-[0_2px_10px_rgba(0,0,0,0.01)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-1 hover:border-primary hover:bg-primary/5 active:scale-[0.98] transition-all duration-300 group cursor-pointer"
+                    >
+                      <div
+                        className="w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 shadow-sm transition-all duration-300"
+                        style={iconBoxStyle}
+                      >
+                        <FileText className="h-4.5 w-4.5" />
+                      </div>
+                      <h3 className="flex-1 min-w-0 text-sm md:text-base font-bold text-base-content font-serif group-hover:text-primary transition-colors duration-300 truncate">
                         {article.title}
                       </h3>
-                    </div>
-                  </Link>
-                ))}
-                {loadingMore && (
+                      <ChevronRight className="h-4.5 w-4.5 shrink-0 text-base-content/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-300" />
+                    </Link>
+                  );
+                })}
+                {loadingMore && !view.startsWith("icon-") && (
                   <>
                     <ArticleSkeleton />
                     <ArticleSkeleton />

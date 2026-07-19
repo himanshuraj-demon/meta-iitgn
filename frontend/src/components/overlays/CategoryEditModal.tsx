@@ -2,11 +2,29 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, X, Maximize2, Minimize2 } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiService } from "@/api";
 import { ICON_MAP } from "@/components/wiki/CategoryPage";
-import ProfilePopover from "@/components/navs/ProfilePopover";
+
+export const CATEGORY_COLORS = [
+  "#4f46e5", // indigo (brand)
+  "#3b82f6", // blue
+  "#0ea5e9", // sky
+  "#10b981", // emerald
+  "#84cc16", // lime
+  "#f59e0b", // amber
+  "#f97316", // orange
+  "#ef4444", // red
+  "#f43f5e", // rose
+  "#ec4899", // pink
+  "#a855f7", // purple
+  "#8b5cf6", // violet
+  "#14b8a6", // teal
+  "#64748b", // slate
+  "#0f172a", // near-black
+  "#78716c", // stone
+];
 
 interface CategoryEditModalProps {
   category: {
@@ -15,6 +33,7 @@ interface CategoryEditModalProps {
     name: string;
     description: string;
     icon?: string;
+    color?: string;
   };
   onClose: () => void;
 }
@@ -25,6 +44,7 @@ export default function CategoryEditModal({ category, onClose }: CategoryEditMod
   const [editName, setEditName] = useState(category.name);
   const [editDescription, setEditDescription] = useState(category.description);
   const [editIcon, setEditIcon] = useState(category.icon || "BookOpen");
+  const [editColor, setEditColor] = useState<string>(category.color || "#4f46e5");
   const [editError, setEditError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -61,6 +81,7 @@ export default function CategoryEditModal({ category, onClose }: CategoryEditMod
         name: editName.trim(),
         description: editDescription.trim(),
         icon: editIcon || "BookOpen",
+        color: editColor,
       });
       updateCategoryState(updatedCat);
       onClose();
@@ -85,7 +106,7 @@ export default function CategoryEditModal({ category, onClose }: CategoryEditMod
             : "w-full h-full sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:max-w-md rounded-none sm:rounded-2xl shadow-none sm:shadow-xl"
         }`}
       >
-        {/* Window Header — close (left) · profile + maximize (right) */}
+        {/* Window Header — title (left) · close (right) */}
         <div
           onDoubleClick={(e) => {
             if ((e.target as HTMLElement).closest("button")) return;
@@ -99,19 +120,6 @@ export default function CategoryEditModal({ category, onClose }: CategoryEditMod
             <span>Edit Category</span>
           </div>
           <div className="flex items-center justify-end gap-1">
-            <ProfilePopover />
-            <button
-              type="button"
-              onClick={() => setIsMaximized(!isMaximized)}
-              className="hidden sm:inline-flex p-1 hover:bg-base-300 rounded-lg transition-colors cursor-pointer text-base-content/70 hover:text-base-content"
-              aria-label={isMaximized ? "Restore" : "Maximize"}
-            >
-              {isMaximized ? (
-                <Minimize2 className="w-4 h-4 shrink-0" />
-              ) : (
-                <Maximize2 className="w-4 h-4 shrink-0" />
-              )}
-            </button>
             <button
               type="button"
               onClick={onClose}
@@ -178,6 +186,37 @@ export default function CategoryEditModal({ category, onClose }: CategoryEditMod
                     title={iconKey}
                   >
                     <IconComponent className="h-5 w-5" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-base-content/70 uppercase block">
+              Category Color
+            </label>
+            <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 max-w-lg">
+              {CATEGORY_COLORS.map((color) => {
+                const isSelected = editColor.toLowerCase() === color.toLowerCase();
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setEditColor(color)}
+                    className={`relative w-9 h-9 rounded-full border-2 transition-all duration-200 cursor-pointer active:scale-95 ${isSelected
+                      ? "border-base-content scale-110 shadow-md"
+                      : "border-base-300 hover:scale-105"
+                      }`}
+                    style={{ backgroundColor: color }}
+                    title={color}
+                    aria-label={`Select color ${color}`}
+                  >
+                    {isSelected && (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="w-2.5 h-2.5 rounded-full bg-base-100 shadow" />
+                      </span>
+                    )}
                   </button>
                 );
               })}

@@ -10,6 +10,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { apiService } from "@/api";
 import { Category } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";
+import CategoryEditModal, { CATEGORY_COLORS } from "@/components/overlays/CategoryEditModal";
 
 const ICON_MAP: Record<string, any> = {
   BookOpen,
@@ -35,28 +36,24 @@ interface CategoryFormInput {
 export default function CategoriesPage() {
   useDocumentTitle("Categories");
   const router = useRouter();
-  const { user, categories, addCategoryState, updateCategoryState, activeTier } = useAuth();
+  const { user, categories, addCategoryState, updateCategoryState } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
 
   // Add Category form states
   const [showAddForm, setShowAddForm] = useState(false);
   const [error, setError] = useState("");
+  const [newColor, setNewColor] = useState<string>("#4f46e5");
 
-  // Edit Category form states
+  // Edit Category — handled by <CategoryEditModal /> below.
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [editError, setEditError] = useState("");
   const [pinningCategoryId, setPinningCategoryId] = useState<number | null>(null);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CategoryFormInput>({
     defaultValues: { icon: "BookOpen" }
   });
-  const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, setValue: setValueEdit, watch: watchEdit, formState: { errors: editErrors } } = useForm<CategoryFormInput>({
-    defaultValues: { icon: "BookOpen" }
-  });
 
-  const isGold = activeTier === "gold";
+  const canManageCategory = user?.role === "admin" || user?.role === "moderator";
   const selectedIcon = watch("icon") || "BookOpen";
-  const selectedIconEdit = watchEdit("icon") || "BookOpen";
 
   const onCreateSubmit = async (data: CategoryFormInput) => {
     try {
@@ -64,10 +61,12 @@ export default function CategoriesPage() {
       const newCat = await apiService.createCategory({
         name: data.name.trim(),
         description: data.description.trim(),
-        icon: data.icon || "BookOpen"
+        icon: data.icon || "BookOpen",
+        color: newColor,
       });
       addCategoryState(newCat);
       reset();
+      setNewColor("#4f46e5");
       setShowAddForm(false);
     } catch (err: any) {
       console.error(err);
@@ -77,27 +76,6 @@ export default function CategoriesPage() {
 
   const handleStartEdit = (cat: Category) => {
     setEditingCategory(cat);
-    setValueEdit("name", cat.name);
-    setValueEdit("description", cat.description);
-    setValueEdit("icon", cat.icon || "BookOpen");
-  };
-
-  const onEditSubmit = async (data: CategoryFormInput) => {
-    if (!editingCategory) return;
-    try {
-      setEditError("");
-      const updatedCat = await apiService.updateCategory(editingCategory.category_id, {
-        name: data.name.trim(),
-        description: data.description.trim(),
-        icon: data.icon || "BookOpen"
-      });
-      updateCategoryState(updatedCat);
-      resetEdit();
-      setEditingCategory(null);
-    } catch (err: any) {
-      console.error(err);
-      setEditError(err.response?.data?.error || err.message || "Failed to update category");
-    }
   };
 
   // Filter categories based on search
@@ -138,7 +116,7 @@ export default function CategoriesPage() {
             </p>
           </div>
 
-          {user && (
+          {(user?.role === "admin" || user?.role === "moderator") && (
             <div className="shrink-0 mb-1">
               <button
                 onClick={() => {
@@ -155,18 +133,33 @@ export default function CategoriesPage() {
           )}
         </div>
 
-        {/* Create Category Form */}
+        {/* Create Category Modal — floating, consistent with the edit modal */}
         {showAddForm && (
-          <form
-            onSubmit={handleSubmit(onCreateSubmit)}
-            className="p-6 bg-base-100 border border-primary/20 rounded-2xl shadow-md space-y-4 max-w-xl animate-in fade-in slide-in-from-top-4 duration-250"
-          >
-            <div className="flex items-center gap-2 text-primary font-bold text-sm">
-              <FolderPlus className="h-5 w-5" />
-              <span>Add Custom Category</span>
-            </div>
+          <div className="fixed inset-0 bg-base-content/40 backdrop-blur-xs flex items-center justify-center z-[21000] animate-in fade-in duration-200 p-0 sm:p-4">
+            <form
+              onSubmit={handleSubmit(onCreateSubmit)}
+              className="relative flex flex-col overflow-hidden bg-base-100 border-0 sm:border border-base-200 animate-in zoom-in-95 duration-200 w-full h-full sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:max-w-md rounded-none sm:rounded-2xl shadow-none sm:shadow-xl"
+            >
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-base-200 bg-base-200 text-base-content select-none shrink-0">
+                <div className="flex items-center gap-2 text-primary font-bold">
+                  <FolderPlus className="h-5 w-5" />
+                  <span>Add Custom Category</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setError("");
+                  }}
+                  className="p-1 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer text-red-400 hover:text-red-500"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5 shrink-0" />
+                </button>
+              </div>
 
-            {error && (
+              <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4">
+                {error && (
               <div className="p-3 text-xs bg-rose-50 text-rose-600 border border-rose-100 rounded-lg">
                 {error}
               </div>
@@ -179,6 +172,7 @@ export default function CategoriesPage() {
               <input
                 id="cat-name"
                 type="text"
+                autoComplete="off"
                 {...register("name", { required: "Category name is required" })}
                 placeholder="e.g. Alumni, Research Grants, Internships"
                 className="w-full px-3 py-2 text-sm border border-base-300 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors"
@@ -233,6 +227,37 @@ export default function CategoriesPage() {
               )}
             </div>
 
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-750 uppercase block">
+                Category Color
+              </label>
+              <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 max-w-lg">
+                {CATEGORY_COLORS.map((color) => {
+                  const isSelected = newColor.toLowerCase() === color.toLowerCase();
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setNewColor(color)}
+                      className={`relative w-9 h-9 rounded-full border-2 transition-all duration-200 cursor-pointer active:scale-95 ${isSelected
+                        ? "border-base-content scale-110 shadow-md"
+                        : "border-base-300 hover:scale-105"
+                        }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                      aria-label={`Select color ${color}`}
+                    >
+                      {isSelected && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <span className="w-2.5 h-2.5 rounded-full bg-base-100 shadow" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="flex items-center gap-2 justify-end pt-2">
               <button
                 type="button"
@@ -251,118 +276,17 @@ export default function CategoriesPage() {
                 Create
               </button>
             </div>
+            </div>
           </form>
-        )}
+        </div>
+      )}
 
-        {/* Edit Category Modal Overlay */}
+        {/* Edit Category Modal — shared with the in-category editor */}
         {editingCategory && (
-          <div className="fixed inset-0 bg-base-content/40 backdrop-blur-xs flex items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
-            <form
-              onSubmit={handleSubmitEdit(onEditSubmit)}
-              className="w-full h-full sm:h-auto sm:max-w-md bg-base-100 border-0 sm:border border-base-200 p-6 rounded-none sm:rounded-2xl shadow-none sm:shadow-xl space-y-4 animate-in zoom-in-95 duration-200 overflow-y-auto"
-            >
-              <div className="flex items-center justify-between border-b border-base-200 pb-3">
-                <div className="flex items-center gap-2 text-primary font-bold">
-                  <Pencil className="h-5 w-5" />
-                  <span>Edit Category</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingCategory(null);
-                    setEditError("");
-                  }}
-                  className="text-base-content/50 hover:text-gray-650 cursor-pointer"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {editError && (
-                <div className="p-3 text-xs bg-rose-50 text-rose-600 border border-rose-100 rounded-lg">
-                  {editError}
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-770 uppercase">
-                  Category Name
-                </label>
-                <input
-                  type="text"
-                  {...registerEdit("name", { required: "Category name is required" })}
-                  placeholder="Category Name"
-                  className="w-full px-3 py-2 text-sm border border-base-300 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors"
-                />
-                {editErrors.name && (
-                  <span className="text-[10px] text-rose-500 font-semibold">{editErrors.name.message}</span>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-base-content/60 uppercase">
-                  Description
-                </label>
-                <textarea
-                  {...registerEdit("description", { required: "Description is required" })}
-                  placeholder="Description..."
-                  className="w-full px-3 py-2 text-sm border border-base-300 text-gray-600 rounded-xl focus:outline-none focus:border-blue-500 transition-colors min-h-20 max-h-40"
-                />
-                {editErrors.description && (
-                  <span className="text-[10px] text-rose-500 font-semibold">{editErrors.description.message}</span>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-750 uppercase block">
-                  Category Icon
-                </label>
-                <input type="hidden" {...registerEdit("icon", { required: "Category icon is required" })} />
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 bg-base-200 p-3.5 rounded-2xl border border-base-300/60 max-w-lg">
-                  {Object.keys(ICON_MAP).map((iconKey) => {
-                    const IconComponent = ICON_MAP[iconKey];
-                    const isSelected = selectedIconEdit === iconKey;
-                    return (
-                      <button
-                        key={iconKey}
-                        type="button"
-                        onClick={() => setValueEdit("icon", iconKey)}
-                        className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 group ${isSelected
-                            ? "bg-primary border-primary text-primary-content shadow-md shadow-primary/20 scale-105"
-                            : "bg-base-100 border-base-300 text-base-content/60 hover:text-gray-850 hover:border-gray-350"
-                          }`}
-                        title={iconKey}
-                      >
-                        <IconComponent className="h-5 w-5" />
-                      </button>
-                    );
-                  })}
-                </div>
-                {editErrors.icon && (
-                  <span className="text-[10px] text-rose-500 font-semibold">{editErrors.icon.message}</span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingCategory(null);
-                    setEditError("");
-                  }}
-                  className="px-3.5 py-1.5 border border-base-300 rounded-xl text-xs font-bold text-base-content/60 hover:bg-gray-55 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-content rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
+          <CategoryEditModal
+            category={editingCategory}
+            onClose={() => setEditingCategory(null)}
+          />
         )}
 
         {/* Search Bar */}
@@ -397,10 +321,17 @@ export default function CategoriesPage() {
                 {/* Header Row: Icon & Title on left, Buttons on right */}
                 <div className="flex items-center justify-between gap-3 pointer-events-auto">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50/80 border border-primary/20 flex items-center justify-center shrink-0 shadow-sm transition-all duration-300 group-hover:bg-blue-100/50">
+                    <div
+                      className="w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-sm transition-all duration-300 group-hover:opacity-90"
+                      style={{
+                        backgroundColor: `${cat.color || "#4f46e5"}1a`,
+                        borderColor: `${cat.color || "#4f46e5"}33`,
+                        color: cat.color || "#4f46e5",
+                      }}
+                    >
                       {(() => {
                         const IconComponent = ICON_MAP[cat.icon || "BookOpen"] || Sparkles;
-                        return <IconComponent className="h-4 w-4 text-primary" />;
+                        return <IconComponent className="h-4 w-4" />;
                       })()}
                     </div>
                     <h3 className="text-sm md:text-base font-bold text-base-content font-serif group-hover:text-primary transition-colors duration-300 truncate">
@@ -409,11 +340,17 @@ export default function CategoriesPage() {
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {cat.total_articles > 0 && (
-                      <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full select-none">
+                      <span
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full select-none"
+                        style={{
+                          backgroundColor: `${cat.color || "#4f46e5"}1a`,
+                          color: cat.color || "#4f46e5",
+                        }}
+                      >
                         {cat.total_articles}<span className="hidden sm:inline"> articles</span>
                       </span>
                     )}
-                    {isGold && (
+                    {canManageCategory && (
                       <button
                         onClick={async (e) => {
                           e.stopPropagation();
@@ -447,7 +384,7 @@ export default function CategoriesPage() {
                         )}
                       </button>
                     )}
-                    {isGold && (
+                    {canManageCategory && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { Loader2, ArrowLeft, Pencil, Trash2, FileText } from "lucide-react";
 import { apiService } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
 import GenericOverlayModal from "@/components/overlays/GenericOverlayModal";
 import { toast } from "react-hot-toast";
+import { useViewMode } from "@/hooks/useViewMode";
+import ViewSwitcher from "@/components/helpers/ViewSwitcher";
+import { getGridClass, getIconBoxClass } from "@/lib/viewModes";
 
 interface NewsOverlayProps {
   isOpen: boolean;
@@ -26,6 +29,10 @@ export default function NewsOverlay({
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Article-list view (Default / Tiles / Details / Icons S–XL). Persisted to
+  // localStorage under a news-specific key so it's independent of other surfaces.
+  const [view, setView] = useViewMode("meta_iitgn_news_view");
 
   // Add form states
   const [showAddNewsForm, setShowAddNewsForm] = useState(false);
@@ -74,6 +81,84 @@ export default function NewsOverlay({
     if (!loadingMore && hasMore) {
       fetchNews(page + 1, true);
     }
+  };
+
+  const renderNewsItem = (item: any, idx: number) => {
+    const preview = item.content
+      ? item.content.replace(/---[\s\S]*?---/, "").replace(/#[\s\S]*?\n/, "").trim()
+      : item.description;
+    const posted = `Posted: ${getRelativeTime(item.created_at)}`;
+
+    if (view.startsWith("icon-")) {
+      return (
+        <button
+          key={item.slug || idx}
+          type="button"
+          onClick={() => setSelectedNews(item)}
+          className="group flex flex-col items-center justify-center gap-2 p-2 rounded-xl hover:bg-primary/5 hover:border hover:border-primary cursor-pointer text-center"
+        >
+          <div
+            className={`${getIconBoxClass(view)} rounded-xl border border-primary/20 bg-primary/10 flex items-center justify-center text-primary`}
+          >
+            <FileText className={getIconBoxClass(view)} />
+          </div>
+          <span className="text-xs font-medium text-base-content/80 group-hover:text-primary transition-colors duration-200 max-w-full break-words text-center">
+            {item.title}
+          </span>
+        </button>
+      );
+    }
+
+    if (view === "tiles") {
+      return (
+        <button
+          key={item.slug || idx}
+          type="button"
+          onClick={() => setSelectedNews(item)}
+          className="flex flex-col gap-2 p-4 border border-base-300 bg-base-100 rounded-2xl shadow-xs hover:shadow-md hover:border-primary transition-all duration-150 cursor-pointer text-left w-full"
+        >
+          <div className="w-9 h-9 rounded-lg border border-primary/20 bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <FileText className="h-4.5 w-4.5" />
+          </div>
+          <h4 className="text-sm font-bold text-base-content line-clamp-2">{item.title}</h4>
+          <p className="text-[11px] text-base-content/60 line-clamp-2 mt-auto">{preview}</p>
+        </button>
+      );
+    }
+
+    if (view === "details") {
+      return (
+        <button
+          key={item.slug || idx}
+          type="button"
+          onClick={() => setSelectedNews(item)}
+          className="flex items-center gap-3 p-3 md:p-4 border border-base-300 bg-base-100 rounded-2xl shadow-xs hover:shadow-md hover:border-primary transition-all duration-150 cursor-pointer text-left w-full"
+        >
+          <div className="w-9 h-9 rounded-lg border border-primary/20 bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <FileText className="h-4.5 w-4.5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm md:text-base font-bold text-base-content truncate">{item.title}</h4>
+            <p className="text-[11px] text-base-content/60 line-clamp-1">{preview}</p>
+            <span className="text-[9px] text-base-content/50 font-semibold block mt-1">{posted}</span>
+          </div>
+        </button>
+      );
+    }
+
+    // default
+    return (
+      <button
+        key={item.slug || idx}
+        type="button"
+        onClick={() => setSelectedNews(item)}
+        className="p-5 border border-base-300 bg-base-100 rounded-2xl shadow-xs hover:shadow-md hover:border-primary transition-all duration-150 cursor-pointer text-left animate-in fade-in w-full"
+      >
+        <h4 className="text-base font-bold text-primary">{item.title}</h4>
+        <p className="text-xs text-base-content/60 mt-1 line-clamp-2">{preview}</p>
+        <span className="text-[9px] text-base-content/50 font-semibold block mt-2">{posted}</span>
+      </button>
+    );
   };
 
   const handleAddNews = async (e: React.FormEvent) => {
@@ -320,7 +405,11 @@ export default function NewsOverlay({
             </article>
           </div>
         ) : (
-          <div className="space-y-4">
+          <>
+            <div className="flex items-center justify-end">
+              <ViewSwitcher view={view} onChange={setView} />
+            </div>
+
             {loading ? (
               <div className="flex justify-center items-center py-20">
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
@@ -330,26 +419,11 @@ export default function NewsOverlay({
                 <p className="text-base-content/60 font-medium">No campus news found.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {newsList.map((item, idx) => (
-                  <button
-                    key={item.slug || idx}
-                    type="button"
-                    onClick={() => setSelectedNews(item)}
-                    className="p-5 border border-base-300 bg-base-100 rounded-2xl shadow-xs hover:shadow-md hover:border-primary transition-all duration-150 cursor-pointer text-left animate-in fade-in w-full"
-                  >
-                    <h4 className="text-base font-bold text-primary">{item.title}</h4>
-                    <p className="text-xs text-base-content/60 mt-1 line-clamp-2">
-                      {item.content ? item.content.replace(/---[\s\S]*?---/, "").replace(/#[\s\S]*?\n/, "").trim() : item.description}
-                    </p>
-                    <span className="text-[9px] text-base-content/50 font-semibold block mt-2">
-                      Posted: {getRelativeTime(item.created_at)}
-                    </span>
-                  </button>
-                ))}
+              <div className={getGridClass(view)}>
+                {newsList.map((item, idx) => renderNewsItem(item, idx))}
 
                 {hasMore && (
-                  <div className="flex justify-center pt-4">
+                  <div className="col-span-full flex justify-center pt-4">
                     <button
                       onClick={handleLoadMore}
                       disabled={loadingMore}
@@ -368,7 +442,7 @@ export default function NewsOverlay({
                 )}
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </GenericOverlayModal>

@@ -74,21 +74,13 @@ export default function LeftPanel({
 
   const portalsToDisplay = useMemo(() => {
     const pinned = categories.filter((c) => c.is_pinned);
-    const colors = [
-      { bg: "bg-rose-50 text-rose-500", icon: "text-rose-500", textBg: "hover:bg-rose-50/50" },
-      { bg: "bg-amber-50 text-amber-600", icon: "text-amber-600", textBg: "hover:bg-amber-50/50" },
-      { bg: "bg-emerald-50 text-emerald-600", icon: "text-emerald-600", textBg: "hover:bg-emerald-50/50" },
-      { bg: "bg-indigo-50 text-indigo-600", icon: "text-indigo-600", textBg: "hover:bg-indigo-50/50" },
-      { bg: "bg-sky-50 text-sky-500", icon: "text-sky-500", textBg: "hover:bg-sky-50/50" },
-      { bg: "bg-secondary/10 text-secondary", icon: "text-purple-500", textBg: "hover:bg-purple-50/50" },
-    ];
 
-    return pinned.map((c, idx) => ({
+    return pinned.map((c) => ({
       name: c.name,
       slug: c.slug,
       path: `/wiki/${c.slug}`,
       iconName: c.icon || "BookOpen",
-      colorTheme: colors[idx % colors.length],
+      color: c.color || "#4f46e5",
     }));
   }, [categories]);
 
@@ -109,15 +101,19 @@ export default function LeftPanel({
 
   const renderPortalIcon = (
     iconName: string,
-    colorTheme: { bg: string; icon: string }
+    color: string
   ) => {
     const IconComponent = PORTAL_ICON_MAP[iconName] || HelpCircle;
 
     return (
       <div
-        className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${colorTheme.bg}`}
+        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+        style={{
+          backgroundColor: `${color}1a`,
+          color: color,
+        }}
       >
-        <IconComponent className={`h-5 w-5 ${colorTheme.icon}`} />
+        <IconComponent className="h-5 w-5" />
       </div>
     );
   };
@@ -223,7 +219,7 @@ export default function LeftPanel({
                   }}
                   className={`card card-compact card-bordered flex flex-row items-center gap-2 p-3 border-base-200 bg-base-100 shadow-xs hover:scale-105 transition-all duration-100 ease-in-out cursor-pointer group text-left w-full`}
                 >
-                  {renderPortalIcon(portal.iconName, portal.colorTheme)}
+                  {renderPortalIcon(portal.iconName, portal.color)}
                   <span className="text-xs font-semibold text-base-content group-hover:text-primary transition-colors duration-200">
                     {portal.name}
                   </span>

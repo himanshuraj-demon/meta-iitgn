@@ -134,7 +134,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <ProfileProvider>
           {children}
           <Toaster
-            position="top-right"
+            position="top-center"
+            containerStyle={{ zIndex: 30000 }}
             toastOptions={{
               className: "!bg-base-100 !text-base-content border !border-base-300 rounded-lg shadow-lg font-sans",
               style: {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Trash2, Tag } from "lucide-react";
+import { X, Trash2, Tag, ChevronDown, Search, Check } from "lucide-react";
 import { EditableCell } from "@/components/article/editable-cell";
 import { InfoboxData } from "@/lib/types";
 import { apiService } from "@/api";
@@ -32,9 +32,9 @@ interface WikiInfoBoxProps {
 }
 
 /**
- * Category selector for the infobox "Category" row. It acts like a dropdown you
- * can also type into, but only lets you commit a value that matches one of the
- * real categories (typed free-text is reverted on blur/close).
+ * Category selector for the infobox "Category" row. Renders a real dropdown:
+ * a select-style trigger showing the current value, which opens a panel with a
+ * search box and a filtered list. Only real categories can be selected.
  */
 function CategoryCombobox({
   value,
@@ -46,13 +46,10 @@ function CategoryCombobox({
   categories: Category[];
 }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState(value || "");
+  const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    setQuery(value || "");
-  }, [value]);
+  const searchRef = useRef<HTMLInputElement | null>(null);
 
   const normalized = (s: string) => s.toLowerCase().trim();
   const filtered = categories.filter(
@@ -61,21 +58,35 @@ function CategoryCombobox({
       normalized(c.name).includes(normalized(query)) ||
       normalized(c.slug).includes(normalized(query))
   );
-  const isValid = categories.some(
-    (c) =>
-      normalized(c.name) === normalized(query) ||
-      normalized(c.slug) === normalized(query)
-  );
+
+  // Close on outside click.
+  useEffect(() => {
+    if (!open) return;
+    const onDocMouseDown = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, [open]);
+
+  // Focus the search box and reset filter each time the panel opens.
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      setActiveIndex(0);
+      // Focus after the panel mounts.
+      requestAnimationFrame(() => searchRef.current?.focus());
+    }
+  }, [open]);
 
   const select = (cat: Category) => {
     onChange(cat.name);
-    setQuery(cat.name);
     setOpen(false);
-  };
-
-  // Only allow committing a real category — revert stray text on close/blur.
-  const revertIfInvalid = () => {
-    if (!isValid) setQuery(value || "");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -84,62 +95,91 @@ function CategoryCombobox({
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setOpen(true);
       setActiveIndex((i) => Math.min(i + 1, filtered.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveIndex((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (open && filtered[activeIndex]) select(filtered[activeIndex]);
+      if (filtered[activeIndex]) select(filtered[activeIndex]);
     } else if (e.key === "Escape") {
+      e.preventDefault();
       setOpen(false);
-      revertIfInvalid();
     }
   };
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-          setActiveIndex(0);
-        }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(revertIfInvalid, 120)}
-        onKeyDown={handleKeyDown}
-        placeholder="Select category"
-        className="w-full border border-base-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-primary font-normal bg-transparent resize-none"
-      />
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 border border-base-300 rounded px-2 py-1 text-xs bg-transparent hover:border-primary focus:outline-none focus:border-primary transition-colors"
+      >
+        <span className={value ? "text-base-content" : "text-base-content/40"}>
+          {value || "Select category"}
+        </span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 shrink-0 text-base-content/50 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
       {open && (
-        <ul className="absolute z-50 mt-1 w-full max-h-48 overflow-auto rounded-lg border border-base-300 bg-base-100 shadow-lg no-scrollbar">
-          {filtered.length === 0 ? (
-            <li className="px-3 py-2 text-xs text-base-content/40">
-              No matching categories
-            </li>
-          ) : (
-            filtered.map((cat, idx) => (
-              <li
-                key={cat.category_id}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  select(cat);
-                }}
-                onMouseEnter={() => setActiveIndex(idx)}
-                className={`px-3 py-2 text-xs cursor-pointer ${
-                  idx === activeIndex
-                    ? "bg-primary/10 text-primary"
-                    : "text-base-content hover:bg-base-200"
-                }`}
-              >
-                {cat.name}
+        <div className="absolute z-50 mt-1 w-full rounded-lg border border-base-300 bg-base-100 shadow-lg overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-base-300 px-2 py-1.5">
+            <Search className="h-3.5 w-3.5 shrink-0 text-base-content/40" />
+            <input
+              ref={searchRef}
+              type="text"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setActiveIndex(0);
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Search categories…"
+              className="w-full bg-transparent text-xs focus:outline-none font-normal"
+            />
+          </div>
+          <ul
+            role="listbox"
+            className="max-h-48 overflow-auto no-scrollbar py-1"
+          >
+            {filtered.length === 0 ? (
+              <li className="px-3 py-2 text-xs text-base-content/40">
+                No matching categories
               </li>
-            ))
-          )}
-        </ul>
+            ) : (
+              filtered.map((cat, idx) => {
+                const selected = normalized(cat.name) === normalized(value);
+                return (
+                  <li
+                    key={cat.category_id}
+                    role="option"
+                    aria-selected={selected}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      select(cat);
+                    }}
+                    onMouseEnter={() => setActiveIndex(idx)}
+                    className={`flex items-center justify-between gap-2 px-3 py-2 text-xs cursor-pointer ${
+                      idx === activeIndex
+                        ? "bg-primary/10 text-primary"
+                        : "text-base-content hover:bg-base-200"
+                    }`}
+                  >
+                    <span className="truncate">{cat.name}</span>
+                    {selected && (
+                      <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    )}
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
       )}
     </div>
   );

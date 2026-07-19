@@ -20,6 +20,7 @@ export interface Category {
   total_articles: number;
   is_pinned?: boolean;
   icon?: string;
+  color?: string;
   created_at: string;
   updated_at: string;
 }
