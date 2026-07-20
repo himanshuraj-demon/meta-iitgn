@@ -15,6 +15,7 @@ import { Plugin } from "@milkdown/prose/state";
 import type { EditorView } from "@milkdown/prose/view";
 import { $prose, $useKeymap } from "@milkdown/utils";
 import { cn } from "@/lib/utils";
+import { applySectionFolding } from "@/lib/wikiFolding";
 import { apiService, getPagesList } from "@/api";
 import type { PageListItem } from "@/api";
 
@@ -41,109 +42,9 @@ interface MilkdownEditorInnerProps {
   autoFold?: boolean;
 }
 
-// Heading levels that begin a foldable section in the reader.
-const FOLDABLE_TAGS = new Set(["H2", "H3"]);
-
-const FOLD_TOGGLE_SVG =
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>';
-
-/**
- * Groups the top-level blocks of a read-only ProseMirror document into
- * collapsible sections: each H2/H3 heading becomes the handle for the content
- * that follows it (up to the next foldable heading). Idempotent — guarded by a
- * data attribute so it can safely re-run.
- */
-function applySectionFolding(prose: HTMLElement, startCollapsed = false) {
-  if (prose.dataset.folded === "true") return;
-
-  const children = Array.from(prose.children) as HTMLElement[];
-  const pre: HTMLElement[] = [];
-  const sections: { heading: HTMLElement; body: HTMLElement[] }[] = [];
-
-  for (const child of children) {
-    if (FOLDABLE_TAGS.has(child.tagName)) {
-      sections.push({ heading: child, body: [] });
-    } else if (sections.length === 0) {
-      pre.push(child);
-    } else {
-      sections[sections.length - 1].body.push(child);
-    }
-  }
-
-  // Nothing to fold (e.g. a short article with no sub-headings) — leave the
-  // DOM untouched and don't mark as folded so a later render can still fold.
-  if (sections.length === 0) return;
-
-  // Detach current top-level nodes, then re-append them wrapped in fold markup.
-  // Node references stay valid after innerHTML="" so we can re-insert them.
-  prose.innerHTML = "";
-  const fragment = document.createDocumentFragment();
-
-  for (const node of pre) fragment.appendChild(node);
-
-  for (const sec of sections) {
-    const wrap = document.createElement("div");
-    wrap.className = "wiki-fold";
-
-    const toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = "wiki-fold-toggle";
-    toggle.setAttribute("aria-label", "Collapse section");
-    toggle.setAttribute("aria-expanded", "true");
-    toggle.innerHTML = FOLD_TOGGLE_SVG;
-
-    sec.heading.classList.add("wiki-fold-title");
-    sec.heading.prepend(toggle);
-
-    const body = document.createElement("div");
-    body.className = "wiki-fold-body";
-    for (const node of sec.body) body.appendChild(node);
-
-    wrap.appendChild(sec.heading);
-    wrap.appendChild(body);
-
-    // Toggle the section on click of the heading (the chevron is a child, so it
-    // is covered via bubbling). Links inside a heading are left alone so they
-    // still navigate.
-    const toggleSection = (e: Event) => {
-      if ((e.target as HTMLElement)?.closest("a")) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const collapsed = wrap.classList.toggle("collapsed");
-      toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-      toggle.setAttribute(
-        "aria-label",
-        collapsed ? "Expand section" : "Collapse section"
-      );
-    };
-
-    // Stop mousedown/pointerdown from reaching ProseMirror: in read-only mode a
-    // mousedown still sets a selection, which dispatches a transaction and makes
-    // ProseMirror reconcile the DOM — wiping the wrappers we injected. On rapid
-    // successive clicks that eventually removes the toggle itself. Blocking the
-    // event at the heading keeps our markup intact (links are exempt).
-    const blockProseMirror = (e: Event) => {
-      if ((e.target as HTMLElement)?.closest("a")) return;
-      e.stopPropagation();
-      e.preventDefault();
-    };
-    sec.heading.addEventListener("mousedown", blockProseMirror);
-    sec.heading.addEventListener("pointerdown", blockProseMirror);
-    sec.heading.addEventListener("click", toggleSection);
-
-    // "Auto fold" starts every section collapsed.
-    if (startCollapsed) {
-      wrap.classList.add("collapsed");
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.setAttribute("aria-label", "Expand section");
-    }
-
-    fragment.appendChild(wrap);
-  }
-
-  prose.appendChild(fragment);
-  prose.dataset.folded = "true";
-}
+// Section folding for the read-only surface is implemented in
+// `@/lib/wikiFolding` (shared with the lightweight static reader) and invoked
+// from the reader-only effect below.
 
 /** Active `[[` page-link suggestion shown by the editor dropdown. */
 interface WikiLinkSuggestion {

@@ -37,5 +37,28 @@ export const getIconBoxClass = (view: ViewMode): string => {
   }
 };
 
+// Pixel size for an icon glyph (Lucide or emoji) rendered inside a view item's
+// icon box. Kept a touch smaller than the box so the glyph sits comfortably
+// within the rounded container across every view mode.
+export const getIconSize = (view: ViewMode): number => {
+  switch (view) {
+    case "icon-sm":
+      return 16;
+    case "icon-md":
+      return 20;
+    case "icon-lg":
+      return 28;
+    case "icon-xl":
+      return 36;
+    case "tiles":
+      return 20;
+    case "details":
+      return 16;
+    case "default":
+    default:
+      return 18;
+  }
+};
+
 export const humanizeSlug = (slug: string): string =>
   slug.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();

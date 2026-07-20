@@ -7,6 +7,24 @@ export const invalidateCategoriesCache = () => {
   categoriesCache = null;
 };
 
+// Per-category article listings (GET /categories/:slug/articles). Keyed by
+// `${slug}:${page}:${limit}` so each pagination window is cached independently.
+const categoryArticlesCache = new Map<string, { data: any; expiry: number }>();
+const CATEGORY_ARTICLES_TTL = 60000; // 60 seconds
+
+export const invalidateCategoryArticlesCache = (slug?: string) => {
+  if (slug) {
+    // Drop every cached window for this category (any page/limit variant).
+    for (const key of categoryArticlesCache.keys()) {
+      if (key.startsWith(`${slug}:`)) {
+        categoryArticlesCache.delete(key);
+      }
+    }
+  } else {
+    categoryArticlesCache.clear();
+  }
+};
+
 export const getCategories = async (req: Request, res: Response) => {
   try {
     if (categoriesCache) {
@@ -249,6 +267,7 @@ export const updateCategory = async (req: Request, res: Response) => {
     });
 
     invalidateCategoriesCache();
+    invalidateCategoryArticlesCache();
 
     const count = await prisma.live_pages.count({
       where: {
@@ -375,6 +394,12 @@ export const getCategoryArticles = async (req: Request, res: Response) => {
     const limitNum = parseInt(req.query.limit as string, 10) || 6;
     const skip = (pageNum - 1) * limitNum;
 
+    const cacheKey = `${categorySlug}:${pageNum}:${limitNum}`;
+    const cached = categoryArticlesCache.get(cacheKey);
+    if (cached && cached.expiry > Date.now()) {
+      return res.json(cached.data);
+    }
+
     // Pages are associated with a category via the `category` or `subcategory` columns.
     const totalMatched = await prisma.live_pages.count({
       where: {
@@ -397,7 +422,9 @@ export const getCategoryArticles = async (req: Request, res: Response) => {
       select: {
         page_id: true,
         slug: true,
-        title: true
+        title: true,
+        icon: true,
+        color: true
       },
       orderBy: {
         title: 'asc'
@@ -409,16 +436,21 @@ export const getCategoryArticles = async (req: Request, res: Response) => {
     const results = paginatedPages.map((page) => ({
       page_id: page.page_id,
       slug: page.slug,
-      title: page.title || "Untitled"
+      title: page.title || "Untitled",
+      icon: page.icon,
+      color: page.color
     }));
 
-    return res.json({
+    const response = {
       articles: results,
       total: totalMatched,
       page: pageNum,
       limit: limitNum,
       hasMore: skip + limitNum < totalMatched
-    });
+    };
+    categoryArticlesCache.set(cacheKey, { data: response, expiry: Date.now() + CATEGORY_ARTICLES_TTL });
+
+    return res.json(response);
   } catch (error: any) {
     console.error("Error in getCategoryArticles:", error);
     return res.status(500).json({ error: error.message || "Internal server error" });

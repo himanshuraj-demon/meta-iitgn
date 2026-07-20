@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, Search as SearchIcon } from "lucide-react";
+import { EmojiPicker } from "frimousse";
 import {
   CATEGORY_ICON_SET,
   CATEGORY_ICON_KEYS,
@@ -10,16 +11,6 @@ import {
   DEFAULT_COLOR,
   isEmojiIcon,
 } from "@/lib/categoryIcon";
-
-const EMOJIS = [
-  "📚", "📖", "📝", "✏️", "📌", "📎", "🔖", "💡", "⭐", "🔥",
-  "🎓", "🏫", "🏢", "🏛️", "🏠", "🏞️", "🌄", "⛺", "🗺️", "📍",
-  "🔬", "🧪", "⚗️", "🧬", "💻", "🤖", "📊", "📈", "📉", "🧮",
-  "⚽", "🏆", "🥇", "🎉", "🎪", "🎯", "🎨", "🎭", "🎵", "📅",
-  "📆", "⏰", "📰", "📢", "💬", "👥", "👤", "🤝", "🌟", "💼",
-  "🏅", "❤️", "✅", "⚙️", "🔧", "🛡️", "🚀", "🌈", "🍀", "🌿",
-  "🌍", "☕", "🍎", "🧭",
-];
 
 type Tab = "icon" | "emoji";
 
@@ -118,27 +109,55 @@ export default function CategoryIconPicker({
           </div>
         )}
 
-        {/* Emoji grid */}
+        {/* Emoji picker */}
         {tab === "emoji" && (
-          <div className="grid grid-cols-8 gap-1.5 max-h-52 overflow-y-auto">
-            {EMOJIS.map((e) => {
-              const selected = selectedIcon === e;
-              return (
-                <button
-                  key={e}
-                  type="button"
-                  onClick={() => setSelectedIcon(e)}
-                  className={`py-1.5 rounded-lg border text-xl leading-none flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-95 ${
-                    selected
-                      ? "bg-primary/15 border-primary scale-105"
-                      : "bg-base-100 border-base-300 hover:bg-base-200"
-                  }`}
-                >
-                  {e}
-                </button>
-              );
-            })}
-          </div>
+          <EmojiPicker.Root
+            columns={8}
+            className="flex flex-col [&_*]:outline-none"
+            onEmojiSelect={(e) => setSelectedIcon(e.emoji)}
+          >
+            <div className="relative">
+              <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-base-content/40 pointer-events-none" />
+              <EmojiPicker.Search
+                autoFocus
+                placeholder="Search emoji…"
+                className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-base-300 bg-base-100 text-base-content placeholder-base-content/40 focus:border-primary focus:outline-none"
+              />
+            </div>
+
+            <EmojiPicker.Viewport className="h-64 overflow-y-auto rounded-lg">
+              <EmojiPicker.Loading className="flex items-center justify-center h-full text-xs text-base-content/50">
+                Loading emojis…
+              </EmojiPicker.Loading>
+              <EmojiPicker.Empty className="flex items-center justify-center h-full text-xs text-base-content/50">
+                No emoji found.
+              </EmojiPicker.Empty>
+              <EmojiPicker.List
+                className="flex flex-col"
+                components={{
+                  CategoryHeader: ({ category }) => (
+                    <div className="sticky top-0 z-10 px-1 py-1.5 text-[10px] font-bold uppercase tracking-wider text-base-content/50 bg-base-100/95 backdrop-blur">
+                      {category.label}
+                    </div>
+                  ),
+                  Row: ({ children }) => <div className="flex gap-0.5">{children}</div>,
+                  Emoji: ({ emoji, ...props }) => {
+                    const selected = emoji.emoji === selectedIcon;
+                    return (
+                      <button
+                        {...props}
+                        className={`flex-1 aspect-square flex items-center justify-center rounded-lg text-xl leading-none transition-all duration-150 cursor-pointer hover:bg-primary/10 hover:scale-105 active:scale-95 ${
+                          selected ? "bg-primary/15 ring-1 ring-primary" : ""
+                        } ${emoji.isActive ? "bg-primary/10" : ""}`}
+                      >
+                        {emoji.emoji}
+                      </button>
+                    );
+                  },
+                }}
+              />
+            </EmojiPicker.Viewport>
+          </EmojiPicker.Root>
         )}
 
         {/* Color row */}

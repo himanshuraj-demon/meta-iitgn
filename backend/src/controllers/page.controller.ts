@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { invalidateCategoriesCache, extractPageFields } from './category.controller.js';
+import { invalidateCategoriesCache, invalidateCategoryArticlesCache, extractPageFields } from './category.controller.js';
 import { processAndMarkMediaUsed } from '../utils/cleanup.js';
 import { updateSyncMetadata } from '../utils/syncMetadata.js';
 
@@ -73,6 +73,8 @@ export const getRecentNewPages = async (req: Request, res: Response) => {
         created_at: true,
         metadata: true,
         content: true,
+        icon: true,
+        color: true,
       },
     });
     return res.json(pages);
@@ -104,6 +106,8 @@ export const getRecentUpdatedPages = async (req: Request, res: Response) => {
         updated_at: true,
         metadata: true,
         content: true,
+        icon: true,
+        color: true,
       },
     });
     return res.json(pages);
@@ -516,65 +520,73 @@ export const getPageById = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * GET /pages/:slug
- * Retrieve a live page by its slug. 
- * Fallback to searching unreviewed pending page drafts with a matching slugified title.
- */
-export const getPage = async (req: Request, res: Response) => {
-  try {
-    const slug = req.params.slug as string;
+// --- Stale-while-revalidate cache for individual live pages ---
+// On a cache hit we return the payload immediately with NO awaited DB call, then
+// revalidate the live `version` in the background and replace the entry on
+// mismatch. A cache miss blocks and fetches as usual (warming the cache).
+const pageCache = new Map<string, { version: number; data: any }>();
+const pageRevalidating = new Set<string>();
+const PAGE_CACHE_MAX = 500;
 
-    // 1. Try to find the live page
-    const livePage = await prisma.live_pages.findFirst({
-      where: {
-        slug,
-        deleted_at: null,
-      },
-      include: {
-        original_author: {
-          select: { name: true },
-        },
-        updater: {
-          select: { name: true },
-        },
-      },
-    });
+export const invalidatePageCache = (slug: string) => {
+  pageCache.delete(slug);
+};
 
-    if (livePage) {
-      return res.json({
+const fetchLivePage = async (slug: string): Promise<{ version: number; data: any } | null> => {
+  const livePage = await prisma.live_pages.findFirst({
+    where: {
+      slug,
+      deleted_at: null,
+    },
+    include: {
+      original_author: {
+        select: { name: true },
+      },
+      updater: {
+        select: { name: true },
+      },
+    },
+  });
+
+  if (livePage) {
+    return {
+      version: livePage.version ?? 1,
+      data: {
         ...livePage,
         users: { name: livePage.original_author?.name },
         updater: { name: livePage.updater?.name ?? null },
-      });
+      },
+    };
+  }
+
+  // Fallback: an in_review new-page proposal with a slugified title match.
+  const pendingPages = await prisma.pending_pages.findMany({
+    where: {
+      status: 'in_review',
+      page_id: null,
+    },
+    include: {
+      editor: {
+        select: { name: true },
+      },
+    },
+  });
+
+  for (const draft of pendingPages) {
+    const meta = draft.metadata as any;
+    let draftSlug = meta?.slug;
+    if (!draftSlug && draft.title) {
+      const baseSlug = draft.title
+        .replace(/[^a-zA-Z0-9\s-]/g, '')
+        .trim()
+        .toLowerCase();
+      draftSlug = baseSlug.replace(/[\s-]+/g, '-');
     }
 
-    // 2. Check pending_pages where status is 'in_review' and page_id is null (new page proposals)
-    const pendingPages = await prisma.pending_pages.findMany({
-      where: {
-        status: 'in_review',
-        page_id: null,
-      },
-      include: {
-        editor: {
-          select: { name: true },
-        },
-      },
-    });
-
-    for (const draft of pendingPages) {
-      const meta = draft.metadata as any;
-      let draftSlug = meta?.slug;
-      if (!draftSlug && draft.title) {
-        const baseSlug = draft.title
-          .replace(/[^a-zA-Z0-9\s-]/g, '')
-          .trim()
-          .toLowerCase();
-        draftSlug = baseSlug.replace(/[\s-]+/g, '-');
-      }
-
-      if (draftSlug === slug) {
-        return res.json({
+    if (draftSlug === slug) {
+      return {
+        version: 1,
+        data: {
           page_id: null,
           pending_id: draft.pending_id,
           title: draft.title,
@@ -586,11 +598,78 @@ export const getPage = async (req: Request, res: Response) => {
           created_at: draft.created_at,
           updated_at: draft.created_at,
           users: { name: draft.editor.name },
-        });
-      }
+        },
+      };
+    }
+  }
+
+  return null;
+};
+
+const revalidateLivePage = async (slug: string) => {
+  if (pageRevalidating.has(slug)) return;
+  pageRevalidating.add(slug);
+  try {
+    const cached = pageCache.get(slug);
+    if (!cached) return;
+
+    // Cheap indexed probe: only the version + soft-delete flag.
+    const meta = await prisma.live_pages.findUnique({
+      where: { slug },
+      select: { version: true, deleted_at: true },
+    });
+
+    if (!meta || meta.deleted_at !== null) {
+      // Page was deleted (or never existed) → drop the now-stale entry.
+      pageCache.delete(slug);
+      return;
     }
 
-    return res.status(404).json({ detail: 'Page not found or deleted' });
+    if ((meta.version ?? 1) !== cached.version) {
+      const fresh = await fetchLivePage(slug);
+      if (fresh) pageCache.set(slug, fresh);
+    }
+  } catch (error) {
+    console.error('Error in revalidateLivePage:', error);
+  } finally {
+    pageRevalidating.delete(slug);
+  }
+};
+
+const cacheLivePage = (slug: string, entry: { version: number; data: any }) => {
+  if (pageCache.size >= PAGE_CACHE_MAX && !pageCache.has(slug)) {
+    const oldest = pageCache.keys().next().value;
+    if (oldest !== undefined) pageCache.delete(oldest);
+  }
+  pageCache.set(slug, entry);
+};
+
+/**
+ * GET /pages/:slug
+ * Retrieve a live page by its slug.
+ * Stale-while-revalidate: serves the cached payload instantly, then checks the
+ * live version in the background and replaces it if out of sync.
+ * Fallback to searching unreviewed pending page drafts with a matching slugified title.
+ */
+export const getPage = async (req: Request, res: Response) => {
+  try {
+    const slug = req.params.slug as string;
+
+    const cached = pageCache.get(slug);
+    if (cached) {
+      // Serve stale immediately; revalidate without blocking the response.
+      res.json(cached.data);
+      void revalidateLivePage(slug);
+      return;
+    }
+
+    // Cache miss → block and fetch (warms the cache for subsequent requests).
+    const result = await fetchLivePage(slug);
+    if (!result) {
+      return res.status(404).json({ detail: 'Page not found or deleted' });
+    }
+    cacheLivePage(slug, result);
+    return res.json(result.data);
   } catch (error: any) {
     console.error('Error in getPage:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
@@ -743,9 +822,11 @@ export const createPage = async (req: Request, res: Response) => {
     await processAndMarkMediaUsed(content, (metadata as any)?.image);
 
     invalidateCategoriesCache();
+    invalidateCategoryArticlesCache();
     invalidateStatsCache();
     invalidateSearchCache();
     invalidateSyncCache('updatedpages');
+    invalidatePageCache(slug);
     invalidateSyncCache('news');
     invalidateSyncCache('popular');
 
@@ -920,9 +1001,11 @@ export const updatePage = async (req: Request, res: Response) => {
     );
 
     invalidateCategoriesCache();
+    invalidateCategoryArticlesCache();
     invalidateStatsCache();
     invalidateSearchCache();
     invalidateSyncCache('updatedpages');
+    invalidatePageCache(slug);
     invalidateSyncCache('news');
     invalidateSyncCache('popular');
 
@@ -972,9 +1055,11 @@ export const deletePage = async (req: Request, res: Response) => {
     });
 
     invalidateCategoriesCache();
+    invalidateCategoryArticlesCache();
     invalidateStatsCache();
     invalidateSearchCache();
     invalidateSyncCache('updatedpages');
+    invalidatePageCache(slug);
     invalidateSyncCache('news');
     invalidateSyncCache('popular');
 
@@ -1153,7 +1238,7 @@ export const getPageRevisions = async (req: Request, res: Response) => {
  */
 export const revertPageToRevision = async (req: Request, res: Response) => {
   try {
-    const { slug } = req.params;
+    const slug = String(req.params.slug);
     const revision_id = parseInt(req.params.revision_id as string, 10);
     const userId = Number(req.user.user_id);
 
@@ -1251,9 +1336,11 @@ export const revertPageToRevision = async (req: Request, res: Response) => {
     });
 
     invalidateCategoriesCache();
+    invalidateCategoryArticlesCache();
     invalidateStatsCache();
     invalidateSearchCache();
     invalidateSyncCache('updatedpages');
+    invalidatePageCache(slug);
 
     return res.json({ success: true, data: result });
   } catch (error: any) {

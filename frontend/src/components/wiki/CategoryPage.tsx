@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useHomeStore } from "@/store/useHomeStore";
 import { PlusCircle, Pencil } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "react-hot-toast";
 import { apiService } from "@/api";
 import CategoryEditModal from "@/components/overlays/CategoryEditModal";
@@ -13,12 +13,14 @@ import CategoryIconPicker from "@/components/overlays/CategoryIconPicker";
 import { CategoryIcon } from "@/lib/categoryIcon";
 import { useViewMode } from "@/hooks/useViewMode";
 import ViewSwitcher from "@/components/helpers/ViewSwitcher";
-import { getGridClass, humanizeSlug } from "@/lib/viewModes";
+import { getGridClass, humanizeSlug, getIconSize } from "@/lib/viewModes";
 import UnifiedViewItem from "@/components/helpers/UnifiedViewItem";
 
 export interface Article {
   slug: string;
   title: string;
+  icon?: string | null;
+  color?: string | null;
 }
 
 interface CategoryPageProps {
@@ -33,6 +35,22 @@ interface CategoryPageProps {
 
 // localStorage key for the user's preferred article-list view on category pages.
 const CATEGORY_VIEW_KEY = "meta_iitgn_category_view";
+
+// Module-level cache of a category's loaded article list. The PortalOverlay
+// unmounts CategoryPage whenever the Quick Portal closes, discarding its state,
+// so the cache lives here (not in component state) to survive re-opens. Entries
+// expire after a short TTL so newly created/edited articles still surface
+// without a manual refresh.
+const CATEGORY_ARTICLES_TTL = 2 * 60 * 1000; // 2 minutes
+
+interface CategoryArticlesCacheEntry {
+  articles: Article[];
+  page: number;
+  hasMore: boolean;
+  ts: number;
+}
+
+const categoryArticlesCache = new Map<string, CategoryArticlesCacheEntry>();
 
 const ArticleSkeleton = () => (
   <div className="card card-compact card-border w-full flex flex-col justify-between p-4 md:p-6 bg-base-100 border-base-200 shadow-[0_2px_10px_rgba(0,0,0,0.01)] animate-pulse select-none">
@@ -90,7 +108,7 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
   // "Add Subcategory" inline form state.
   const [showAddSub, setShowAddSub] = useState(false);
 
-  const loadCategoryArticles = async (pageNum = 1, append = false) => {
+  const loadCategoryArticles = useCallback(async (pageNum = 1, append = false) => {
     try {
       if (pageNum === 1) {
         setLoading(true);
@@ -101,10 +119,23 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
 
       const mapped: Article[] = res.articles.map((art: any) => ({
         slug: art.slug,
-        title: art.title
+        title: art.title,
+        icon: art.icon,
+        color: art.color
       }));
 
-      setArticles(prev => append ? [...prev, ...mapped] : mapped);
+      setArticles(prev => {
+        const next = append ? [...prev, ...mapped] : mapped;
+        // Persist the freshly loaded list so a later re-open renders instantly
+        // from the cache instead of refetching from the server.
+        categoryArticlesCache.set(categorySlug, {
+          articles: next,
+          page: pageNum,
+          hasMore: res.hasMore,
+          ts: Date.now(),
+        });
+        return next;
+      });
       setHasMore(res.hasMore);
       setPage(pageNum);
     } catch (err) {
@@ -113,11 +144,22 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [categorySlug]);
 
   useEffect(() => {
+    // Reuse a cached article list while it's still fresh so re-opening the same
+    // category — or bouncing back to it from a subcategory — is instant instead
+    // of firing a fresh fetch every time the overlay mounts.
+    const cached = categoryArticlesCache.get(categorySlug);
+    if (cached && Date.now() - cached.ts < CATEGORY_ARTICLES_TTL) {
+      setArticles(cached.articles);
+      setPage(cached.page);
+      setHasMore(cached.hasMore);
+      setLoading(false);
+      return;
+    }
     loadCategoryArticles(1, false);
-  }, [categorySlug]);
+  }, [categorySlug, loadCategoryArticles]);
 
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {
@@ -298,12 +340,22 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
             <div className="w-full flex flex-col gap-8">
               <div className={getGridClass(view)}>
                 {articles.map((article) => {
+                  // Each page carries its own icon+color (emoji or Lucide key),
+                  // editable from the article header. Fall back to the category's
+                  // icon/color when a page hasn't set its own.
+                  const pageColor = article.color || category.color || "#4f46e5";
                   const iconBoxStyle = {
-                    backgroundColor: `${category.color || "#4f46e5"}1a`,
-                    borderColor: `${category.color || "#4f46e5"}33`,
-                    color: category.color || "#4f46e5",
+                    backgroundColor: `${pageColor}1a`,
+                    borderColor: `${pageColor}33`,
+                    color: pageColor,
                   };
                   const href = `/wiki/${categorySlug}/${article.slug}`;
+                  const pageIcon = (
+                    <CategoryIcon
+                      icon={article.icon || category.icon}
+                      size={getIconSize(view)}
+                    />
+                  );
 
                   return (
                     <UnifiedViewItem
@@ -312,6 +364,7 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
                       href={href}
                       title={article.title}
                       subtitle={view === "details" ? humanizeSlug(article.slug) : undefined}
+                      icon={pageIcon}
                       iconBoxStyle={iconBoxStyle}
                     />
                   );

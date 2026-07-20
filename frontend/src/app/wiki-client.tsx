@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
+import ReactMarkdown from "react-markdown";
 import { parseMarkdown, stringifyMarkdown } from "@/lib/utils";
 import { InfoboxData, InfoboxRow } from "@/lib/types";
 import { apiService } from "@/api";
@@ -28,17 +29,34 @@ import GenericOverlayModal from "@/components/overlays/GenericOverlayModal";
 import RevisionsView from "@/components/wiki/RevisionsView";
 import PendingChangesView from "@/components/wiki/PendingChangesView";
 import WikiInfoBox from "@/components/wiki/WikiInfoBox";
+import { makeHeadingId } from "@/lib/wikiFolding";
 import { CategoryIcon } from "@/lib/categoryIcon";
 import CategoryIconPicker from "@/components/overlays/CategoryIconPicker";
 import { DEFAULT_ICON, DEFAULT_COLOR } from "@/lib/categoryIcon";
 
-// Dynamically import MilkdownEditor so it doesn't run during SSR
-const MilkdownEditor = dynamic(
-  () => import("@/components/article/milkdown-editor"),
-  {
-    ssr: false,
-  }
-);
+// Progressive enhancement for the read-only surface: while the heavy Milkdown
+// (Crepe) chunk is still downloading, render the article as lightweight static
+// markdown so the title and body paint together immediately instead of the
+// content popping in once the editor bundle arrives. Milkdown then takes over
+// as the reader (preserving visual parity with edit mode). The fallback is
+// transient — it is replaced the moment the editor is ready.
+function MilkdownEditorLazy(props: any) {
+  const fallbackMarkdown = useRef(props.initialMarkdown ?? "");
+  fallbackMarkdown.current = props.initialMarkdown ?? "";
+  const Editor = useMemo(
+    () =>
+      dynamic(() => import("@/components/article/milkdown-editor"), {
+        ssr: false,
+        loading: () => (
+          <div className="milkdown-container prose max-w-none relative min-h-0 border-none p-0">
+            <ReactMarkdown>{fallbackMarkdown.current}</ReactMarkdown>
+          </div>
+        ),
+      }),
+    []
+  );
+  return <Editor {...props} />;
+}
 
 interface WikiClientProps {
   initialMarkdown: string;
@@ -53,6 +71,8 @@ interface WikiClientProps {
   // Per-page icon + color, echoed from the page's `icon`/`color` columns.
   initialIcon?: string;
   initialColor?: string;
+  // Page slug — needed client-side to fire the (non-blocking) view-count.
+  slug?: string;
 }
 
 export default function WikiClient({
@@ -67,6 +87,7 @@ export default function WikiClient({
   contributors,
   initialIcon,
   initialColor,
+  slug,
 }: WikiClientProps) {
   // ALL HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP
   const { user, loading: authLoading } = useAuth();
@@ -99,6 +120,15 @@ export default function WikiClient({
   const [showHelpConfirm, setShowHelpConfirm] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
+  // Reading-progress bar: a client-only preference. Default it to `false` on
+  // the server render (no localStorage there) and resolve it after mount so
+  // the server HTML and first client render match — avoiding a hydration
+  // mismatch. Mirrors the pattern used in CategoryPage/HomeTab.
+  const [showReadingProgress, setShowReadingProgress] = useState(false);
+  useEffect(() => {
+    setShowReadingProgress(localStorage.getItem("wiki_reading_progress") !== "false");
+  }, []);
+
   // Page icon picker state (admin/moderator only) — mirrors CategoryPage: a
   // page has its own icon+color/emoji, editable from the article header.
   const [pageIcon, setPageIcon] = useState(initialIcon || DEFAULT_ICON);
@@ -129,6 +159,18 @@ export default function WikiClient({
   useEffect(() => {
     dbPageIdRef.current = dbPageId;
   }, [dbPageId]);
+
+  // Count a view for genuine article reads. Fired client-side after mount
+  // (not in the SSR pass) so it never blocks the server render or adds
+  // a network round-trip to first paint. Guarded by a ref to run once.
+  const countedRef = useRef(false);
+  useEffect(() => {
+    if (countedRef.current) return;
+    if (dbPageId && !defaultEditing && slug) {
+      countedRef.current = true;
+      apiService.incrementPageViewCount(slug);
+    }
+  }, [dbPageId, defaultEditing, slug]);
 
   const parsed = useMemo(() => parseMarkdown(markdown), [markdown]);
   const isProfile = useMemo(() => {
@@ -571,32 +613,40 @@ export default function WikiClient({
   };
 
   useEffect(() => {
+    // Heading ids are assigned here for the Milkdown (ProseMirror) surfaces
+    // — both edit mode and the read-only reader — since neither renders ids in
+    // the markup. This only runs once the editor has loaded (`editorLoaded`).
+    // Ids are derived from the raw markdown (matching `parsed.toc`) rather than
+    // the rendered text, so headings containing links/formatting still line up
+    // with the table of contents.
+    if (!editorLoaded) return;
     const container = document.querySelector(".milkdown-container");
     if (!container) return;
 
-    const headings = container.querySelectorAll("h2, h3");
     const seenIds: Record<string, number> = {};
-    headings.forEach((heading) => {
-      const text = heading.textContent || "";
-      let baseId = text
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-      if (!baseId) baseId = "heading";
-
-      let finalId = baseId;
-      if (seenIds[baseId] === undefined) {
-        seenIds[baseId] = 0;
-      } else {
-        seenIds[baseId]++;
-        finalId = `${baseId}-${seenIds[baseId]}`;
+    const ids: string[] = [];
+    for (const line of parsed.contentMarkdown.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("## ") || trimmed.startsWith("### ")) {
+        const text = trimmed.replace(/^#{2,3}\s+/, "").trim();
+        ids.push(makeHeadingId(text, seenIds));
       }
+    }
 
-      if (heading.id !== finalId) {
-        heading.id = finalId;
-      }
+    const headings = Array.from(
+      container.querySelectorAll("h2, h3")
+    ) as HTMLElement[];
+    headings.forEach((heading, i) => {
+      const id = ids[i];
+      if (id && heading.id !== id) heading.id = id;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editorLoaded]);
+
+  // Mirror of `activeSection` so the scroll handler can read the latest value
+  // without being re-subscribed on every section change (fewer listener churns).
+  const activeSectionRef = useRef(activeSection);
+  activeSectionRef.current = activeSection;
 
   useEffect(() => {
     const mainElement = document.querySelector("main");
@@ -605,7 +655,12 @@ export default function WikiClient({
     const container = document.querySelector(".milkdown-container");
     if (!container) return;
 
-    const handleScroll = () => {
+    // Coalesce scroll work to one pass per animation frame so a burst of scroll
+    // events can't trigger a synchronous layout read + state update per event.
+    let ticking = false;
+    let lastPct = -1;
+    const update = () => {
+      ticking = false;
       const headingElements = Array.from(container.querySelectorAll("h2, h3"));
 
       // TOC active-section tracking (only meaningful when headings exist).
@@ -620,7 +675,7 @@ export default function WikiClient({
             break;
           }
         }
-        if (currentActive && currentActive !== activeSection) {
+        if (currentActive && currentActive !== activeSectionRef.current) {
           setActiveSection(currentActive);
         }
       }
@@ -630,19 +685,29 @@ export default function WikiClient({
       if (localStorage.getItem("wiki_reading_progress") !== "false") {
         const scrollable = mainElement.scrollHeight - mainElement.clientHeight;
         const pct = scrollable > 0 ? Math.min(100, Math.max(0, (mainElement.scrollTop / scrollable) * 100)) : 0;
-        setReadingProgressPct(pct);
-      } else {
+        if (pct !== lastPct) {
+          lastPct = pct;
+          setReadingProgressPct(pct);
+        }
+      } else if (lastPct !== 0) {
+        lastPct = 0;
         setReadingProgressPct(0);
       }
     };
 
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    };
+
     mainElement.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    update();
 
     return () => {
       mainElement.removeEventListener("scroll", handleScroll);
     };
-  }, [editorLoaded, activeSection]);
+  }, [editorLoaded]);
 
   const handleTocClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
@@ -712,7 +777,7 @@ export default function WikiClient({
 
       {/* Reading progress bar — fixed to the bottom of the viewport, shown only
           when the preference is on. Driven by the <main> scroll position. */}
-      {localStorage.getItem("wiki_reading_progress") !== "false" && (
+      {showReadingProgress && (
         <div
           className="fixed bottom-0 left-0 right-0 z-[15000] h-1 w-full bg-base-200"
           aria-hidden="true"
@@ -793,16 +858,32 @@ export default function WikiClient({
               </div>
             )}
 
-            <MilkdownEditor
-              key={isEditing ? "edit" : "view"}
-              initialMarkdown={parsed.contentMarkdown}
-              onMarkdownChange={handleMarkdownChange}
-              readOnly={!isEditing}
-              onLoaded={() => setEditorLoaded(true)}
-              toolbarContainer={toolbarContainer}
-              enableFolding
-              autoFold={autoFold}
-            />
+            {isEditing ? (
+              <MilkdownEditorLazy
+                key="edit"
+                initialMarkdown={parsed.contentMarkdown}
+                onMarkdownChange={handleMarkdownChange}
+                readOnly={false}
+                onLoaded={() => setEditorLoaded(true)}
+                toolbarContainer={toolbarContainer}
+                enableFolding={false}
+                autoFold={false}
+              />
+            ) : (
+              // Read-only surface rendered by the Milkdown (Crepe) reader so it
+              // matches the editing surface's output exactly. While the editor
+              // chunk loads, MilkdownEditorLazy shows the static fallback so the
+              // content appears together with the title.
+              <MilkdownEditorLazy
+                key="view"
+                initialMarkdown={parsed.contentMarkdown}
+                readOnly={true}
+                onMarkdownChange={() => {}}
+                onLoaded={() => setEditorLoaded(true)}
+                enableFolding
+                autoFold={autoFold}
+              />
+            )}
           </article>
 
           {/* Page stats — visible to logged-in users only, below the article body */}

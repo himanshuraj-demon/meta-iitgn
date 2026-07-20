@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import WikiClient from "../../../wiki-client";
 import Link from "next/link";
 import { apiService } from "@/api";
-import { parseMarkdown } from "@/lib/utils";
 
 // Wiki modals reflect state in the URL (useSearchParams); keep this dynamic.
 export const dynamic = "force-dynamic";
@@ -34,16 +33,11 @@ export async function generateMetadata({ params, searchParams }: WikiArticlePage
     return { title: `New Article | META IITGN` };
   }
 
-  let name = title?.trim() || slugToTitle(slug);
-  try {
-    const dbArticle = await apiService.getPage(slug);
-    if (dbArticle?.content) {
-      const parsedTitle = parseMarkdown(dbArticle.content).title?.trim();
-      if (parsedTitle) name = parsedTitle;
-    }
-  } catch {
-    // Fall back to the slug-derived name.
-  }
+  // NOTE: we deliberately do NOT fetch the article here. generateMetadata
+  // and WikiArticlePage both run on every request; fetching the same page
+  // twice would double the SSR round-trips. The slug-derived name is
+  // used for <title> (WikiArticlePage already does the real fetch for content).
+  const name = title?.trim() || slugToTitle(slug);
 
   return {
     title: `${name} | META IITGN`,
@@ -116,11 +110,8 @@ Write your content here...`;
       contributors = dbArticle.contributors;
       dbPageIcon = dbArticle.icon;
       dbPageColor = dbArticle.color;
-
-      // Count a view for genuine article reads (skip edit mode / non-DB pages).
-      if (dbPageId && edit !== "true") {
-        await apiService.incrementPageViewCount(slug);
-      }
+      // View counting moved to the client (WikiClient) so it doesn't block
+      // the SSR pass or add a round-trip here.
     }
   } catch (e) {
     console.warn("Could not find article in db:", slug, e);
@@ -154,6 +145,7 @@ Write your content here...`;
       contributors={contributors}
       initialIcon={dbPageIcon}
       initialColor={dbPageColor}
+      slug={slug}
       defaultEditing={edit === "true"}
     />
   );

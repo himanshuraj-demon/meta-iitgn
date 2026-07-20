@@ -4,7 +4,8 @@ import React from "react";
 import GenericOverlayModal from "@/components/overlays/GenericOverlayModal";
 import { useViewMode } from "@/hooks/useViewMode";
 import ViewSwitcher from "@/components/helpers/ViewSwitcher";
-import { getGridClass } from "@/lib/viewModes";
+import { getGridClass, getIconSize } from "@/lib/viewModes";
+import { CategoryIcon } from "@/lib/categoryIcon";
 import UnifiedViewItem from "@/components/helpers/UnifiedViewItem";
 
 interface UpdatedPagesOverlayProps {
@@ -32,7 +33,13 @@ export default function UpdatedPagesOverlay({
   const renderItem = (page: any) => {
      const href = `/wiki/${(page.metadata as any)?.category || "campus"}/${page.slug}`;
      const subtitle = `Updated: ${getRelativeTime(page.updated_at)} (${new Date(page.updated_at).toLocaleString()})`;
- 
+     const pageColor = page.color || "#4f46e5";
+     const iconBoxStyle = {
+       backgroundColor: `${pageColor}1a`,
+       borderColor: `${pageColor}33`,
+       color: pageColor,
+     };
+
      return (
        <UnifiedViewItem
          key={page.page_id}
@@ -41,6 +48,8 @@ export default function UpdatedPagesOverlay({
          onClick={onClose}
          title={page.title}
          subtitle={subtitle}
+         icon={<CategoryIcon icon={page.icon} size={getIconSize(view)} />}
+         iconBoxStyle={iconBoxStyle}
        />
      );
    };

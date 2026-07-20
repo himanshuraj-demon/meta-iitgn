@@ -13,7 +13,6 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useHomeStore } from "@/store/useHomeStore";
 import BottomNavbar from "@/components/navs/BottomNavbar";
 import AvatarIcon from "@/components/helpers/AvatarIcon";
-import Loading from "./loading";
 
 // Subcomponents
 import LeftPanel from "@/components/home/LeftPanel";
@@ -31,8 +30,6 @@ import HistoryOverlay from "@/components/overlays/HistoryOverlay";
 import FeaturedEditOverlay from "@/components/overlays/FeaturedEditOverlay";
 import PortalOverlay from "@/components/overlays/PortalOverlay";
 import CategoriesOverlay from "@/components/overlays/CategoriesOverlay";
-
-let initialLoadDone = false;
 
 export default function HomePage() {
   const {
@@ -127,16 +124,6 @@ export default function HomePage() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
   const [mobileNavHidden, setMobileNavHidden] = useState(false);
-  const [initialDelay, setInitialDelay] = useState(!initialLoadDone);
-
-  useEffect(() => {
-    if (initialLoadDone) return;
-    const timer = setTimeout(() => {
-      initialLoadDone = true;
-      setInitialDelay(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Load cached home data immediately on mount (offline-first SWR)
   useEffect(() => {
@@ -439,13 +426,7 @@ export default function HomePage() {
     },
   };
 
-  if (initialDelay || authLoading || auth === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-base-100">
-        <Loading />
-      </div>
-    );
-  }
+  if (authLoading || auth === null) return null;
 
   return (
     <div className="flex flex-col min-h-screen lg:h-screen bg-base-100 overflow-y-auto lg:overflow-hidden font-sans">
