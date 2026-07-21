@@ -34,6 +34,39 @@ interface Contest {
 const CONTESTS_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 const CONTESTS_CACHE_KEY    = "all_contests";
 
+// ---------------------------------------------------------------------------
+// Curated resource links shown in the right sidebar
+// ---------------------------------------------------------------------------
+
+interface ResourceLink {
+  name: string;
+  url:  string;
+  tag:  "Important" | "Medium";
+}
+
+const RESOURCES: ResourceLink[] = [
+  {
+    name: "DSA pdf Notes",
+    url:  "https://github.com/Deeksha2501/Data-Structures-and-Algorithms-Notes",
+    tag:  "Important",
+  },
+  {
+    name: "NeetCode-150",
+    url:  "https://neetcode.io/practice/practice/neetcode150",
+    tag:  "Important",
+  },
+  {
+    name: "Awesome Repo",
+    url:  "https://github.com/sindresorhus/awesome",
+    tag:  "Medium",
+  },
+  {
+    name: "TakeUForward",
+    url:  "https://takeuforward.org",
+    tag:  "Important",
+  },
+];
+
 // Per-platform styling (DaisyUI badge colours + accent)
 const PLATFORM_STYLES: Record<string, { badge: string; accent: string; dot: string }> = {
   codeforces:  { badge: "badge-error",   accent: "text-error",   dot: "bg-error"   },
@@ -354,7 +387,7 @@ export default function UpcomingContests() {
             {!loading && !error && (
               <p className="text-xs text-base-content/50 mt-0.5">
                 {filtered.length} contest{filtered.length !== 1 ? "s" : ""}
-                {fromCache ? " · cached (4 h)" : " · live"}
+                 · live
               </p>
             )}
           </div>
@@ -425,7 +458,7 @@ export default function UpcomingContests() {
         )}
       </div>
 
-      {/* ── RIGHT: Resources sidebar (placeholder for now) ── */}
+      {/* ── RIGHT: Resources sidebar ── */}
       <div className="flex flex-col gap-4 min-w-0">
         <div className="card bg-base-100 border border-base-200">
           <div className="card-body p-5 gap-3">
@@ -433,31 +466,40 @@ export default function UpcomingContests() {
               <BookOpen className="h-5 w-5 text-primary" />
               <h3 className="font-semibold text-base">Resources</h3>
             </div>
-            <p className="text-sm text-base-content/50 leading-relaxed">
-              Curated problem sheets, editorial links, and PDF guides will appear here soon. Stay tuned!
-            </p>
 
-            {/* Skeleton placeholders */}
+            {/* Real resource links */}
             <div className="flex flex-col gap-2 mt-1">
-              {Array.from({ length: 4 }).map((_, i) => (
+              {RESOURCES.map((res) => (
                 <div
-                  key={i}
-                  className="flex items-center gap-2.5 p-2.5 rounded-lg bg-base-200/60 opacity-40"
+                  key={res.url}
+                  className="flex items-center justify-between gap-3 p-3 rounded-xl bg-base-200/50 hover:bg-base-200 transition-colors"
                 >
-                  <div className="h-7 w-7 rounded bg-base-300 shrink-0" />
-                  <div className="flex-1 space-y-1.5">
-                    <div className="h-2.5 w-3/4 rounded bg-base-300" />
-                    <div className="h-2 w-1/2 rounded bg-base-300" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold truncate">{res.name}</p>
+                    <span
+                      className={`badge badge-xs mt-1 ${
+                        res.tag === "Important"
+                          ? "badge-error text-white"
+                          : "badge-warning text-warning-content"
+                      }`}
+                    >
+                      {res.tag}
+                    </span>
                   </div>
+                  <a
+                    href={res.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-xs btn-primary shrink-0 rounded-2xl"
+                  >
+                    Open
+                  </a>
                 </div>
               ))}
             </div>
-
-            <span className="badge badge-outline badge-sm text-base-content/40 border-base-300 mt-1 self-start">
-              Coming soon
-            </span>
           </div>
         </div>
+
 
         {/* Stats card */}
         {!loading && contests.length > 0 && (

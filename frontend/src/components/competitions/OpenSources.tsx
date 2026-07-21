@@ -364,7 +364,7 @@ export default function GitHubExplorer() {
           {!loading && !error && (
             <p className="text-xs text-base-content/50 mt-0.5">
               {formatCount(totalCount)} repositories
-              {fromCache ? " · cached (24 h)" : " · live from GitHub"}
+              · live from GitHub
             </p>
           )}
         </div>
@@ -523,11 +523,6 @@ export default function GitHubExplorer() {
                   {category.label}
                   <span className="text-base-content/40 font-normal"> · {level.label}</span>
                 </h3>
-                {fromCache && (
-                  <span className="text-[10px] text-base-content/30 flex items-center gap-1">
-                    <RefreshCw className="h-3 w-3" /> cached
-                  </span>
-                )}
               </div>
 
               {loading ? (

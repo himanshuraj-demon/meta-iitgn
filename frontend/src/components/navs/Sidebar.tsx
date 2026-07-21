@@ -24,6 +24,7 @@ import {
   InboxIcon,
   LogOut,
   PackageCheck,
+  ChartNoAxesCombined,
   X,
   Calendar,
 } from "lucide-react";
@@ -280,7 +281,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       : "text-base-content/75 hover:text-base-content hover:bg-base-200"
                   }`}
                 >
-                  <Calendar
+                  <ChartNoAxesCombined
                     className={`h-5 w-5 transition-colors duration-200 ${
                       pathname === "/competitions"
                         ? "text-primary"
