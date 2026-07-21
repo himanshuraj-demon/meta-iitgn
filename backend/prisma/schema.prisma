@@ -61,6 +61,8 @@ model users {
   revision_blogs_created  revision_blogs[]        @relation("RevisionBlogCreator")
   readme                  user_readmes?
   papers                  papers[]                @relation("Owner")
+  interview_posts         interview_posts[]       @relation("InterviewAuthor")
+  interview_likes         interview_post_likes[]
 }
 
 model live_pages {
@@ -424,5 +426,43 @@ model papers {
   @@index([owner_id])
 
   @@unique([course_code, year, semester, exam_type])
+}
+
+model interview_posts {
+  post_id     Int                    @id @default(autoincrement())
+  owner_id    Int
+  content     String
+  media       Json                   @default("[]")
+  video_url   String?
+  company     String?
+  role        String?
+  tags        Json                   @default("[]")
+  likes_count Int                    @default(0)
+  approved    Boolean                @default(false)
+  featured    Boolean                @default(false)
+  created_at  DateTime               @default(now())
+  updated_at  DateTime               @default(now()) @updatedAt
+  deleted_at  DateTime?
+
+  // Relations
+  owner       users                  @relation("InterviewAuthor", fields: [owner_id], references: [user_id], onDelete: Cascade)
+  likes       interview_post_likes[]
+
+  @@index([approved], name: "idx_interview_approved")
+  @@index([featured], name: "idx_interview_featured")
+  @@index([owner_id], name: "idx_interview_owner")
+}
+
+model interview_post_likes {
+  id         Int             @id @default(autoincrement())
+  post_id    Int
+  user_id    Int
+  created_at DateTime        @default(now())
+
+  // Relations
+  post       interview_posts @relation(fields: [post_id], references: [post_id], onDelete: Cascade)
+  user       users           @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([post_id, user_id], name: "unique_interview_post_user_like")
 }
 

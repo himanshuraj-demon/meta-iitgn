@@ -45,6 +45,8 @@ import { useProfile } from "@/context/ProfileContext";
 import AdminDashboardOverlay from "@/components/overlays/AdminDashboardOverlay";
 import ConfirmationModal from "@/components/overlays/ConfirmationModal";
 import type { Paper } from "@/lib/types";
+import InterviewPostCard from "@/components/interviews/InterviewPostCard";
+import type { InterviewPost } from "@/api/interviews";
 
 const formatBlogDate = (dateString: string) => {
   try {
@@ -121,7 +123,7 @@ export default function ProfileContent() {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "bookmarks" | "blogs" | "papers"
+    "overview" | "bookmarks" | "blogs" | "interviews" | "papers"
   >("overview");
   const [targetBookmarks, setTargetBookmarks] = useState<any[]>([]);
 
@@ -137,6 +139,11 @@ export default function ProfileContent() {
   const [papersLoaded, setPapersLoaded] = useState(false);
   const [deletingPaperId, setDeletingPaperId] = useState<number | null>(null);
   const [paperToDelete, setPaperToDelete] = useState<Paper | null>(null);
+
+  // Interviews tab state (lazy-loaded when opened)
+  const [userInterviews, setUserInterviews] = useState<InterviewPost[]>([]);
+  const [interviewsLoading, setInterviewsLoading] = useState(false);
+  const [interviewsLoaded, setInterviewsLoaded] = useState(false);
 
   useEffect(() => {
     if (!targetUserId) return;
@@ -334,6 +341,36 @@ export default function ProfileContent() {
     }
   }, [activeTab, targetUserId, papersLoaded, papersLoading]);
 
+  // Lazy-load interview posts when tab opened
+  const loadUserInterviews = async () => {
+    if (!targetUserId) return;
+    setInterviewsLoading(true);
+    try {
+      const res = isOwnProfile
+        ? await apiService.getMyInterviews()
+        : await apiService.getInterviews({ limit: 50 });
+      if (res && res.success) {
+        setUserInterviews(res.posts || []);
+      }
+    } catch (err) {
+      console.error("Error loading user interview posts:", err);
+    } finally {
+      setInterviewsLoading(false);
+      setInterviewsLoaded(true);
+    }
+  };
+
+  useEffect(() => {
+    if (
+      activeTab === "interviews" &&
+      !interviewsLoaded &&
+      !interviewsLoading &&
+      targetUserId
+    ) {
+      loadUserInterviews();
+    }
+  }, [activeTab, targetUserId, interviewsLoaded, interviewsLoading]);
+
   const handleDeletePaper = async (paperId: number) => {
     try {
       setDeletingPaperId(paperId);
@@ -507,7 +544,7 @@ export default function ProfileContent() {
 
         {/* Tab bar */}
         <div className="flex border-t border-base-200 px-5 sm:px-8 overflow-x-auto">
-          {["overview", "bookmarks", "blogs", isOwnProfile ? "papers" : null]
+          {["overview", "bookmarks", "blogs", "interviews", isOwnProfile ? "papers" : null]
             .filter(Boolean)
             .map((tab) => (
               <button
@@ -523,6 +560,8 @@ export default function ProfileContent() {
                   ? `Bookmarks (${displayBookmarks.length})`
                   : tab === "blogs"
                   ? "Blogs"
+                  : tab === "interviews"
+                  ? `Interview Feed ${interviewsLoaded ? `(${userInterviews.length})` : ""}`
                   : tab === "papers"
                   ? `Uploaded Papers ${papersLoaded ? `(${userPapers.length})` : ""}`
                   : tab}
@@ -808,6 +847,43 @@ export default function ProfileContent() {
                     </button>
                   )}
                 </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {activeTab === "interviews" && (
+        <section className="rounded-3xl border border-base-200 bg-base-100 p-5 shadow-sm sm:p-6">
+          <div className="flex items-center justify-between gap-3 mb-5">
+            <div>
+              <h2 className="text-base font-black text-base-content">
+                Interview Feed Experiences
+              </h2>
+              <p className="mt-0.5 text-xs text-base-content/55">
+                {interviewsLoaded
+                  ? `${userInterviews.length} posts`
+                  : "Interview experiences submitted by this user"}
+              </p>
+            </div>
+          </div>
+
+          {interviewsLoading ? (
+            <div className="space-y-4">
+              <div className="h-32 bg-base-300 animate-pulse rounded-2xl" />
+              <div className="h-32 bg-base-300 animate-pulse rounded-2xl" />
+            </div>
+          ) : userInterviews.length === 0 ? (
+            <div className="text-center py-12 border border-dashed border-base-300 rounded-2xl">
+              <MessageSquare className="h-10 w-10 mx-auto text-base-content/30 mb-3" />
+              <p className="text-sm font-bold text-base-content/60">
+                No interview posts submitted yet
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {userInterviews.map((post) => (
+                <InterviewPostCard key={post.post_id} post={post} onPostUpdated={loadUserInterviews} />
               ))}
             </div>
           )}

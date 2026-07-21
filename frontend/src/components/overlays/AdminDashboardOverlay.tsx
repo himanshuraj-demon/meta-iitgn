@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Shield, FileText, Settings, Users, ArrowUpRight } from "lucide-react";
 import PendingChangesView from "@/components/wiki/PendingChangesView";
 import BlogPendingChangesView from "@/components/blog/BlogPendingChangesView";
+import InterviewPendingChangesView from "@/components/interviews/InterviewPendingChangesView";
 
 interface AdminDashboardOverlayProps {
   setShowDashboard: (show: boolean) => void;
@@ -42,6 +43,7 @@ export default function AdminDashboardOverlay({ setShowDashboard }: AdminDashboa
   const [activeTab, setActiveTab] = useState<"logs" | "users" | "approvals">("logs");
   const [showWikiApprovals, setShowWikiApprovals] = useState(false);
   const [showBlogApprovals, setShowBlogApprovals] = useState(false);
+  const [showInterviewApprovals, setShowInterviewApprovals] = useState(false);
 
   // Audit Logs State
   const [logs, setLogs] = useState<AuditLogRecord[]>([]);
@@ -450,7 +452,7 @@ export default function AdminDashboardOverlay({ setShowDashboard }: AdminDashboa
                   Review and publish proposed wiki articles, page edits, and blog posts submitted by campus contributors.
                 </p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center pt-2">
                 <button
                   onClick={() => setShowWikiApprovals(true)}
                   className="btn btn-primary rounded-xl font-bold flex-1 sm:flex-initial cursor-pointer animate-none"
@@ -462,6 +464,12 @@ export default function AdminDashboardOverlay({ setShowDashboard }: AdminDashboa
                   className="btn btn-secondary rounded-xl font-bold flex-1 sm:flex-initial cursor-pointer animate-none"
                 >
                   Review Blog Posts
+                </button>
+                <button
+                  onClick={() => setShowInterviewApprovals(true)}
+                  className="btn btn-accent rounded-xl font-bold flex-1 sm:flex-initial cursor-pointer animate-none"
+                >
+                  Review Interview Feed Posts
                 </button>
               </div>
             </div>
@@ -480,6 +488,12 @@ export default function AdminDashboardOverlay({ setShowDashboard }: AdminDashboa
         <BlogPendingChangesView
           setShowPendingChanges={setShowBlogApprovals}
           isGlobal={true}
+        />
+      )}
+
+      {showInterviewApprovals && (
+        <InterviewPendingChangesView
+          setShowPendingChanges={setShowInterviewApprovals}
         />
       )}
 

@@ -12,6 +12,7 @@ import CollegeInfoRouter from "./routes/collegeinfo.js"
 import AuditLogRouter from "./routes/auditLogs.js";
 import PaperRouter from "./routes/paper.js"
 import CompetitionsRouter from "./routes/competitions.js"
+import InterviewPostsRouter from "./routes/interviewPosts.js"
 
 const router = Router();
 
@@ -37,6 +38,9 @@ router.use("/paper",PaperRouter)
 
 // Competitions (GitHub repos proxy + cache)
 router.use("/competitions", CompetitionsRouter);
+
+// Interview Feed Posts
+router.use("/interviews", InterviewPostsRouter);
 
 export default router;
 
