@@ -365,6 +365,22 @@ model sync_metadata {
   count        Int
 }
 
+/// Cached GitHub repository search results, keyed by category+level combo.
+/// Rows are upserted by the backend when the cache is stale (> 24 hours).
+model github_repos {
+  id          Int      @id @default(autoincrement())
+  cache_key   String   @unique  // "<category>::<level>", e.g. "web-dev::all"
+  category    String
+  level       String
+  repos       Json               // array of GitHubRepo objects (up to 15)
+  total_count Int      @default(0)
+  cached_at   DateTime @default(now())
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([category, level])
+}
+
 model user_readmes {
   user_id    Int      @id
   content    String

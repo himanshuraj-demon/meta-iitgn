@@ -11,6 +11,7 @@ import BlogRouter from "./routes/blogs.js"
 import CollegeInfoRouter from "./routes/collegeinfo.js"
 import AuditLogRouter from "./routes/auditLogs.js";
 import PaperRouter from "./routes/paper.js"
+import CompetitionsRouter from "./routes/competitions.js"
 
 const router = Router();
 
@@ -34,4 +35,8 @@ router.use("/bookmarks", BookmarksRouter);
 router.use("/blogs", BlogRouter);
 router.use("/paper",PaperRouter)
 
+// Competitions (GitHub repos proxy + cache)
+router.use("/competitions", CompetitionsRouter);
+
 export default router;
+

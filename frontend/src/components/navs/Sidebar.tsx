@@ -269,6 +269,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   />
                   <span className="truncate">Academic Calender</span>
                 </Link>
+                <Link
+                  href="/competitions"
+                  onClick={() => {
+                    if (window.innerWidth < 1024) onClose();
+                  }}
+                  className={`group flex items-center gap-3 px-3 py-2 text-[13px] font-semibold rounded-lg transition-all duration-200 ${
+                    pathname === "/competitions"
+                      ? "bg-primary/10 text-primary font-bold"
+                      : "text-base-content/75 hover:text-base-content hover:bg-base-200"
+                  }`}
+                >
+                  <Calendar
+                    className={`h-5 w-5 transition-colors duration-200 ${
+                      pathname === "/competitions"
+                        ? "text-primary"
+                        : "text-base-content/50 group-hover:text-base-content/80"
+                    }`}
+                  />
+                  <span className="truncate">Competitions & Oppurtunities</span>
+                </Link>
               </div>
             </div>
 
