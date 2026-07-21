@@ -5,7 +5,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { prisma } from "../lib/prisma.js";
-import { uploadToCloudinary } from "../utils/upload.js";
+import { uploadToCloudinary, isCloudinaryConfigured } from "../utils/upload.js";
 import { checkAuth } from "../middlewares/auth.js";
 
 const router = Router();
@@ -99,36 +99,52 @@ router.post("/upload", checkAuth, upload.single("file"), async (req: any, res) =
     const userId = Number(req.user.user_id);
 
     if (existingAsset) {
-      // Delete local file immediately since we reuse the existing URL
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-
       let fileUrl = existingAsset.file_url;
-      if (fileUrl.startsWith("/uploads/")) {
-        const host = req.get("host") || "localhost:3001";
-        const protocol = req.protocol || "http";
-        fileUrl = `${protocol}://${host}${fileUrl}`;
+      const isCloudinaryUrl = fileUrl.includes("cloudinary.com");
+      
+      let isReusable = false;
+      if (isCloudinaryUrl) {
+        isReusable = true;
+      } else if (fileUrl.includes("/uploads/")) {
+        const localFilename = fileUrl.split("/uploads/").pop();
+        const physicalPath = localFilename ? path.join(uploadDir, localFilename) : null;
+        // Only reuse local URL if Cloudinary is NOT configured AND the physical file actually exists
+        if (!isCloudinaryConfigured && physicalPath && fs.existsSync(physicalPath)) {
+          isReusable = true;
+        }
       }
 
-      // Create new reference for this user in DB
-      const newAsset = await prisma.media_assets.create({
-        data: {
-          user_id: userId,
-          file_url: fileUrl,
-          file_type: mimeType,
-          file_size: fileSize,
-          hash: fileHash,
-          public_id: existingAsset.public_id,
+      if (isReusable) {
+        // Delete newly uploaded temp file immediately since we reuse the existing valid URL
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
         }
-      });
 
-      return res.json({
-        success: true,
-        url: fileUrl,
-        asset: newAsset,
-        duplicate: true
-      });
+        if (fileUrl.startsWith("/uploads/")) {
+          const host = req.get("host") || "localhost:3001";
+          const protocol = req.protocol || "http";
+          fileUrl = `${protocol}://${host}${fileUrl}`;
+        }
+
+        // Create new reference for this user in DB
+        const newAsset = await prisma.media_assets.create({
+          data: {
+            user_id: userId,
+            file_url: fileUrl,
+            file_type: mimeType,
+            file_size: fileSize,
+            hash: fileHash,
+            public_id: existingAsset.public_id,
+          }
+        });
+
+        return res.json({
+          success: true,
+          url: fileUrl,
+          asset: newAsset,
+          duplicate: true
+        });
+      }
     }
 
     // 4. Upload to Cloudinary (will delete local file upon success)

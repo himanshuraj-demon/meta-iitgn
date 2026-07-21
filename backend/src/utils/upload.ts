@@ -11,10 +11,11 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // Configure Cloudinary only if the variables are set
-const isCloudinaryConfigured = 
+export const isCloudinaryConfigured = Boolean(
   process.env.CLOUDINARY_CLOUD_NAME && 
   process.env.CLOUDINARY_API_KEY && 
-  process.env.CLOUDINARY_API_SECRET;
+  process.env.CLOUDINARY_API_SECRET
+);
 
 if (isCloudinaryConfigured) {
   cloudinary.config({

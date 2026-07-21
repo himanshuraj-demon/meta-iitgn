@@ -78,7 +78,18 @@ export async function runMediaCleanup() {
         }
       });
 
-      const totalReferences = countLive + countPending + countRevision + countBlogs + countPendingBlogs + countRevisionBlogs;
+      // G. Check in interview_posts (content text or media array)
+      const countInterview = await prisma.interview_posts.count({
+        where: {
+          deleted_at: null,
+          OR: [
+            { content: { contains: fileUrl } },
+            { media: { path: [], array_contains: fileUrl } }
+          ]
+        }
+      });
+
+      const totalReferences = countLive + countPending + countRevision + countBlogs + countPendingBlogs + countRevisionBlogs + countInterview;
 
       if (totalReferences === 0) {
         // Unused! Delete from Cloudinary / local fallback

@@ -153,14 +153,14 @@ export default function InterviewPostCard({ post, onPostUpdated, onSelectFeature
         </div>
 
         {/* Status Badges */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 p-2 m-2">
           {!isApproved && (
             <span className="badge badge-warning gap-1 badge-sm font-bold animate-pulse">
               Pending Approval
             </span>
           )}
           {isFeatured && (
-            <span className="badge badge-accent gap-1 badge-sm font-bold">
+            <span className="badge badge-accent gap-1 badge-sm font-bold p-1">
               <Star className="h-3 w-3 fill-current" /> Featured
             </span>
           )}

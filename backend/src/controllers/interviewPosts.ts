@@ -1,5 +1,6 @@
 import express from "express";
 import { prisma } from "../lib/prisma.js";
+import { markUrlsAsUsed, extractUrlsFromText } from "../utils/cleanup.js";
 
 // Helper to check if a JSON tags field includes a target tag
 function matchesTag(tagsJson: any, targetTag: string): boolean {
@@ -285,6 +286,10 @@ export async function createPost(req: express.Request, res: express.Response) {
         },
       },
     });
+
+    // Mark media URLs as used in media_assets so garbage collector preserves them
+    const allUrls = [...formattedMedia, ...extractUrlsFromText(content)];
+    await markUrlsAsUsed(allUrls);
 
     return res.status(201).json({
       success: true,

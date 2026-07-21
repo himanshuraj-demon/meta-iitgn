@@ -24,6 +24,8 @@ import {
   MessageSquare,
   TrendingUp,
   Award,
+  Heart,
+  ArrowUpRight,
 } from "lucide-react";
 
 const FILTER_TAGS = [
@@ -166,8 +168,8 @@ export default function InterviewFeedPage() {
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-base-200/30 pt-14 pb-20 px-2 sm:px-6 mt-5">
-      <div className="mx-auto max-w-7xl">
+    <div className="h-full w-full overflow-y-auto bg-base-200/30 pt-14 pb-20 px-2 sm:px-4 mt-5">
+      <div className="mx-auto max-w-8xl md:px-5">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Left Column: User Profile & Stats Widget (Desktop `lg` only) */}
           <aside className="hidden lg:block lg:col-span-3 space-y-6">
@@ -311,19 +313,19 @@ export default function InterviewFeedPage() {
           </main>
 
           {/* Right Column: Featured Posts Showcase (Desktop `lg` only) */}
-          <aside className="hidden lg:block lg:col-span-3 space-y-5">
-            <div className="rounded-3xl border border-accent/20 bg-base-100 p-5 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
+          <aside className="hidden lg:block lg:col-span-3 space-y-2">
+            <div className="rounded-3xl border border-accent/25 bg-base-100 p-3 shadow-sm space-y-3.5">
+              <div className="flex items-center justify-between px-1">
                 <h3 className="text-xs font-black uppercase text-base-content tracking-wider flex items-center gap-1.5">
                   <Star className="h-4 w-4 text-accent fill-accent" /> Top Featured Stories
                 </h3>
-                <span className="badge badge-accent badge-xs font-bold">Top 5</span>
+                <span className="badge badge-accent badge-xs font-bold px-2 py-0.5">Top 5</span>
               </div>
 
               {loadingFeatured ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-20 bg-base-200 animate-pulse rounded-2xl" />
+                    <div key={i} className="h-24 bg-base-200 animate-pulse rounded-2xl" />
                   ))}
                 </div>
               ) : featuredPosts.length === 0 ? (
@@ -336,26 +338,57 @@ export default function InterviewFeedPage() {
                     <div
                       key={post.post_id}
                       onClick={() => setSelectedFeaturedPost(post)}
-                      className="p-3.5 rounded-2xl bg-base-200/50 border border-base-200 hover:border-accent/40 hover:bg-base-200 transition-all cursor-pointer group"
+                      className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-base-100 via-base-200/40 to-base-100 border border-base-200/80 hover:border-accent/50 hover:shadow-md transition-all duration-200 cursor-pointer group relative overflow-hidden flex flex-col gap-2.5"
                     >
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-xs font-bold text-base-content truncate group-hover:text-primary transition-colors">
-                          {post.owner?.name || "Student"}
-                        </span>
-                        {post.company && (
-                          <span className="badge badge-outline badge-xs text-[10px] font-bold text-accent">
-                            {post.company}
-                          </span>
-                        )}
+                      {/* Author Header */}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="h-8 w-8 rounded-xl bg-base-200 border border-base-300 overflow-hidden shrink-0">
+                          <Avatar
+                            email={post.owner?.email}
+                            name={post.owner?.name || "Student"}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <h4 className="text-xs font-bold text-base-content group-hover:text-primary transition-colors truncate">
+                              {post.owner?.name || "Campus Student"}
+                            </h4>
+                            {post.company && (
+                              <span className="badge badge-accent badge-outline badge-xs text-[10px] font-bold shrink-0">
+                                {post.company}
+                              </span>
+                            )}
+                          </div>
+                          {post.role && (
+                            <p className="text-[10px] font-medium text-base-content/60 truncate flex items-center gap-1">
+                              <Briefcase className="h-2.5 w-2.5 text-base-content/40" /> {post.role}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs text-base-content/80 line-clamp-2 leading-relaxed">
+
+                      {/* Content Snippet */}
+                      <p className="text-xs text-base-content/85 line-clamp-3 leading-relaxed font-normal">
                         {post.content}
                       </p>
-                      {post.tags && post.tags.length > 0 && (
-                        <div className="flex items-center gap-1 mt-2 text-[10px] text-base-content/50 font-medium">
-                          #{post.tags[0]} · {post.likes_count} likes
+
+                      {/* Card Footer */}
+                      <div className="flex items-center justify-between pt-1.5 border-t border-base-200/60 text-[10px] text-base-content/60 font-semibold">
+                        <div className="flex items-center gap-1.5">
+                          {post.tags && post.tags.length > 0 && (
+                            <span className="badge badge-ghost badge-xs text-[10px] font-medium">
+                              #{post.tags[0]}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1 text-rose-500 font-bold">
+                            <Heart className="h-3 w-3 fill-rose-500" /> {post.likes_count}
+                          </span>
                         </div>
-                      )}
+                        <span className="flex items-center gap-0.5 text-primary group-hover:translate-x-0.5 transition-transform font-bold">
+                          Read Story <ArrowUpRight className="h-3 w-3" />
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
