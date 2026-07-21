@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Award,
+  ArrowDown,
   ArrowRight,
   Sparkles,
   FlaskConical,
@@ -20,6 +21,7 @@ import {
   SlidersHorizontal,
   RefreshCw,
   User,
+  Users,
   Pencil,
 } from "lucide-react";
 
@@ -340,7 +342,7 @@ export default function HomeTab({
                 href={activeTarget}
                 className="inline-flex items-center gap-2 text-gray-900 font-black bg-white hover:bg-gray-100 px-6 py-3.5 rounded-full transition-colors shadow-lg"
               >
-                Read All <ArrowRight className="w-4 w-4" />
+                Read <ArrowRight className="w-4 w-4" />
               </Link>
             ) : (
               <button
@@ -348,7 +350,7 @@ export default function HomeTab({
                 onClick={() => setShowEditFeatured(true)}
                 className="inline-flex items-center gap-2 text-gray-900 font-black bg-white hover:bg-gray-100 px-6 py-3.5 rounded-full transition-colors shadow-lg cursor-pointer"
               >
-                Read All <ArrowRight className="w-4 w-4" />
+                Read <ArrowRight className="w-4 w-4" />
               </button>
             )}
           </div>
@@ -691,14 +693,14 @@ export default function HomeTab({
 
           <div className="relative z-10 flex gap-8 items-center w-full justify-around">
             <div className="text-center">
-              <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mb-1">Total Articles</p>
+              <p className="text-white font-bold text-xs uppercase tracking-widest mb-1">Total Articles</p>
               <p className="font-display font-black text-4xl text-white">
                 {totalPagesCount !== null ? totalPagesCount.toLocaleString() : "…"}
               </p>
             </div>
             <div className="w-px h-12 bg-gray-700" />
             <div className="text-center">
-              <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mb-1">Categories</p>
+              <p className="text-white font-bold text-xs uppercase tracking-widest mb-1">Categories</p>
               <div className="flex items-center justify-center gap-2">
                 <p className="font-display font-black text-4xl text-[#34d399]">{categoriesCount}</p>
                 <span className="relative flex h-3 w-3">
@@ -719,42 +721,55 @@ export default function HomeTab({
   return (
     <>
       {/* ── Mountain Hero Banner ───────────────────────────────────────────── */}
-      <div className="relative w-full h-[85vh] lg:h-dvh min-h-125 hidden md:flex flex-col items-center justify-center text-center p-6 bg-primary overflow-hidden select-none">
+      <div className="relative w-full h-[85vh] lg:h-dvh min-h-125 hidden md:flex flex-col items-center justify-center text-center p-8 bg-primary overflow-hidden select-none">
+
+        {/* Background image (unchanged) */}
         <ParallaxBackground mousePos={mousePos} imageSrc="/homepage_bg.png" overlayClass="" />
 
+        {/* Floating Bento Badges */}
+        <div className="hidden lg:flex absolute top-16 left-16 bg-white/20 backdrop-blur-xl border border-white/30 rounded-[1.5rem] p-4 items-center gap-4 animate-[bounce_6s_infinite] shadow-2xl">
+          <div className="bg-linear-to-br from-fuchsia-400 to-pink-500 text-white p-3 rounded-[1rem] shadow-inner"><Sparkles className="w-6 h-6" /></div>
+          <div className="text-left text-white drop-shadow-md">
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-90">Total Edits</p>
+            <p className="font-display font-black text-2xl">{totalPagesCount ?? 0}</p>
+          </div>
+        </div>
+
+        <div className="hidden lg:flex absolute bottom-24 right-16 bg-white/20 backdrop-blur-xl border border-white/30 rounded-[1.5rem] p-4 items-center gap-4 animate-[bounce_7s_infinite_reverse] shadow-2xl">
+          <div className="text-right text-white drop-shadow-md">
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-90">Active Readers</p>
+            <p className="font-display font-black text-2xl">{newPages.length ?? 0}</p>
+          </div>
+          <div className="bg-linear-to-br from-cyan-400 to-blue-500 text-white p-3 rounded-[1rem] shadow-inner"><Users className="w-6 h-6" /></div>
+        </div>
+
         <style>{`
-          @keyframes gradient-x { 0%, 100% { background-position: 0% 50%; } 55% { background-position: 100% 50%; } }
           @keyframes slide-up-fade { 0% { opacity: 0; transform: translateY(120px); } 100% { opacity: 1; transform: translateY(0); } }
-          .animate-gradient-text { background-size: 200% auto; animation: gradient-x 6s ease infinite; }
-          .hero-gradient-text {
-            background-image: linear-gradient(100deg, rgba(255,255,255,0.97), rgba(255,255,255,0.55), rgba(226,232,240,0.9));
-            background-size: 300% 100%;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            color: transparent;
-          }
           .animate-hero-content { animation: slide-up-fade 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+          @keyframes bounce-arrow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+          .animate-bounce-arrow { animation: bounce-arrow 2s infinite ease-in-out; }
         `}</style>
 
-        <div className={`relative z-10 max-w-5xl space-y-6 px-4 ${imageLoaded ? "animate-hero-content" : "opacity-0"} font-style-sensitive`}>
-          <h1 className="select-none leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
-            <span className="text-4xl sm:text-6xl lg:text-[75px] font-light tracking-wide bg-linear-to-r from-white to-slate-200 bg-clip-text text-transparent block">
-              Welcome to
-            </span>
-            <span className="text-5xl sm:text-7xl lg:text-[105px] font-bold tracking-widest hero-gradient-text block mt-4 animate-gradient-text uppercase">
-              META IITGN
-            </span>
+        {/* Hero Main Content */}
+        <div className={`relative z-10 flex flex-col items-center w-full max-w-4xl ${imageLoaded ? "animate-hero-content" : "opacity-0"}`}>
+          <div className="bg-white/10 backdrop-blur-2xl border border-white/20 text-white px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-8 shadow-lg flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> The Campus Wiki
+          </div>
+
+          <h1 className="font-display font-black text-5xl sm:text-7xl md:text-8xl lg:text-[7.5rem] leading-[0.9] text-white tracking-tighter mb-8 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
+            Welcome to <br />
+            <span className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">META IITGN</span>
           </h1>
-          <p className="text-md sm:text-lg md:text-xl text-slate-200/90 font-medium tracking-widest max-w-2xl mx-auto leading-relaxed text-shadow-premium pt-4 uppercase">
-            A collaborative space where anyone on campus can write and edit about anything.
+
+          <p className="text-white font-bold text-lg md:text-2xl max-w-2xl leading-relaxed drop-shadow-[0_4px_6px_rgba(0,0,0,0.8)]">
+            A collaborative space where anyone on campus can read, write, and edit about absolutely anything.
           </p>
         </div>
 
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer text-white/85 hover:text-white group select-none transition-opacity duration-300" onClick={scrollToFeed}>
-          <span className="text-[10px] font-black uppercase tracking-widest text-shadow-premium">Scroll Down</span>
-          <div className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center p-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.3)] transition-transform group-hover:translate-y-0.5">
-            <div className="w-1.5 h-2.5 bg-white rounded-full animate-bounce" />
+        {/* Scroll cue */}
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-105" onClick={scrollToFeed}>
+          <div className="relative w-14 h-14 rounded-full bg-white/15 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] animate-bounce before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/30 before:to-transparent before:opacity-50">
+            <ArrowDown className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 text-white drop-shadow-md" />
           </div>
         </div>
       </div>
