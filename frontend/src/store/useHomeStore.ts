@@ -251,11 +251,38 @@ export const useHomeStore = create<HomeState>((set, get) => ({
           });
 
           // 2. Background sync ONLY bookmarks and pendingpages
+          const TWELVE_HOURS = 12 * 60 * 60 * 1000;
           let syncInfo: any = null;
-          try {
-            syncInfo = await apiService.getSyncCheck();
-          } catch (err) {
-            console.error("Bookmarks sync check failed:", err);
+          let cacheValid = false;
+          const cachedSyncStr = localStorage.getItem("syncCheck");
+
+          if (cachedSyncStr && !force) {
+            try {
+              const parsed = JSON.parse(cachedSyncStr);
+              const cachedUserId = parsed.user_id;
+              if (cachedUserId === currentUserId && Date.now() - parsed.timestamp < TWELVE_HOURS) {
+                syncInfo = parsed.data;
+                cacheValid = true;
+              }
+            } catch (e) {
+              console.error("Failed to parse cached syncCheck in bookmarksOnly:", e);
+            }
+          }
+
+          if (!cacheValid) {
+            try {
+              syncInfo = await apiService.getSyncCheck();
+              localStorage.setItem(
+                "syncCheck",
+                JSON.stringify({
+                  timestamp: Date.now(),
+                  user_id: currentUserId,
+                  data: syncInfo,
+                })
+              );
+            } catch (err) {
+              console.error("Bookmarks sync check failed:", err);
+            }
           }
 
           if (syncInfo) {
@@ -436,7 +463,7 @@ export const useHomeStore = create<HomeState>((set, get) => ({
         let syncInfo: any = null;
         let cacheValid = false;
         const cachedSyncStr = localStorage.getItem("syncCheck");
-        const hasCachedData = cachedNews.length > 0 && cachedFeatured.length > 0;
+        const hasCachedData = cachedNews.length > 0 || cachedFeatured.length > 0 || cachedEvents.length > 0 || cachedPopular.length > 0;
 
         if (cachedSyncStr && !force) {
           try {

@@ -13,6 +13,7 @@ const Home = () => {
   const [papers, setPapers] = useState<Paper[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [department, setDepartment] = useState("");
   const [year, setYear] = useState("");
   const [page, setPage] = useState(1);
@@ -25,7 +26,7 @@ const Home = () => {
 
     try {
       const response = await apiService.getPapers({
-        search,
+        search: debouncedSearch,
         department,
         year,
         page,
@@ -43,22 +44,26 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, department, year, page]);
+  }, [debouncedSearch, department, year, page]);
 
+  // Debounce search query changes
   useEffect(() => {
     const handler = setTimeout(() => {
-      setPage(1);
-      fetchPapers();
+      setDebouncedSearch(search);
     }, 400);
 
     return () => clearTimeout(handler);
-  }, [search, department, year]);
+  }, [search]);
 
+  // Reset page to 1 when search or filters change
   useEffect(() => {
-    setTimeout(() => {
-      fetchPapers();
-    }, 10);
-  }, [page]);
+    setPage(1);
+  }, [debouncedSearch, department, year]);
+
+  // Fetch papers when search, filters, or page change
+  useEffect(() => {
+    fetchPapers();
+  }, [debouncedSearch, department, year, page, fetchPapers]);
 
   const handleDownload = async (paperId: number, pdfUrl: string) => {
     try {

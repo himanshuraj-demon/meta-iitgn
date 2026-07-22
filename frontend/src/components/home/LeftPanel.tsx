@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { apiService } from "@/api";
+
 import { useAuth } from "@/hooks/useAuth";
 import { useHomeStore } from "@/store/useHomeStore";
 import { Menu, Heart, Settings, GripHorizontal } from "lucide-react";
 import Sidebar from "@/components/navs/Sidebar";
 import { CategoryIcon, CATEGORY_COLORS } from "@/lib/categoryIcon";
+import { useCommonStore } from "@/store/useCommonStore";
 import { BeautifulSearchBox } from "@/components/helpers/SearchDesign";
 import { Responsive as ResponsiveGridLayout, Layout, useContainerWidth } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
@@ -40,8 +41,8 @@ export default function LeftPanel({
   const { categories, setSettingsTab, auth } = useAuth();
   const { setActiveOverlay, setActivePortalCategory } = useHomeStore();
   const isLoggedIn = auth === true;
-  const [pageCount, setPageCount] = useState<number | null>(null);
-  
+  const pageCount = useCommonStore((state) => state.stats?.totalPages ?? null);
+  const loadStats = useCommonStore((state) => state.loadStats);
   const [isEditingSizes, setIsEditingSizes] = useState(false);
   const [layout, setLayout] = useState<Layout[]>([]);
   const { width, containerRef, mounted } = useContainerWidth();
@@ -133,19 +134,8 @@ export default function LeftPanel({
 
 
   useEffect(() => {
-    async function loadStats() {
-      try {
-        const stats = await apiService.getPageStats();
-        if (stats && typeof stats.totalPages === "number") {
-          setPageCount(stats.totalPages);
-          localStorage.setItem("wiki-total-pages-count", JSON.stringify(stats.totalPages));
-        }
-      } catch (err) {
-        console.error("Failed to load page stats count:", err);
-      }
-    }
     loadStats();
-  }, []);
+  }, [loadStats]);
 
   const renderPortalIcon = (iconName: string | undefined, color: string, iconClass?: string) => {
     if (iconClass) {

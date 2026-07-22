@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { AuthContext, type User, type Category } from "./AuthContext";
 import { api } from "../lib/api";
-
 import { db } from "../lib/db";
+import { useCommonStore } from "../store/useCommonStore";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -18,6 +18,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     return null;
   });
+
+  const stats = useCommonStore((state) => state.stats);
+  const loadStats = useCommonStore((state) => state.loadStats);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  useEffect(() => {
+    if (stats?.totalPages !== undefined) {
+      setTotalPagesCountState(stats.totalPages);
+    }
+  }, [stats]);
 
   const setTotalPagesCount = useCallback((val: any) => {
     setTotalPagesCountState((prev: any) => {
