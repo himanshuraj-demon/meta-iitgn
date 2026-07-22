@@ -27,6 +27,7 @@ import {
 
 import ParallaxBackground from "@/components/helpers/ParallaxBackground";
 import { useAuth } from "@/hooks/useAuth";
+import { apiService } from "@/api";
 import EventsOverlay from "@/components/overlays/EventsOverlay";
 import HomeCard from "@/components/home/HomeCard";
 import HomeMasonryGrid, { MasonryCardConfig } from "@/components/home/HomeMasonryGrid";
@@ -103,18 +104,13 @@ export default function HomeTab({
   getRelativeTime,
   newsPages,
   setShowAllNews,
-  triviaPages,
-  setShowAllTrivia,
-  setActiveTriviaItem,
-  historyPages,
-  setShowAllHistory,
   totalPagesCount,
   featuredPages,
   popularPages,
   upcomingEvents,
   setShowEditFeatured,
 }: HomeTabProps) {
-  const { categories } = useAuth();
+  const { categories, user } = useAuth();
   const router = useRouter();
 
   // ── Card visibility preferences (local only) ───────────────────────────────
@@ -825,72 +821,120 @@ export default function HomeTab({
                 </button>
               </div>
 
-              {(() => {
-                const visibleGroups = CARD_GROUPS.map((group) => ({
-                  ...group,
-                  items: cards.filter((c) => group.ids.includes(c.id)),
-                })).filter((group) => group.items.length > 0);
+              <details className="collapse collapse-arrow bg-base-200/50 mt-4 border border-base-200">
+                <summary className="collapse-title text-sm font-semibold text-base-content/80">
+                  Hide/Show Cards
+                </summary>
+                <div className="collapse-content pb-4">
+                  {(() => {
+                    const visibleGroups = CARD_GROUPS.map((group) => ({
+                      ...group,
+                      items: cards.filter((c) => group.ids.includes(c.id)),
+                    })).filter((group) => group.items.length > 0);
 
-                const columns: typeof visibleGroups[] = [[], [], []];
-                visibleGroups.forEach((group, i) => {
-                  columns[i % 3].push(group);
-                });
+                    const columns: typeof visibleGroups[] = [[], [], []];
+                    visibleGroups.forEach((group, i) => {
+                      columns[i % 3].push(group);
+                    });
 
-                return (
-                  <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-3">
-                    {columns.map((col, ci) => (
-                      <div key={ci} className="space-y-4">
-                        {col.map((group) => (
-                          <div key={group.title}>
-                            <div className="mb-3.5 flex items-center justify-between">
-                              <div className="flex items-center gap-2.5">
-                                <span className="h-4 w-1.5 rounded-full bg-primary" />
-                                <h5 className="text-xs font-bold uppercase tracking-widest text-base-content/50">
-                                  {group.title}
-                                </h5>
+                    return (
+                      <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-3 mt-2">
+                        {columns.map((col, ci) => (
+                          <div key={ci} className="space-y-4">
+                            {col.map((group) => (
+                              <div key={group.title}>
+                                <div className="mb-3.5 flex items-center justify-between">
+                                  <div className="flex items-center gap-2.5">
+                                    <span className="h-4 w-1.5 rounded-full bg-primary" />
+                                    <h5 className="text-xs font-bold uppercase tracking-widest text-base-content/50">
+                                      {group.title}
+                                    </h5>
+                                  </div>
+                                  <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-semibold text-base-content/60">
+                                    {group.items.length}
+                                  </span>
+                                </div>
+                                <div className="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-200 bg-base-100 shadow-sm">
+                                  {group.items.map((c) => {
+                                    const visible = !hiddenCards.has(c.id);
+                                    return (
+                                      <label
+                                        key={c.id}
+                                        className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-base-200/60"
+                                      >
+                                        <span className="text-sm font-medium text-base-content/80">
+                                          {CARD_LABELS[c.id] ?? c.id}
+                                        </span>
+                                        <input
+                                          type="checkbox"
+                                          className="toggle toggle-sm toggle-primary"
+                                          checked={visible}
+                                          onChange={() => toggleCard(c.id)}
+                                        />
+                                      </label>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                              <span className="rounded-full bg-base-200 px-2 py-0.5 text-xs font-semibold text-base-content/60">
-                                {group.items.length}
-                              </span>
-                            </div>
-                            <div className="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-200 bg-base-100 shadow-sm">
-                              {group.items.map((c) => {
-                                const visible = !hiddenCards.has(c.id);
-                                return (
-                                  <label
-                                    key={c.id}
-                                    className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-base-200/60"
-                                  >
-                                    <span className="text-sm font-medium text-base-content/80">
-                                      {CARD_LABELS[c.id] ?? c.id}
-                                    </span>
-                                    <input
-                                      type="checkbox"
-                                      className="toggle toggle-sm toggle-primary"
-                                      checked={visible}
-                                      onChange={() => toggleCard(c.id)}
-                                    />
-                                  </label>
-                                );
-                              })}
-                            </div>
+                            ))}
                           </div>
                         ))}
                       </div>
-                    ))}
-                  </div>
-                );
-              })()}
+                    );
+                  })()}
+                </div>
+              </details>
 
-              {hiddenCards.size > 0 && (
-                <button
-                  type="button"
-                  onClick={showAllCards}
-                  className="btn btn-ghost btn-xs text-base-content/60"
-                >
-                  Show all cards
-                </button>
-              )}
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-base-200">
+                {hiddenCards.size > 0 ? (
+                  <button
+                    type="button"
+                    onClick={showAllCards}
+                    className="btn btn-ghost btn-xs text-base-content/60"
+                  >
+                    Show all cards
+                  </button>
+                ) : (
+                  <div />
+                )}
+                
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem(HOME_HIDDEN_CARDS_KEY);
+                      localStorage.removeItem("meta_iitgn_home_card_order_v2");
+                      window.location.reload();
+                    }}
+                    className="btn btn-outline btn-xs"
+                  >
+                    Reset Layout
+                  </button>
+                  
+                  {user?.role === 'admin' && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const layoutStr = localStorage.getItem("meta_iitgn_home_card_order_v2");
+                        if (layoutStr) {
+                          try {
+                            await apiService.updateSetting("homepage_layout", JSON.parse(layoutStr));
+                            alert("Global layout saved successfully! Other users will now see this as default.");
+                          } catch (e) {
+                            alert("Failed to save global layout. Check console for details.");
+                            console.error(e);
+                          }
+                        } else {
+                          alert("Please customize your layout first before saving globally.");
+                        }
+                      }}
+                      className="btn btn-primary btn-xs"
+                    >
+                      Save as Global Default
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>

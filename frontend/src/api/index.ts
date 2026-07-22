@@ -10,6 +10,7 @@ import * as featuredApi from "./featured";
 import * as paperApi from "./paper";
 import * as competitionApi from "./competition";
 import * as interviewApi from "./interviews";
+import * as settingsApi from "./settings";
 
 export const apiService = {
   ...userApi,
@@ -24,6 +25,7 @@ export const apiService = {
   ...paperApi,
   ...competitionApi,
   ...interviewApi,
+  ...settingsApi,
 };
 
 export * from "./user";
@@ -38,4 +40,5 @@ export * from "./featured";
 export * from "./paper";
 export * from "./competition";
 export * from "./interviews";
+export * from "./settings";
 

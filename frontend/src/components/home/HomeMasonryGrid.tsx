@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Responsive as ResponsiveGridLayout, Layout, useContainerWidth } from "react-grid-layout";
+import useSWR from "swr";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { GripVertical } from "lucide-react";
+import { apiService } from "@/api";
 
 export interface MasonryCardConfig {
   id: string;
@@ -29,16 +31,38 @@ export default function HomeMasonryGrid({
   const { width, containerRef, mounted } = useContainerWidth();
   const [layouts, setLayouts] = useState<ReactGridLayout.Layouts | null>(null);
   const [activeBreakpoint, setActiveBreakpoint] = useState<string>("lg");
+  const isUserAction = useRef(false);
+
+  const { data: globalSetting } = useSWR("site_settings_homepage_layout", async () => {
+    try {
+      const res = await apiService.getSetting("homepage_layout");
+      return res;
+    } catch (e) {
+      // ignore
+    }
+    return null;
+  });
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
+      const enforceMax = (layoutArray: Layout[]) => layoutArray.map(item => ({ ...item, maxW: 4, maxH: 4 }));
+
       if (saved) {
+        isUserAction.current = true;
         const parsed = JSON.parse(saved);
-        
-        // Enforce new max boundaries on saved layouts
-        const enforceMax = (layoutArray: Layout[]) => layoutArray.map(item => ({ ...item, maxW: 4, maxH: 4 }));
-        
+        if (Array.isArray(parsed)) {
+          setLayouts({ lg: enforceMax(parsed) });
+        } else {
+          const enforcedParsed: ReactGridLayout.Layouts = {};
+          Object.keys(parsed).forEach(key => {
+            enforcedParsed[key] = enforceMax(parsed[key]);
+          });
+          setLayouts(enforcedParsed);
+        }
+      } else if (globalSetting?.data) {
+        // Use global setting if user has no local layout
+        const parsed = typeof globalSetting.data === 'string' ? JSON.parse(globalSetting.data) : globalSetting.data;
         if (Array.isArray(parsed)) {
           setLayouts({ lg: enforceMax(parsed) });
         } else {
@@ -49,7 +73,7 @@ export default function HomeMasonryGrid({
           setLayouts(enforcedParsed);
         }
       } else {
-        // Generate default layout if nothing is saved
+        // Generate default layout if nothing is saved locally or globally
         const defaultLg = cards.map((card, index) => ({
           i: card.id,
           x: (index * 2) % 4,
@@ -67,7 +91,7 @@ export default function HomeMasonryGrid({
       console.error("Failed to load portal layout:", e);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey]);
+  }, [storageKey, globalSetting]);
 
   const handleLayoutChange = (currentLayout: Layout[], allLayouts: ReactGridLayout.Layouts) => {
     let layoutsToSave = { ...allLayouts };
@@ -85,10 +109,12 @@ export default function HomeMasonryGrid({
     }
 
     setLayouts(layoutsToSave);
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(layoutsToSave));
-    } catch (e) {
-      console.error("Failed to save portal layout:", e);
+    if (isUserAction.current) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(layoutsToSave));
+      } catch (e) {
+        console.error("Failed to save portal layout:", e);
+      }
     }
   };
 
@@ -123,7 +149,9 @@ export default function HomeMasonryGrid({
           margin={[gap, gap]}
           containerPadding={[0, 0]}
           onLayoutChange={handleLayoutChange}
-          onBreakpointChange={(newBreakpoint) => setActiveBreakpoint(newBreakpoint)}
+          onBreakpointChange={(bp) => setActiveBreakpoint(bp)}
+          onDragStop={() => (isUserAction.current = true)}
+          onResizeStop={() => (isUserAction.current = true)}
           isDraggable={reorderEnabled}
           isResizable={reorderEnabled}
           compactType="vertical"

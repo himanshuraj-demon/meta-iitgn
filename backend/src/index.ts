@@ -13,6 +13,7 @@ import AuditLogRouter from "./routes/auditLogs.js";
 import PaperRouter from "./routes/paper.js"
 import CompetitionsRouter from "./routes/competitions.js"
 import InterviewPostsRouter from "./routes/interviewPosts.js"
+import SettingsRouter from "./routes/settings.js"
 
 const router = Router();
 
@@ -41,6 +42,9 @@ router.use("/competitions", CompetitionsRouter);
 
 // Interview Feed Posts
 router.use("/interviews", InterviewPostsRouter);
+
+// Settings
+router.use("/settings", SettingsRouter);
 
 export default router;
 

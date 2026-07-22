@@ -310,7 +310,7 @@ export default function GitHubExplorer() {
       .finally(() => setLoading(false));
 
     return () => abortRef.current?.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [category, level, search]);
 
   // ---------------------------------------------------------------------------
