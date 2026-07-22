@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { ArrowRight, BookOpen, PlusCircle, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/api";
 import Avatar from "@/components/helpers/Avatar";
 import { useViewMode } from "@/hooks/useViewMode";
@@ -52,6 +52,7 @@ export default function BlogGridPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
+  const queryClient = useQueryClient();
   const [view, setView] = useViewMode("meta_iitgn_blog_view");
 
   const { data, isLoading, isFetching } = useQuery({
@@ -182,28 +183,36 @@ export default function BlogGridPage() {
                     />
                   );
 
+                  const prefetchBlog = () => {
+                    queryClient.prefetchQuery({
+                      queryKey: ["blog", blog.slug],
+                      queryFn: () => apiService.getBlog(blog.slug),
+                    });
+                  };
+
                   return (
-                    <UnifiedViewItem
-                      key={blog.blog_id}
-                      view={view}
-                      href={href}
-                      title={blog.title}
-                      description={blog.description}
-                      avatar={authorAvatar}
-                      meta={view === "tiles" ? metaContent : undefined}
-                      subtitle={
-                        view === "details" || view === "default" ? (
-                          <span className="flex items-center gap-2 text-[10px] text-base-content/40 uppercase font-black tracking-wider mt-1 flex-wrap">
-                            <span>By {blog.original_author.name}</span>
-                            <span>•</span>
-                            <span>{formatDate(blog.created_at)}</span>
-                            <span>•</span>
-                            <span>{blog.view_count} views</span>
-                          </span>
-                        ) : undefined
-                      }
-                      action={view === "tiles" ? actionContent : undefined}
-                    />
+                    <div key={blog.blog_id} onMouseEnter={prefetchBlog} className="w-full">
+                      <UnifiedViewItem
+                        view={view}
+                        href={href}
+                        title={blog.title}
+                        description={blog.description}
+                        avatar={authorAvatar}
+                        meta={view === "tiles" ? metaContent : undefined}
+                        subtitle={
+                          view === "details" || view === "default" ? (
+                            <span className="flex items-center gap-2 text-[10px] text-base-content/40 uppercase font-black tracking-wider mt-1 flex-wrap">
+                              <span>By {blog.original_author.name}</span>
+                              <span>•</span>
+                              <span>{formatDate(blog.created_at)}</span>
+                              <span>•</span>
+                              <span>{blog.view_count} views</span>
+                            </span>
+                          ) : undefined
+                        }
+                        action={view === "tiles" ? actionContent : undefined}
+                      />
+                    </div>
                   );
                 })}
                 {loadingMore && (

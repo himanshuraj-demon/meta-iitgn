@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useHomeStore } from "@/store/useHomeStore";
 import { PlusCircle, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
 import { apiService } from "@/api";
@@ -58,6 +58,7 @@ const ArticleSkeleton = () => (
 export default function CategoryPage({ categorySlug, embedded = false }: CategoryPageProps) {
   const { user, categories, updateCategoryState } = useAuth();
   const { setActivePortalCategory, setActiveOverlay } = useHomeStore();
+  const queryClient = useQueryClient();
   const category = categories?.find(c => c.slug === categorySlug);
   const childCategories = (categories || []).filter(c => category && c.parent_id === category.category_id);
   const [articles, setArticles] = useState<Article[]>([]);
@@ -273,17 +274,25 @@ export default function CategoryPage({ categorySlug, embedded = false }: Categor
                   setActiveOverlay("portal");
                 };
 
+                const prefetchChild = () => {
+                  queryClient.prefetchQuery({
+                    queryKey: ["categoryArticles", child.slug, 1],
+                    queryFn: () => apiService.getCategoryArticles(child.slug, { page: 1, limit: 6 }),
+                  });
+                };
+
                 return (
-                  <UnifiedViewItem
-                    key={child.slug}
-                    view={subView}
-                    onClick={openChild}
-                    title={child.name}
-                    description={subView === "details" ? undefined : (child.description || "No description provided.")}
-                    subtitle={subView === "details" ? humanizeSlug(child.slug) : undefined}
-                    icon={childIcon}
-                    iconBoxStyle={iconBoxStyle}
-                  />
+                  <div key={child.slug} onMouseEnter={prefetchChild} className="w-full">
+                    <UnifiedViewItem
+                      view={subView}
+                      onClick={openChild}
+                      title={child.name}
+                      description={subView === "details" ? undefined : (child.description || "No description provided.")}
+                      subtitle={subView === "details" ? humanizeSlug(child.slug) : undefined}
+                      icon={childIcon}
+                      iconBoxStyle={iconBoxStyle}
+                    />
+                  </div>
                 );
               })}
             </div>

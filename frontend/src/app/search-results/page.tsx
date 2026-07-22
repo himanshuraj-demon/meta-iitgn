@@ -25,7 +25,7 @@ import {
   CATEGORY_ICON_SET,
   isEmojiIcon,
 } from "@/lib/categoryIcon";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Tint any CSS color (hex, theme name, …) the same way the category
 // editor does, so icon boxes read consistently across every surface.
@@ -90,6 +90,7 @@ function SearchResultsContent() {
 
   useDocumentTitle(queryParam ? `Search: ${queryParam}` : "Search");
 
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState(queryParam);
   const [category, setCategory] = useState(categoryParam);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -311,35 +312,50 @@ function SearchResultsContent() {
                     : openInNewTab
                       ? undefined
                       : item.path;
+                const prefetchResult = () => {
+                  if (item.type === "category") {
+                    queryClient.prefetchQuery({
+                      queryKey: ["categoryArticles", item.slug || "", 1],
+                      queryFn: () => apiService.getCategoryArticles(item.slug || "", { page: 1, limit: 6 }),
+                    });
+                  } else if (item.type === "blog") {
+                    queryClient.prefetchQuery({
+                      queryKey: ["blog", item.slug || ""],
+                      queryFn: () => apiService.getBlog(item.slug || ""),
+                    });
+                  }
+                };
+
                 return (
-                  <UnifiedViewItem
-                    key={item.path}
-                    view={view}
-                    href={href}
-                    onClick={
-                      openInNewTab
-                        ? () => window.open(href || item.path, "_blank", "noopener,noreferrer")
-                        : undefined
-                    }
-                    title={highlightText(item.title, queryParam)}
-                    subtitle={item.categoryName || displayCategory}
-                    description={highlightText(item.description, queryParam)}
-                    icon={getResultIcon(item, getIconSize(view))}
-                    iconBoxStyle={iconBoxStyle}
-                    avatar={
-                      item.type === "profile" ? (
-                        <Avatar
-                          name={item.title}
-                          className="h-7 w-7 rounded-full object-cover ring-1 ring-base-300 shrink-0"
-                        />
-                      ) : undefined
-                    }
-                    topRightAction={
-                      item.is_pending ? (
-                        <span className="badge badge-warning badge-xs">Pending</span>
-                      ) : undefined
-                    }
-                  />
+                  <div key={item.path} onMouseEnter={prefetchResult} className="w-full">
+                    <UnifiedViewItem
+                      view={view}
+                      href={href}
+                      onClick={
+                        openInNewTab
+                          ? () => window.open(href || item.path, "_blank", "noopener,noreferrer")
+                          : undefined
+                      }
+                      title={highlightText(item.title, queryParam)}
+                      subtitle={item.categoryName || displayCategory}
+                      description={highlightText(item.description, queryParam)}
+                      icon={getResultIcon(item, getIconSize(view))}
+                      iconBoxStyle={iconBoxStyle}
+                      avatar={
+                        item.type === "profile" ? (
+                          <Avatar
+                            name={item.title}
+                            className="h-7 w-7 rounded-full object-cover ring-1 ring-base-300 shrink-0"
+                          />
+                        ) : undefined
+                      }
+                      topRightAction={
+                        item.is_pending ? (
+                          <span className="badge badge-warning badge-xs">Pending</span>
+                        ) : undefined
+                      }
+                    />
+                  </div>
                 );
               })}
             </div>
