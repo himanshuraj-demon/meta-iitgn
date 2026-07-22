@@ -19,6 +19,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.2.0",
     "@types/node": "^26.1.1",
     "axios": "^1.18.1",
     "cloudinary": "^2.10.0",
@@ -36,7 +37,6 @@
     "slugify": "^1.6.9"
   },
   "devDependencies": {
-    "@types/multer": "^2.2.0",
     "knip": "^6.27.0",
     "prisma": "^6.19.3",
     "tsx": "^4.23.0",
