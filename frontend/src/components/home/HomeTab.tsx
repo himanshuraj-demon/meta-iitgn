@@ -345,7 +345,7 @@ export default function HomeTab({
             {activeTarget ? (
               <Link
                 href={activeTarget}
-                className="btn btn-primary btn-sm @md:btn-md shadow-lg"
+                className="btn btn-primary btn-sm @md:btn-md shadow-lg rounded-2xl"
               >
                 Read <ArrowRight className="w-3 h-3 @md:w-4 @md:h-4" />
               </Link>
@@ -682,7 +682,7 @@ export default function HomeTab({
             <button
               type="button"
               onClick={handleRandomPage}
-              className="mt-3 @sm:mt-4 w-full font-black text-white bg-gray-900 hover:bg-black py-2.5 @sm:py-3.5 rounded-xl transition-transform active:scale-95 text-[10px] @sm:text-sm shadow-xl shadow-gray-900/20 cursor-pointer"
+              className="mt-3 @sm:mt-4 w-full font-black text-black bg-gray-900 hover:bg-black hover:text-white py-2.5 @sm:py-3.5 rounded-xl transition-transform active:scale-95 text-[12px] @sm:text-sm shadow-xl shadow-gray-900/20 cursor-pointer"
             >
               Open a random page
             </button>
@@ -696,9 +696,9 @@ export default function HomeTab({
       id: "pending-pages",
       colSpan: 2,
       content: (
-        <div className="rounded-2xl p-4 @sm:p-6 flex flex-col md:flex-col   items-center justify-between border-2 border-[#f3f4f6] gap-4 @md:gap-6 h-full font-inter text-[#111827]">
+        <div className="rounded-2xl p-4 @sm:p-6 flex flex-col md:flex-col   items-center justify-between border-2 border-[#f3f4f6] gap-4 @md:gap-6 h-full font-inter ">
           <div className="flex-1 text-center @md:text-left">
-            <h3 className="font-display font-bold text-lg @sm:text-xl flex items-center justify-center @md:justify-start gap-2 text-[#111827] mb-1.5 @sm:mb-2">
+            <h3 className="font-display font-bold text-lg @sm:text-xl flex items-center justify-center @md:justify-start gap-2  mb-1.5 @sm:mb-2">
               <Clock className="h-4 w-4 @sm:h-5 @sm:w-5 text-[#9ca3af]" />{" "}
               Pending Review
             </h3>

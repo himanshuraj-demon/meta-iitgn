@@ -449,7 +449,7 @@ export default function ProfileContent() {
     : targetBookmarks ?? profileCache[targetUserId!]?.bookmarks ?? [];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-28">
+    <div className="mx-auto max-w-4xl space-y-6 pb-28 scrollbar-none">
       {/* ── Profile Header Card ─────────────────────────────────── */}
       <section className="relative overflow-hidden rounded-3xl border border-base-200 bg-base-100 shadow-sm">
         {/* Banner */}
