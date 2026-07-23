@@ -8,7 +8,6 @@ import { getSearchHistory, addSearchHistory, clearSearchHistory } from "@/lib/se
 interface SearchTabProps {
   searchTabQuery: string;
   setSearchTabQuery: (query: string) => void;
-  mousePos?: { x: number; y: number };
 }
 
 export default function SearchTab({

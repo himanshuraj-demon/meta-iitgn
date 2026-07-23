@@ -31,7 +31,6 @@ interface BookmarksTabProps {
   setBookmarks: (bookmarks: BookmarkItem[]) => void;
   removeBookmark: (id: string) => void;
   setActiveTab?: (tab: "home" | "search" | "bookmarks") => void;
-  mousePos?: { x: number; y: number };
 }
 
 // Formatter for display names of categories
