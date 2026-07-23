@@ -15,6 +15,7 @@ import ViewSwitcher from "@/components/helpers/ViewSwitcher";
 import { getGridClass, getIconSize } from "@/lib/viewModes";
 import UnifiedViewItem from "@/components/helpers/UnifiedViewItem";
 import { CategoryIcon } from "@/lib/categoryIcon";
+import { useCommonStore } from "@/store/useCommonStore";
 
 interface BookmarkItem {
   id: string;
@@ -65,20 +66,8 @@ export default function BookmarksTab({
   const [localBookmarks, setLocalBookmarks] = useState<BookmarkItem[]>([]);
   const [limit, setLimit] = useState(5);
   const [totalCount, setTotalCount] = useState(0);
-  // Compact layout preference (re-read on settings change).
-  const [compact, setCompact] = useState(false);
-
-  // Article-list view (Default / Tiles / Details / Icons S–XL). Persisted to
-  // localStorage under a bookmarks-specific key so it's independent of other surfaces.
+  const compact = useCommonStore((state) => state.compactLayout);
   const [view, setView] = useViewMode("meta_iitgn_bookmarks_view");
-
-  useEffect(() => {
-    const syncCompact = () =>
-      setCompact(localStorage.getItem("wiki_compact_layout") === "true");
-    syncCompact();
-    window.addEventListener("wiki_settings_changed", syncCompact);
-    return () => window.removeEventListener("wiki_settings_changed", syncCompact);
-  }, []);
 
   const fetchLocalBookmarks = useCallback(async (currentLimit: number) => {
     try {

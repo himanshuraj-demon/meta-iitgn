@@ -20,11 +20,12 @@ import {
 } from "lucide-react";
 
 import { FaGithub } from "react-icons/fa6";
-import { WIKI_THEMES, DARK_THEMES } from "@/lib/constants";
+import { WIKI_THEMES } from "@/lib/constants";
 import ProfilePopover from "@/components/navs/ProfilePopover";
 import { db } from "@/lib/db";
 import { useHomeStore } from "@/store/useHomeStore";
 import Image from "next/image";
+import { useCommonStore } from "@/store/useCommonStore";
 
 // Real build info shown in the Help & About tab.
 const APP_VERSION = "1.1.0";
@@ -57,27 +58,38 @@ export default function SettingsModal({
   // Mobile view navigation layer state: "list" shows settings categories, "details" shows the setting controls
   const [mobileView, setMobileView] = useState<"list" | "details">("list");
 
-  // Interface settings (applied to the whole UI, not the editor/article text)
-  const [theme, setTheme] = useState("light");
-  const [interfaceFontStyle, setInterfaceFontStyle] = useState("sans");
-  const [zoomLevel, setZoomLevel] = useState("100%");
-  const [compactLayout, setCompactLayout] = useState(false);
-  const [readingProgress, setReadingProgress] = useState(true);
-  const [autoFold, setAutoFold] = useState(false);
-
-  // Editor settings (independent of the interface font)
-  const [editorAutosave, setEditorAutosave] = useState(true);
-  const [editorSpellCheck, setEditorSpellCheck] = useState(true);
-  const [editorWordCount, setEditorWordCount] = useState(true);
-  const [editorFontStyle, setEditorFontStyle] = useState("serif");
-  const [editorFontSize, setEditorFontSize] = useState("normal");
-
-  const [autoFocusSearch, setAutoFocusSearch] = useState(false);
-  const [historyLimit, setHistoryLimit] = useState(10);
-  const [openInNewTab, setOpenInNewTab] = useState(false);
-
-  // Performance: interface animations (persisted + applied globally via data-reduce-motion)
-  const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const {
+    theme,
+    setTheme,
+    interfaceFontStyle,
+    setInterfaceFontStyle,
+    zoomLevel,
+    setZoomLevel,
+    compactLayout,
+    setCompactLayout,
+    readingProgress,
+    setReadingProgress,
+    autoFold,
+    setAutoFold,
+    editorAutosave,
+    setEditorAutosave,
+    editorSpellCheck,
+    setEditorSpellCheck,
+    editorWordCount,
+    setEditorWordCount,
+    editorFontStyle,
+    setEditorFontStyle,
+    editorFontSize,
+    setEditorFontSize,
+    autoFocusSearch,
+    setAutoFocusSearch,
+    historyLimit,
+    setHistoryLimit,
+    openNewTab: openInNewTab,
+    setOpenNewTab: setOpenInNewTab,
+    animations: animationsEnabled,
+    setAnimations: setAnimationsEnabled,
+  } = useCommonStore();
 
   // Storage: transient feedback for the clear/reset actions
   const [cacheCleared, setCacheCleared] = useState(false);
@@ -158,53 +170,6 @@ export default function SettingsModal({
 
   useEffect(() => {
     setIsMounted(true);
-    // Load settings from localStorage
-    const savedTheme = localStorage.getItem("wiki_theme") || "light";
-    const savedInterfaceFontStyle =
-      localStorage.getItem("wiki_interface_font_style") || "sans";
-    const savedZoom = localStorage.getItem("wiki_zoom_level") || "100%";
-
-    const savedCompact = localStorage.getItem("wiki_compact_layout") === "true";
-    const savedProgress =
-      localStorage.getItem("wiki_reading_progress") !== "false";
-    const savedAutoFold = localStorage.getItem("wiki_auto_fold") === "true";
-
-    const savedEditorAutosave =
-      localStorage.getItem("wiki_editor_autosave") !== "false";
-    const savedEditorSpellCheck =
-      localStorage.getItem("wiki_editor_spellcheck") !== "false";
-    const savedEditorWordCount =
-      localStorage.getItem("wiki_editor_word_count") !== "false";
-    const savedEditorFontStyle =
-      localStorage.getItem("wiki_editor_font_style") || "serif";
-    const savedEditorFontSize =
-      localStorage.getItem("wiki_editor_font_size") || "normal";
-
-    const savedAutoFocus =
-      localStorage.getItem("wiki_autofocus_search") === "true";
-    const savedHistoryLimit = Number(
-      localStorage.getItem("wiki_history_limit") || "10"
-    );
-    const savedNewTab = localStorage.getItem("wiki_open_new_tab") === "true";
-
-    const savedAnimations = localStorage.getItem("wiki_animations") !== "false";
-
-    setTheme(savedTheme);
-    setInterfaceFontStyle(savedInterfaceFontStyle);
-    setZoomLevel(savedZoom);
-    setCompactLayout(savedCompact);
-    setReadingProgress(savedProgress);
-    setAutoFold(savedAutoFold);
-    setEditorAutosave(savedEditorAutosave);
-    setEditorSpellCheck(savedEditorSpellCheck);
-    setEditorWordCount(savedEditorWordCount);
-    setEditorFontStyle(savedEditorFontStyle);
-    setEditorFontSize(savedEditorFontSize);
-    setAutoFocusSearch(savedAutoFocus);
-    setHistoryLimit(savedHistoryLimit);
-    setOpenInNewTab(savedNewTab);
-    setAnimationsEnabled(savedAnimations);
-
     if (initialTab) {
       setActiveTab(initialTab);
       if (typeof window !== "undefined" && window.innerWidth >= 645) {
@@ -224,104 +189,63 @@ export default function SettingsModal({
   }, [initialTab, handleMouseMove, handleMouseUp]);
 
   const handleSaveTheme = (newTheme: string) => {
-    // Apply everything in a single synchronous update so the entire palette
-    // (background, borders, primary, etc.) swaps in one repaint instead of
-    // animating each property independently.
     setTheme(newTheme);
-    localStorage.setItem("wiki_theme", newTheme);
-    localStorage.setItem("wiki_daisyui_theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-    if (DARK_THEMES.includes(newTheme)) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveInterfaceFontStyle = (style: string) => {
     setInterfaceFontStyle(style);
-    localStorage.setItem("wiki_interface_font_style", style);
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveZoomLevel = (zoom: string) => {
     setZoomLevel(zoom);
-    localStorage.setItem("wiki_zoom_level", zoom);
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveCompact = (val: boolean) => {
     setCompactLayout(val);
-    localStorage.setItem("wiki_compact_layout", val ? "true" : "false");
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveProgress = (val: boolean) => {
     setReadingProgress(val);
-    localStorage.setItem("wiki_reading_progress", val ? "true" : "false");
   };
 
   const handleSaveAutoFold = (val: boolean) => {
     setAutoFold(val);
-    localStorage.setItem("wiki_auto_fold", val ? "true" : "false");
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveEditorAutosave = (val: boolean) => {
     setEditorAutosave(val);
-    localStorage.setItem("wiki_editor_autosave", val ? "true" : "false");
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveEditorSpellCheck = (val: boolean) => {
     setEditorSpellCheck(val);
-    localStorage.setItem("wiki_editor_spellcheck", val ? "true" : "false");
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveEditorWordCount = (val: boolean) => {
     setEditorWordCount(val);
-    localStorage.setItem("wiki_editor_word_count", val ? "true" : "false");
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveEditorFontStyle = (style: string) => {
     setEditorFontStyle(style);
-    localStorage.setItem("wiki_editor_font_style", style);
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveEditorFontSize = (size: string) => {
     setEditorFontSize(size);
-    localStorage.setItem("wiki_editor_font_size", size);
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   const handleSaveAutoFocus = (val: boolean) => {
     setAutoFocusSearch(val);
-    localStorage.setItem("wiki_autofocus_search", val ? "true" : "false");
   };
 
   const handleSaveHistoryLimit = (val: number) => {
     setHistoryLimit(val);
-    localStorage.setItem("wiki_history_limit", String(val));
   };
 
   const handleSaveNewTab = (val: boolean) => {
     setOpenInNewTab(val);
-    localStorage.setItem("wiki_open_new_tab", val ? "true" : "false");
   };
 
   const handleSaveAnimations = (val: boolean) => {
     setAnimationsEnabled(val);
-    localStorage.setItem("wiki_animations", val ? "true" : "false");
-    // Disable transitions/animations globally when turned off.
-    document.documentElement.setAttribute(
-      "data-reduce-motion",
-      val ? "false" : "true"
-    );
-    window.dispatchEvent(new Event("wiki_settings_changed"));
   };
 
   // Clear the offline (Dexie / IndexedDB) content cache. This wipes downloaded
@@ -357,13 +281,23 @@ export default function SettingsModal({
   // Reset every locally-stored preference (theme, fonts, layout, etc.) back to
   // defaults, then reload so the fresh values are applied everywhere.
   const handleResetSettings = () => {
-    const keys: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      // Only touch preference keys; leave auth/session caches untouched.
-      if (key && key.startsWith("wiki_")) keys.push(key);
-    }
-    keys.forEach((k) => localStorage.removeItem(k));
+    setTheme("light");
+    setInterfaceFontStyle("sans");
+    setZoomLevel("100%");
+    setCompactLayout(false);
+    setReadingProgress(true);
+    setAutoFold(false);
+    setEditorAutosave(true);
+    setEditorSpellCheck(true);
+    setEditorWordCount(true);
+    setEditorFontStyle("serif");
+    setEditorFontSize("normal");
+    setAutoFocusSearch(false);
+    setHistoryLimit(10);
+    setOpenInNewTab(false);
+    setAnimationsEnabled(true);
+
+    localStorage.removeItem("wiki-settings-storage");
     setSettingsReset(true);
     setTimeout(() => {
       window.location.reload();
